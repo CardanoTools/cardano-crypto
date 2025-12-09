@@ -295,7 +295,10 @@ impl CertifiedVrf {
     /// # Returns
     ///
     /// A `CertifiedVrf` containing both the output and proof
-    pub fn eval(secret_key: &[u8; SECRET_KEY_SIZE], message: &[u8]) -> crate::common::CryptoResult<Self> {
+    pub fn eval(
+        secret_key: &[u8; SECRET_KEY_SIZE],
+        message: &[u8],
+    ) -> crate::common::CryptoResult<Self> {
         let proof = VrfDraft03::prove(secret_key, message)?;
         let output_bytes = VrfDraft03::proof_to_hash(&proof)?;
 
@@ -390,7 +393,10 @@ impl core::fmt::Debug for VrfKeyPair {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("VrfKeyPair")
             .field("signing_key", &"<redacted>")
-            .field("verification_key", &format!("<{} bytes>", self.verification_key.len()))
+            .field(
+                "verification_key",
+                &format!("<{} bytes>", self.verification_key.len()),
+            )
             .finish()
     }
 }
@@ -421,7 +427,9 @@ impl VrfKeyPair {
 #[cfg(feature = "cbor")]
 mod cbor_impl {
     use super::*;
-    use crate::cbor::{CborError, FromCbor, ToCbor, decode_bytes, encode_bytes, encoded_size_bytes};
+    use crate::cbor::{
+        decode_bytes, encode_bytes, encoded_size_bytes, CborError, FromCbor, ToCbor,
+    };
 
     impl ToCbor for OutputVrf {
         #[cfg(feature = "alloc")]
@@ -464,8 +472,8 @@ mod cbor_impl {
             proof.copy_from_slice(&decoded);
 
             // Compute output from proof
-            let output_bytes = VrfDraft03::proof_to_hash(&proof)
-                .map_err(|_| CborError::DeserializationFailed)?;
+            let output_bytes =
+                VrfDraft03::proof_to_hash(&proof).map_err(|_| CborError::DeserializationFailed)?;
 
             Ok(Self {
                 output: OutputVrf::new(output_bytes),

@@ -48,8 +48,7 @@ fn hex_encode(bytes: &[u8]) -> String {
 /// This is the simplest case with an empty input message.
 #[test]
 fn test_vrf_draft03_ietf_vector_10() -> Result<()> {
-    let sk_seed =
-        hex_decode("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60");
+    let sk_seed = hex_decode("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60");
     let expected_pk =
         hex_decode("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
     let alpha: &[u8] = &[]; // empty message
@@ -96,8 +95,7 @@ fn test_vrf_draft03_ietf_vector_10() -> Result<()> {
 /// IETF Test Vector #11: Single byte alpha (0x72)
 #[test]
 fn test_vrf_draft03_ietf_vector_11() -> Result<()> {
-    let sk_seed =
-        hex_decode("4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb");
+    let sk_seed = hex_decode("4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb");
     let expected_pk =
         hex_decode("3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c");
     let alpha = hex_decode("72");
@@ -140,8 +138,7 @@ fn test_vrf_draft03_ietf_vector_11() -> Result<()> {
 /// IETF Test Vector #12: Two byte alpha (0xaf82)
 #[test]
 fn test_vrf_draft03_ietf_vector_12() -> Result<()> {
-    let sk_seed =
-        hex_decode("c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7");
+    let sk_seed = hex_decode("c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7");
     let expected_pk =
         hex_decode("fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025");
     let alpha = hex_decode("af82");
@@ -182,7 +179,7 @@ fn test_vrf_draft03_ietf_vector_12() -> Result<()> {
 }
 
 // ============================================================================
-// VRF Draft-03 Cardano Compatibility Tests  
+// VRF Draft-03 Cardano Compatibility Tests
 // ============================================================================
 
 /// Test VRF proof generation is deterministic
@@ -352,8 +349,18 @@ fn test_vrf_message_sizes() -> Result<()> {
         let proof = VrfDraft03::prove(&sk, &message)?;
         let hash = VrfDraft03::verify(&pk, &proof, &message)?;
 
-        assert_eq!(hash.len(), 64, "Output size mismatch for message size {}", size);
-        assert_eq!(proof.len(), 80, "Proof size mismatch for message size {}", size);
+        assert_eq!(
+            hash.len(),
+            64,
+            "Output size mismatch for message size {}",
+            size
+        );
+        assert_eq!(
+            proof.len(),
+            80,
+            "Proof size mismatch for message size {}",
+            size
+        );
     }
 
     Ok(())
@@ -446,8 +453,7 @@ fn test_elligator2_ietf_vector_10() {
     let message: &[u8] = &[];
 
     // Expected H point from IETF VRF draft-03 specification
-    let expected_h =
-        hex_decode("1c5672d919cc0a800970cd7e05cb36ed27ed354c33519948e5a9eaf89aee12b7");
+    let expected_h = hex_decode("1c5672d919cc0a800970cd7e05cb36ed27ed354c33519948e5a9eaf89aee12b7");
 
     // Compute hash as done in cardano_hash_to_curve
     let mut hasher = Sha512::new();

@@ -44,10 +44,12 @@ pub const PAYMENT_VERIFICATION_KEY_TYPE: &str = "PaymentVerificationKeyShelley_e
 pub const PAYMENT_SIGNING_KEY_TYPE: &str = "PaymentSigningKeyShelley_ed25519";
 
 /// TextEnvelope type for extended payment verification keys
-pub const PAYMENT_EXTENDED_VERIFICATION_KEY_TYPE: &str = "PaymentExtendedVerificationKeyShelley_ed25519_bip32";
+pub const PAYMENT_EXTENDED_VERIFICATION_KEY_TYPE: &str =
+    "PaymentExtendedVerificationKeyShelley_ed25519_bip32";
 
 /// TextEnvelope type for extended payment signing keys
-pub const PAYMENT_EXTENDED_SIGNING_KEY_TYPE: &str = "PaymentExtendedSigningKeyShelley_ed25519_bip32";
+pub const PAYMENT_EXTENDED_SIGNING_KEY_TYPE: &str =
+    "PaymentExtendedSigningKeyShelley_ed25519_bip32";
 
 // =============================================================================
 // Stake Key Types (Ed25519)
@@ -60,7 +62,8 @@ pub const STAKE_VERIFICATION_KEY_TYPE: &str = "StakeVerificationKeyShelley_ed255
 pub const STAKE_SIGNING_KEY_TYPE: &str = "StakeSigningKeyShelley_ed25519";
 
 /// TextEnvelope type for extended stake verification keys
-pub const STAKE_EXTENDED_VERIFICATION_KEY_TYPE: &str = "StakeExtendedVerificationKeyShelley_ed25519_bip32";
+pub const STAKE_EXTENDED_VERIFICATION_KEY_TYPE: &str =
+    "StakeExtendedVerificationKeyShelley_ed25519_bip32";
 
 /// TextEnvelope type for extended stake signing keys
 pub const STAKE_EXTENDED_SIGNING_KEY_TYPE: &str = "StakeExtendedSigningKeyShelley_ed25519_bip32";
@@ -82,7 +85,8 @@ pub const POOL_VERIFICATION_KEY_TYPE: &str = "StakePoolVerificationKey_ed25519";
 pub const POOL_SIGNING_KEY_TYPE: &str = "StakePoolSigningKey_ed25519";
 
 /// TextEnvelope type for extended pool verification keys
-pub const POOL_EXTENDED_VERIFICATION_KEY_TYPE: &str = "StakePoolExtendedVerificationKey_ed25519_bip32";
+pub const POOL_EXTENDED_VERIFICATION_KEY_TYPE: &str =
+    "StakePoolExtendedVerificationKey_ed25519_bip32";
 
 /// TextEnvelope type for extended pool signing keys
 pub const POOL_EXTENDED_SIGNING_KEY_TYPE: &str = "StakePoolExtendedSigningKey_ed25519_bip32";
@@ -130,7 +134,8 @@ pub const GENESIS_VERIFICATION_KEY_TYPE: &str = "GenesisVerificationKey_ed25519"
 pub const GENESIS_SIGNING_KEY_TYPE: &str = "GenesisSigningKey_ed25519";
 
 /// TextEnvelope type for extended genesis verification keys
-pub const GENESIS_EXTENDED_VERIFICATION_KEY_TYPE: &str = "GenesisExtendedVerificationKey_ed25519_bip32";
+pub const GENESIS_EXTENDED_VERIFICATION_KEY_TYPE: &str =
+    "GenesisExtendedVerificationKey_ed25519_bip32";
 
 /// TextEnvelope type for extended genesis signing keys
 pub const GENESIS_EXTENDED_SIGNING_KEY_TYPE: &str = "GenesisExtendedSigningKey_ed25519_bip32";
@@ -146,10 +151,12 @@ pub const GENESIS_DELEGATE_VERIFICATION_KEY_TYPE: &str = "GenesisDelegateVerific
 pub const GENESIS_DELEGATE_SIGNING_KEY_TYPE: &str = "GenesisDelegateSigningKey_ed25519";
 
 /// TextEnvelope type for extended genesis delegate verification keys
-pub const GENESIS_DELEGATE_EXTENDED_VERIFICATION_KEY_TYPE: &str = "GenesisDelegateExtendedVerificationKey_ed25519_bip32";
+pub const GENESIS_DELEGATE_EXTENDED_VERIFICATION_KEY_TYPE: &str =
+    "GenesisDelegateExtendedVerificationKey_ed25519_bip32";
 
 /// TextEnvelope type for extended genesis delegate signing keys
-pub const GENESIS_DELEGATE_EXTENDED_SIGNING_KEY_TYPE: &str = "GenesisDelegateExtendedSigningKey_ed25519_bip32";
+pub const GENESIS_DELEGATE_EXTENDED_SIGNING_KEY_TYPE: &str =
+    "GenesisDelegateExtendedSigningKey_ed25519_bip32";
 
 // =============================================================================
 // Genesis UTxO Key Types
@@ -182,28 +189,34 @@ pub const DREP_EXTENDED_SIGNING_KEY_TYPE: &str = "DRepExtendedSigningKey_ed25519
 // =============================================================================
 
 /// TextEnvelope type for committee cold verification keys
-pub const COMMITTEE_COLD_VERIFICATION_KEY_TYPE: &str = "ConstitutionalCommitteeColdVerificationKey_ed25519";
+pub const COMMITTEE_COLD_VERIFICATION_KEY_TYPE: &str =
+    "ConstitutionalCommitteeColdVerificationKey_ed25519";
 
 /// TextEnvelope type for committee cold signing keys
 pub const COMMITTEE_COLD_SIGNING_KEY_TYPE: &str = "ConstitutionalCommitteeColdSigningKey_ed25519";
 
 /// TextEnvelope type for extended committee cold verification keys
-pub const COMMITTEE_COLD_EXTENDED_VERIFICATION_KEY_TYPE: &str = "ConstitutionalCommitteeColdExtendedVerificationKey_ed25519_bip32";
+pub const COMMITTEE_COLD_EXTENDED_VERIFICATION_KEY_TYPE: &str =
+    "ConstitutionalCommitteeColdExtendedVerificationKey_ed25519_bip32";
 
 /// TextEnvelope type for extended committee cold signing keys
-pub const COMMITTEE_COLD_EXTENDED_SIGNING_KEY_TYPE: &str = "ConstitutionalCommitteeColdExtendedSigningKey_ed25519_bip32";
+pub const COMMITTEE_COLD_EXTENDED_SIGNING_KEY_TYPE: &str =
+    "ConstitutionalCommitteeColdExtendedSigningKey_ed25519_bip32";
 
 /// TextEnvelope type for committee hot verification keys
-pub const COMMITTEE_HOT_VERIFICATION_KEY_TYPE: &str = "ConstitutionalCommitteeHotVerificationKey_ed25519";
+pub const COMMITTEE_HOT_VERIFICATION_KEY_TYPE: &str =
+    "ConstitutionalCommitteeHotVerificationKey_ed25519";
 
 /// TextEnvelope type for committee hot signing keys
 pub const COMMITTEE_HOT_SIGNING_KEY_TYPE: &str = "ConstitutionalCommitteeHotSigningKey_ed25519";
 
 /// TextEnvelope type for extended committee hot verification keys
-pub const COMMITTEE_HOT_EXTENDED_VERIFICATION_KEY_TYPE: &str = "ConstitutionalCommitteeHotExtendedVerificationKey_ed25519_bip32";
+pub const COMMITTEE_HOT_EXTENDED_VERIFICATION_KEY_TYPE: &str =
+    "ConstitutionalCommitteeHotExtendedVerificationKey_ed25519_bip32";
 
 /// TextEnvelope type for extended committee hot signing keys
-pub const COMMITTEE_HOT_EXTENDED_SIGNING_KEY_TYPE: &str = "ConstitutionalCommitteeHotExtendedSigningKey_ed25519_bip32";
+pub const COMMITTEE_HOT_EXTENDED_SIGNING_KEY_TYPE: &str =
+    "ConstitutionalCommitteeHotExtendedSigningKey_ed25519_bip32";
 
 // =============================================================================
 // Certificate Types
@@ -213,7 +226,8 @@ pub const COMMITTEE_HOT_EXTENDED_SIGNING_KEY_TYPE: &str = "ConstitutionalCommitt
 pub const NODE_OPERATIONAL_CERTIFICATE_TYPE: &str = "NodeOperationalCertificate";
 
 /// TextEnvelope type for operational certificate issue counter
-pub const OPERATIONAL_CERTIFICATE_ISSUE_COUNTER_TYPE: &str = "NodeOperationalCertificateIssueCounter";
+pub const OPERATIONAL_CERTIFICATE_ISSUE_COUNTER_TYPE: &str =
+    "NodeOperationalCertificateIssueCounter";
 
 // =============================================================================
 // Signature Types
@@ -238,21 +252,36 @@ mod tests {
 
     #[test]
     fn test_payment_key_types() {
-        assert_eq!(PAYMENT_VERIFICATION_KEY_TYPE, "PaymentVerificationKeyShelley_ed25519");
+        assert_eq!(
+            PAYMENT_VERIFICATION_KEY_TYPE,
+            "PaymentVerificationKeyShelley_ed25519"
+        );
         assert_eq!(PAYMENT_SIGNING_KEY_TYPE, "PaymentSigningKeyShelley_ed25519");
-        assert_eq!(PAYMENT_EXTENDED_VERIFICATION_KEY_TYPE, "PaymentExtendedVerificationKeyShelley_ed25519_bip32");
-        assert_eq!(PAYMENT_EXTENDED_SIGNING_KEY_TYPE, "PaymentExtendedSigningKeyShelley_ed25519_bip32");
+        assert_eq!(
+            PAYMENT_EXTENDED_VERIFICATION_KEY_TYPE,
+            "PaymentExtendedVerificationKeyShelley_ed25519_bip32"
+        );
+        assert_eq!(
+            PAYMENT_EXTENDED_SIGNING_KEY_TYPE,
+            "PaymentExtendedSigningKeyShelley_ed25519_bip32"
+        );
     }
 
     #[test]
     fn test_stake_key_types() {
-        assert_eq!(STAKE_VERIFICATION_KEY_TYPE, "StakeVerificationKeyShelley_ed25519");
+        assert_eq!(
+            STAKE_VERIFICATION_KEY_TYPE,
+            "StakeVerificationKeyShelley_ed25519"
+        );
         assert_eq!(STAKE_SIGNING_KEY_TYPE, "StakeSigningKeyShelley_ed25519");
     }
 
     #[test]
     fn test_pool_key_types() {
-        assert_eq!(POOL_VERIFICATION_KEY_TYPE, "StakePoolVerificationKey_ed25519");
+        assert_eq!(
+            POOL_VERIFICATION_KEY_TYPE,
+            "StakePoolVerificationKey_ed25519"
+        );
         assert_eq!(POOL_SIGNING_KEY_TYPE, "StakePoolSigningKey_ed25519");
     }
 
@@ -264,21 +293,36 @@ mod tests {
 
     #[test]
     fn test_kes_key_types() {
-        assert_eq!(KES_VERIFICATION_KEY_TYPE, "KesVerificationKey_ed25519_kes_2^6");
+        assert_eq!(
+            KES_VERIFICATION_KEY_TYPE,
+            "KesVerificationKey_ed25519_kes_2^6"
+        );
         assert_eq!(KES_SIGNING_KEY_TYPE, "KesSigningKey_ed25519_kes_2^6");
     }
 
     #[test]
     fn test_governance_key_types() {
         assert_eq!(DREP_VERIFICATION_KEY_TYPE, "DRepVerificationKey_ed25519");
-        assert_eq!(COMMITTEE_COLD_VERIFICATION_KEY_TYPE, "ConstitutionalCommitteeColdVerificationKey_ed25519");
-        assert_eq!(COMMITTEE_HOT_VERIFICATION_KEY_TYPE, "ConstitutionalCommitteeHotVerificationKey_ed25519");
+        assert_eq!(
+            COMMITTEE_COLD_VERIFICATION_KEY_TYPE,
+            "ConstitutionalCommitteeColdVerificationKey_ed25519"
+        );
+        assert_eq!(
+            COMMITTEE_HOT_VERIFICATION_KEY_TYPE,
+            "ConstitutionalCommitteeHotVerificationKey_ed25519"
+        );
     }
 
     #[test]
     fn test_certificate_types() {
-        assert_eq!(NODE_OPERATIONAL_CERTIFICATE_TYPE, "NodeOperationalCertificate");
-        assert_eq!(OPERATIONAL_CERTIFICATE_ISSUE_COUNTER_TYPE, "NodeOperationalCertificateIssueCounter");
+        assert_eq!(
+            NODE_OPERATIONAL_CERTIFICATE_TYPE,
+            "NodeOperationalCertificate"
+        );
+        assert_eq!(
+            OPERATIONAL_CERTIFICATE_ISSUE_COUNTER_TYPE,
+            "NodeOperationalCertificateIssueCounter"
+        );
     }
 
     #[test]

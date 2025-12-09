@@ -70,7 +70,10 @@ impl core::fmt::Display for SeedError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             SeedError::InvalidLength { expected, actual } => {
-                write!(f, "Invalid seed length: expected {expected} bytes, got {actual}")
+                write!(
+                    f,
+                    "Invalid seed length: expected {expected} bytes, got {actual}"
+                )
             }
             SeedError::ValidationFailed(msg) => {
                 write!(f, "Seed validation failed: {msg}")

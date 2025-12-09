@@ -220,7 +220,9 @@ pub trait KesAlgorithm {
     /// assert_eq!(hash.len(), 32);
     /// ```
     #[cfg(feature = "alloc")]
-    fn hash_verification_key<H: crate::hash::HashAlgorithm>(key: &Self::VerificationKey) -> Vec<u8> {
+    fn hash_verification_key<H: crate::hash::HashAlgorithm>(
+        key: &Self::VerificationKey,
+    ) -> Vec<u8> {
         let raw = Self::raw_serialize_verification_key_kes(key);
         H::hash(&raw)
     }
@@ -384,7 +386,10 @@ impl<K: KesAlgorithm> core::fmt::Debug for SignKeyWithPeriodKes<K> {
 impl<K: KesAlgorithm> SignKeyWithPeriodKes<K> {
     /// Create a new sign key with period
     pub fn new(signing_key: K::SigningKey, period: Period) -> Self {
-        Self { signing_key, period }
+        Self {
+            signing_key,
+            period,
+        }
     }
 
     /// Get the current period
@@ -508,7 +513,6 @@ impl<K: KesAlgorithm> KesKeyPair<K> {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

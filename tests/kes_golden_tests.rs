@@ -127,7 +127,11 @@ fn test_sum2_kes_basic() -> Result<()> {
 #[test]
 fn test_sum2_kes_total_periods() {
     // Sum2 means depth 2, so 2^2 = 4 periods
-    assert_eq!(Sum2Kes::total_periods(), 4, "Sum2KES should have 4 periods (2^2)");
+    assert_eq!(
+        Sum2Kes::total_periods(),
+        4,
+        "Sum2KES should have 4 periods (2^2)"
+    );
 }
 
 /// Test that evolved key cannot sign for past periods
@@ -196,11 +200,8 @@ fn test_sum6_kes_evolution() -> Result<()> {
 
         // Evolve to target period
         for p in 0..target_period {
-            sk = Sum6Kes::update_kes(&(), sk, p)?.expect(&format!(
-                "Key should evolve from period {} to {}",
-                p,
-                p + 1
-            ));
+            sk = Sum6Kes::update_kes(&(), sk, p)?
+                .unwrap_or_else(|| panic!("Key should evolve from period {} to {}", p, p + 1));
         }
 
         // Sign and verify at target period

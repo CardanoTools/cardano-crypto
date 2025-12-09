@@ -105,11 +105,7 @@ pub struct KESPeriodInfo {
 pub fn kes_period_info<K: KesAlgorithm>(period: KESPeriod) -> KESPeriodInfo {
     let total_periods = K::total_periods() as u32;
     let is_valid = (period as u64) < K::total_periods();
-    let remaining_periods = if is_valid {
-        total_periods - period
-    } else {
-        0
-    };
+    let remaining_periods = if is_valid { total_periods - period } else { 0 };
 
     KESPeriodInfo {
         period,
@@ -117,7 +113,8 @@ pub fn kes_period_info<K: KesAlgorithm>(period: KESPeriod) -> KESPeriodInfo {
         total_periods,
         remaining_periods,
     }
-}/// Check if a KES period is valid for a specific algorithm
+}
+/// Check if a KES period is valid for a specific algorithm
 ///
 /// # Type Parameters
 ///

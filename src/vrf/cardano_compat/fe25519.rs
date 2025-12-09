@@ -8,8 +8,8 @@
 
 use fiat_crypto::curve25519_64::{
     fiat_25519_add, fiat_25519_carry, fiat_25519_carry_mul, fiat_25519_carry_square,
-    fiat_25519_from_bytes, fiat_25519_loose_field_element, fiat_25519_opp,
-    fiat_25519_sub, fiat_25519_tight_field_element, fiat_25519_to_bytes,
+    fiat_25519_from_bytes, fiat_25519_loose_field_element, fiat_25519_opp, fiat_25519_sub,
+    fiat_25519_tight_field_element, fiat_25519_to_bytes,
 };
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 
@@ -19,7 +19,7 @@ pub struct Fe25519(fiat_25519_tight_field_element);
 
 impl core::fmt::Debug for Fe25519 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "Fe25519({:?})"  , self.to_bytes())
+        write!(f, "Fe25519({:?})", self.to_bytes())
     }
 }
 
@@ -41,7 +41,7 @@ impl ConditionallySelectable for Fe25519 {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         let mut result = fiat_25519_tight_field_element([0u64; 5]);
         for i in 0..5 {
-            result.0[i] = u64::conditional_select(&a.0.0[i], &b.0.0[i], choice);
+            result.0[i] = u64::conditional_select(&a.0 .0[i], &b.0 .0[i], choice);
         }
         Fe25519(result)
     }
@@ -139,7 +139,7 @@ impl Fe25519 {
     /// Convert tight to loose for operations
     #[inline]
     fn as_loose(&self) -> fiat_25519_loose_field_element {
-        fiat_25519_loose_field_element(self.0.0)
+        fiat_25519_loose_field_element(self.0 .0)
     }
 
     /// Multiplication
@@ -292,8 +292,8 @@ mod tests {
 
         assert_eq!(zero_bytes, [0u8; 32]);
         assert_eq!(one_bytes[0], 1);
-        for i in 1..32 {
-            assert_eq!(one_bytes[i], 0);
+        for byte in &one_bytes[1..32] {
+            assert_eq!(*byte, 0);
         }
     }
 
@@ -338,7 +338,10 @@ mod tests {
     #[test]
     fn test_sqrt() {
         // Test sqrt(4) = 2 or -2
-        let four = Fe25519::ONE.add(&Fe25519::ONE).add(&Fe25519::ONE).add(&Fe25519::ONE);
+        let four = Fe25519::ONE
+            .add(&Fe25519::ONE)
+            .add(&Fe25519::ONE)
+            .add(&Fe25519::ONE);
         let (exists, sqrt_four) = four.sqrt();
 
         assert!(bool::from(exists));
@@ -365,8 +368,8 @@ mod tests {
         assert_eq!(a_bytes[0], 0x06);
         assert_eq!(a_bytes[1], 0x6D);
         assert_eq!(a_bytes[2], 0x07);
-        for i in 3..32 {
-            assert_eq!(a_bytes[i], 0);
+        for byte in &a_bytes[3..32] {
+            assert_eq!(*byte, 0);
         }
     }
 }

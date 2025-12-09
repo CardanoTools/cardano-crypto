@@ -20,7 +20,11 @@ fn main() {
     let entropy = b"abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
     let master_seed = derive_seed(entropy);
 
-    println!("Entropy: \"{}...\" ({} bytes)", &String::from_utf8_lossy(&entropy[..40]), entropy.len());
+    println!(
+        "Entropy: \"{}...\" ({} bytes)",
+        &String::from_utf8_lossy(&entropy[..40]),
+        entropy.len()
+    );
     println!("Master seed: {}...", hex(&master_seed[..16]));
     println!();
 
@@ -36,9 +40,9 @@ fn main() {
 
     // Derive purpose-specific seeds using indices
     let payment_seed = expand_seed(&master_seed, 0); // Purpose 0: Payment keys
-    let stake_seed = expand_seed(&master_seed, 1);   // Purpose 1: Stake keys
-    let vrf_seed = expand_seed(&master_seed, 2);     // Purpose 2: VRF keys
-    let kes_seed = expand_seed(&master_seed, 3);     // Purpose 3: KES keys
+    let stake_seed = expand_seed(&master_seed, 1); // Purpose 1: Stake keys
+    let vrf_seed = expand_seed(&master_seed, 2); // Purpose 2: VRF keys
+    let kes_seed = expand_seed(&master_seed, 3); // Purpose 3: KES keys
 
     println!("Master seed: {}...", hex(&master_seed[..8]));
     println!("├── Purpose 0 (Payment): {}...", hex(&payment_seed[..8]));
@@ -90,8 +94,14 @@ fn main() {
         println!();
 
         // Verify expand() matches expand_seed()
-        assert_eq!(child_0.as_bytes(), &expand_seed(secure_master.as_bytes(), 0));
-        assert_eq!(child_1.as_bytes(), &expand_seed(secure_master.as_bytes(), 1));
+        assert_eq!(
+            child_0.as_bytes(),
+            &expand_seed(secure_master.as_bytes(), 0)
+        );
+        assert_eq!(
+            child_1.as_bytes(),
+            &expand_seed(secure_master.as_bytes(), 1)
+        );
         println!("✓ SecureSeed.expand() matches expand_seed()");
 
         // SecureSeed will be zeroized when it goes out of scope
@@ -107,7 +117,10 @@ fn main() {
     use cardano_crypto::dsign::{DsignAlgorithm, Ed25519};
     let signing_key = Ed25519::gen_key(&payment_seed);
     let verification_key = Ed25519::derive_verification_key(&signing_key);
-    println!("Payment Ed25519 VK: {}...", hex(&verification_key.as_bytes()[..8]));
+    println!(
+        "Payment Ed25519 VK: {}...",
+        hex(&verification_key.as_bytes()[..8])
+    );
 
     // Generate VRF keys
     use cardano_crypto::vrf::VrfDraft03;

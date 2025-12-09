@@ -135,48 +135,81 @@ pub use dsign::{
 };
 
 #[cfg(feature = "vrf")]
-pub use vrf::{CertifiedVrf, OutputVrf, VrfAlgorithm, VrfDraft03, VrfDraft13, VrfKeyPair, VrfSigningKey, VrfVerificationKey, VrfProof};
+pub use vrf::{
+    CertifiedVrf, OutputVrf, VrfAlgorithm, VrfDraft03, VrfDraft13, VrfKeyPair, VrfProof,
+    VrfSigningKey, VrfVerificationKey,
+};
 
 #[cfg(feature = "kes")]
 pub use kes::{
     CompactSum0Kes, CompactSum1Kes, CompactSum2Kes, CompactSum3Kes, CompactSum4Kes, CompactSum5Kes,
-    CompactSum6Kes, CompactSum7Kes, KesAlgorithm, KesError, KesKeyPair, KesSignature, KesSigningKey,
-    KesVerificationKey, Period, SignKeyWithPeriodKes, SignedKes, SingleKes, Sum0Kes, Sum1Kes,
-    Sum2Kes, Sum3Kes, Sum4Kes, Sum5Kes, Sum6Kes, Sum7Kes,
+    CompactSum6Kes, CompactSum7Kes, KesAlgorithm, KesError, KesKeyPair, KesSignature,
+    KesSigningKey, KesVerificationKey, Period, SignKeyWithPeriodKes, SignedKes, SingleKes, Sum0Kes,
+    Sum1Kes, Sum2Kes, Sum3Kes, Sum4Kes, Sum5Kes, Sum6Kes, Sum7Kes,
 };
 
 #[cfg(feature = "cbor")]
 pub use cbor::{
     // Core CBOR functions
-    decode_bytes, encode_bytes,
-    // Generic verification key / signature
-    decode_signature, decode_verification_key, encode_signature, encode_verification_key,
-    // DSIGN-specific CBOR
-    decode_signature_dsign, decode_signing_key_dsign, decode_verification_key_dsign,
-    encode_signature_dsign, encode_signing_key_dsign, encode_verification_key_dsign,
-    // KES-specific CBOR
-    decode_signature_kes, decode_signing_key_kes, decode_verification_key_kes,
-    encode_signature_kes, encode_signing_key_kes, encode_verification_key_kes,
-    // VRF-specific CBOR
-    decode_output_vrf, decode_proof_vrf, decode_signing_key_vrf, decode_verification_key_vrf,
-    encode_output_vrf, encode_proof_vrf, encode_signing_key_vrf, encode_verification_key_vrf,
+    decode_bytes,
     // Hash CBOR
-    decode_hash, encode_hash,
-    // Size utilities (generic)
-    encoded_signature_size, encoded_size_bytes, encoded_verification_key_size,
-    // Size expressions (DSIGN)
-    encoded_signing_key_dsign_size, encoded_signature_dsign_size, encoded_verification_key_dsign_size,
-    // Size expressions (VRF)
-    encoded_output_vrf_size, encoded_proof_vrf_draft03_size, encoded_proof_vrf_draft13_size,
-    encoded_signing_key_vrf_size, encoded_verification_key_vrf_size,
-    // Size expressions (KES)
-    encoded_signature_sum6kes_size, encoded_signing_key_sum6kes_size, encoded_verification_key_kes_size,
+    decode_hash,
+    // VRF-specific CBOR
+    decode_output_vrf,
+    decode_proof_vrf,
+    // Generic verification key / signature
+    decode_signature,
+    // DSIGN-specific CBOR
+    decode_signature_dsign,
+    // KES-specific CBOR
+    decode_signature_kes,
+    decode_signing_key_dsign,
+    decode_signing_key_kes,
+    decode_signing_key_vrf,
+    decode_verification_key,
+    decode_verification_key_dsign,
+    decode_verification_key_kes,
+    decode_verification_key_vrf,
+    encode_bytes,
+    encode_hash,
+    encode_output_vrf,
+    encode_proof_vrf,
+    encode_signature,
+    encode_signature_dsign,
+    encode_signature_kes,
+    encode_signing_key_dsign,
+    encode_signing_key_kes,
+    encode_signing_key_vrf,
+    encode_verification_key,
+    encode_verification_key_dsign,
+    encode_verification_key_kes,
+    encode_verification_key_vrf,
     // Size expressions (Hash)
-    encoded_hash_blake2b224_size, encoded_hash_blake2b256_size,
-    // Traits
-    FromCbor, ToCbor,
+    encoded_hash_blake2b224_size,
+    encoded_hash_blake2b256_size,
+    // Size expressions (VRF)
+    encoded_output_vrf_size,
+    encoded_proof_vrf_draft03_size,
+    encoded_proof_vrf_draft13_size,
+    encoded_signature_dsign_size,
+    // Size utilities (generic)
+    encoded_signature_size,
+    // Size expressions (KES)
+    encoded_signature_sum6kes_size,
+    // Size expressions (DSIGN)
+    encoded_signing_key_dsign_size,
+    encoded_signing_key_sum6kes_size,
+    encoded_signing_key_vrf_size,
+    encoded_size_bytes,
+    encoded_verification_key_dsign_size,
+    encoded_verification_key_kes_size,
+    encoded_verification_key_size,
+    encoded_verification_key_vrf_size,
     // Error type
     CborError,
+    // Traits
+    FromCbor,
+    ToCbor,
 };
 
 #[cfg(feature = "seed")]
@@ -190,9 +223,8 @@ pub use key::text_envelope;
 pub use key::hash::{
     hash_payment_verification_key, hash_pool_verification_key, hash_raw,
     hash_stake_verification_key, hash_verification_key, hash_vrf_verification_key,
-    CommitteeColdKeyHash, CommitteeHotKeyHash, DRepKeyHash, GenesisDelegateKeyHash,
-    GenesisKeyHash, KeyHash, PaymentKeyHash, PoolKeyHash, StakeKeyHash, VrfKeyHash,
-    KEY_HASH_SIZE,
+    CommitteeColdKeyHash, CommitteeHotKeyHash, DRepKeyHash, GenesisDelegateKeyHash, GenesisKeyHash,
+    KeyHash, PaymentKeyHash, PoolKeyHash, StakeKeyHash, VrfKeyHash, KEY_HASH_SIZE,
 };
 
 #[cfg(feature = "kes")]

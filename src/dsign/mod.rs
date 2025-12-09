@@ -99,7 +99,9 @@ pub trait DsignAlgorithm: Clone + Send + Sync + 'static {
     /// let hash = Ed25519::hash_verification_key::<Blake2b256>(&vk);
     /// assert_eq!(hash.len(), 32);
     /// ```
-    fn hash_verification_key<H: crate::hash::HashAlgorithm>(key: &Self::VerificationKey) -> alloc::vec::Vec<u8> {
+    fn hash_verification_key<H: crate::hash::HashAlgorithm>(
+        key: &Self::VerificationKey,
+    ) -> alloc::vec::Vec<u8> {
         let raw = Self::raw_serialize_verification_key(key);
         H::hash(raw)
     }
@@ -287,7 +289,9 @@ impl DsignKeyPair {
 #[cfg(feature = "cbor")]
 mod cbor_impl {
     use super::*;
-    use crate::cbor::{CborError, FromCbor, ToCbor, decode_bytes, encode_bytes, encoded_size_bytes};
+    use crate::cbor::{
+        decode_bytes, encode_bytes, encoded_size_bytes, CborError, FromCbor, ToCbor,
+    };
 
     // Implementation for Ed25519-specific SignedDsign
     impl ToCbor for SignedDsign<Ed25519> {
@@ -304,8 +308,8 @@ mod cbor_impl {
     impl FromCbor for SignedDsign<Ed25519> {
         fn from_cbor(bytes: &[u8]) -> Result<Self, CborError> {
             let decoded = decode_bytes(bytes)?;
-            let sig = ed25519::Ed25519Signature::from_bytes(&decoded)
-                .ok_or(CborError::InvalidLength)?;
+            let sig =
+                ed25519::Ed25519Signature::from_bytes(&decoded).ok_or(CborError::InvalidLength)?;
             Ok(SignedDsign::from_signature(sig))
         }
     }

@@ -173,7 +173,7 @@ pub fn elligator2_to_edwards(input: &[u8; 32]) -> Option<EdwardsPoint> {
     // Step 6: Convert to curve25519-dalek EdwardsPoint for cofactor clearing
     // The compressed format is y with sign of x in high bit
     let mut point_bytes = yed.to_bytes();
-    let xed_sign = bool::from(final_xed.is_negative()) as u8;  // Should be 0 after abs()
+    let xed_sign = bool::from(final_xed.is_negative()) as u8; // Should be 0 after abs()
     point_bytes[31] |= xed_sign << 7;
 
     let compressed_before_cofactor = CompressedEdwardsY(point_bytes);
@@ -220,7 +220,7 @@ mod tests {
 
         let mut input2 = [0u8; 32];
         input2[0] = 42;
-        input2[31] = 0x80;  // Only differs in sign bit
+        input2[31] = 0x80; // Only differs in sign bit
 
         let point1 = elligator2_to_edwards(&input1).unwrap();
         let point2 = elligator2_to_edwards(&input2).unwrap();

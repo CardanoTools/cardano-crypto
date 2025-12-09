@@ -28,8 +28,8 @@
 //! let _verify: fn(&[u8;32], &[u8;80], &[u8]) -> CryptoResult<[u8;64]> = cardano_compat::cardano_vrf_verify;
 //! ```
 
-pub mod fe25519;
 pub mod elligator2;
+pub mod fe25519;
 pub mod point;
 pub mod prove;
 pub mod verify;

@@ -107,11 +107,7 @@ impl core::fmt::Display for Bech32Error {
                 )
             }
             Self::HrpMismatch { expected, actual } => {
-                write!(
-                    f,
-                    "HRP mismatch: expected '{}', got '{}'",
-                    expected, actual
-                )
+                write!(f, "HRP mismatch: expected '{}', got '{}'", expected, actual)
             }
         }
     }
@@ -158,8 +154,7 @@ pub type Bech32Result<T> = core::result::Result<T, Bech32Error>;
 pub fn encode_to_bech32(hrp: &str, data: &[u8]) -> Bech32Result<String> {
     let hrp = Hrp::parse(hrp).map_err(|e| Bech32Error::InvalidHrp(e.to_string()))?;
 
-    bech32::encode::<Bech32>(hrp, data)
-        .map_err(|e| Bech32Error::InvalidEncoding(e.to_string()))
+    bech32::encode::<Bech32>(hrp, data).map_err(|e| Bech32Error::InvalidEncoding(e.to_string()))
 }
 
 /// Decode a Bech32 string into its HRP and data bytes
@@ -276,10 +271,7 @@ pub fn decode_with_hrp(encoded: &str, expected_hrp: &str) -> Bech32Result<Vec<u8
 /// assert_eq!(decoded, key);
 /// ```
 #[inline]
-pub fn decode_to_array<const N: usize>(
-    encoded: &str,
-    expected_hrp: &str,
-) -> Bech32Result<[u8; N]> {
+pub fn decode_to_array<const N: usize>(encoded: &str, expected_hrp: &str) -> Bech32Result<[u8; N]> {
     let data = decode_with_hrp(encoded, expected_hrp)?;
 
     if data.len() != N {

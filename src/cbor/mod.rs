@@ -1210,7 +1210,7 @@ mod tests {
 
     #[test]
     fn test_vrf_output_trait_roundtrip() {
-        use crate::vrf::{VrfDraft03, OutputVrf};
+        use crate::vrf::{OutputVrf, VrfDraft03};
 
         let seed = [42u8; 32];
         let (secret_key, public_key) = VrfDraft03::keypair_from_seed(&seed);
@@ -1234,13 +1234,16 @@ mod tests {
         let encoded = certified.to_cbor();
         let decoded = CertifiedVrf::from_cbor(&encoded).unwrap();
 
-        assert_eq!(certified.get_output().as_bytes(), decoded.get_output().as_bytes());
+        assert_eq!(
+            certified.get_output().as_bytes(),
+            decoded.get_output().as_bytes()
+        );
         assert_eq!(certified.get_proof(), decoded.get_proof());
     }
 
     #[test]
     fn test_signed_dsign_cbor_roundtrip() {
-        use crate::dsign::{Ed25519, DsignAlgorithm, SignedDsign};
+        use crate::dsign::{DsignAlgorithm, Ed25519, SignedDsign};
 
         let signing_key = Ed25519::gen_key(&[42u8; 32]);
         let signed = SignedDsign::<Ed25519>::sign(&signing_key, b"test message");
@@ -1248,13 +1251,16 @@ mod tests {
         let encoded = signed.to_cbor();
         let decoded = SignedDsign::<Ed25519>::from_cbor(&encoded).unwrap();
 
-        assert_eq!(signed.get_signature().as_bytes(), decoded.get_signature().as_bytes());
+        assert_eq!(
+            signed.get_signature().as_bytes(),
+            decoded.get_signature().as_bytes()
+        );
     }
 
     #[test]
     fn test_ed25519_verification_key_cbor_roundtrip() {
-        use crate::dsign::{Ed25519, DsignAlgorithm};
         use crate::dsign::ed25519::Ed25519VerificationKey;
+        use crate::dsign::{DsignAlgorithm, Ed25519};
 
         let signing_key = Ed25519::gen_key(&[42u8; 32]);
         let vk = Ed25519::derive_verification_key(&signing_key);
@@ -1267,8 +1273,8 @@ mod tests {
 
     #[test]
     fn test_ed25519_signature_cbor_roundtrip() {
-        use crate::dsign::{Ed25519, DsignAlgorithm};
         use crate::dsign::ed25519::Ed25519Signature;
+        use crate::dsign::{DsignAlgorithm, Ed25519};
 
         let signing_key = Ed25519::gen_key(&[42u8; 32]);
         let sig = Ed25519::sign(&signing_key, b"test message");
@@ -1296,10 +1302,16 @@ mod tests {
 
         // Verify against actual encoding
         let vk = vec![0x42u8; 32];
-        assert_eq!(encode_verification_key_dsign(&vk).len(), encoded_verification_key_dsign_size());
+        assert_eq!(
+            encode_verification_key_dsign(&vk).len(),
+            encoded_verification_key_dsign_size()
+        );
 
         let sig = vec![0x43u8; 64];
-        assert_eq!(encode_signature_dsign(&sig).len(), encoded_signature_dsign_size());
+        assert_eq!(
+            encode_signature_dsign(&sig).len(),
+            encoded_signature_dsign_size()
+        );
     }
 
     #[test]
@@ -1321,10 +1333,16 @@ mod tests {
 
         // Verify against actual encoding
         let vk = vec![0x44u8; 32];
-        assert_eq!(encode_verification_key_vrf(&vk).len(), encoded_verification_key_vrf_size());
+        assert_eq!(
+            encode_verification_key_vrf(&vk).len(),
+            encoded_verification_key_vrf_size()
+        );
 
         let proof = vec![0x45u8; 80];
-        assert_eq!(encode_proof_vrf(&proof).len(), encoded_proof_vrf_draft03_size());
+        assert_eq!(
+            encode_proof_vrf(&proof).len(),
+            encoded_proof_vrf_draft03_size()
+        );
 
         let output = vec![0x46u8; 64];
         assert_eq!(encode_output_vrf(&output).len(), encoded_output_vrf_size());
@@ -1343,10 +1361,16 @@ mod tests {
 
         // Verify against actual encoding
         let vk = vec![0x47u8; 32];
-        assert_eq!(encode_verification_key_kes(&vk).len(), encoded_verification_key_kes_size());
+        assert_eq!(
+            encode_verification_key_kes(&vk).len(),
+            encoded_verification_key_kes_size()
+        );
 
         let sig = vec![0x48u8; 448];
-        assert_eq!(encode_signature_kes(&sig).len(), encoded_signature_sum6kes_size());
+        assert_eq!(
+            encode_signature_kes(&sig).len(),
+            encoded_signature_sum6kes_size()
+        );
     }
 
     #[test]
@@ -1399,7 +1423,7 @@ mod tests {
 
     #[test]
     fn test_dsign_verification_key_serialization_roundtrip() {
-        use crate::dsign::{Ed25519, DsignAlgorithm};
+        use crate::dsign::{DsignAlgorithm, Ed25519};
 
         // Generate a real verification key
         let signing_key = Ed25519::gen_key(&[0xABu8; 32]);
@@ -1418,7 +1442,7 @@ mod tests {
 
     #[test]
     fn test_dsign_signature_serialization_roundtrip() {
-        use crate::dsign::{Ed25519, DsignAlgorithm};
+        use crate::dsign::{DsignAlgorithm, Ed25519};
 
         let signing_key = Ed25519::gen_key(&[0xCDu8; 32]);
         let sig = Ed25519::sign(&signing_key, b"test message");
@@ -1436,7 +1460,7 @@ mod tests {
 
     #[test]
     fn test_vrf_verification_key_serialization_roundtrip() {
-        use crate::vrf::{VrfDraft03, VrfAlgorithm};
+        use crate::vrf::{VrfAlgorithm, VrfDraft03};
 
         let seed = [0xEFu8; 32];
         let (_, vk) = VrfDraft03::keypair_from_seed(&seed);
@@ -1454,7 +1478,7 @@ mod tests {
 
     #[test]
     fn test_vrf_proof_serialization_roundtrip() {
-        use crate::vrf::{VrfDraft03, VrfAlgorithm};
+        use crate::vrf::{VrfAlgorithm, VrfDraft03};
 
         let seed = [0x12u8; 32];
         let (sk, _) = VrfDraft03::keypair_from_seed(&seed);
@@ -1473,7 +1497,7 @@ mod tests {
 
     #[test]
     fn test_kes_verification_key_serialization_roundtrip() {
-        use crate::kes::{Sum6Kes, KesAlgorithm};
+        use crate::kes::{KesAlgorithm, Sum6Kes};
 
         let seed = [0x34u8; 32];
         let signing_key = Sum6Kes::gen_key_kes_from_seed_bytes(&seed).unwrap();
@@ -1492,7 +1516,7 @@ mod tests {
 
     #[test]
     fn test_kes_signature_serialization_roundtrip() {
-        use crate::kes::{Sum6Kes, KesAlgorithm};
+        use crate::kes::{KesAlgorithm, Sum6Kes};
 
         let seed = [0x56u8; 32];
         let signing_key = Sum6Kes::gen_key_kes_from_seed_bytes(&seed).unwrap();

@@ -526,8 +526,8 @@ mod tests {
 
     #[test]
     fn test_vrf_algorithm_trait() {
-        use crate::vrf::VrfAlgorithm;
         use crate::hash::Blake2b256;
+        use crate::vrf::VrfAlgorithm;
 
         let seed = [42u8; 32];
         let (sk, vk) = <VrfDraft03 as VrfAlgorithm>::keypair_from_seed(&seed);
@@ -567,12 +567,14 @@ mod tests {
 
         // Test verification key roundtrip
         let vk_bytes = <VrfDraft03 as VrfAlgorithm>::raw_serialize_verification_key(&vk);
-        let vk_restored = <VrfDraft03 as VrfAlgorithm>::raw_deserialize_verification_key(vk_bytes).unwrap();
+        let vk_restored =
+            <VrfDraft03 as VrfAlgorithm>::raw_deserialize_verification_key(vk_bytes).unwrap();
         assert_eq!(vk, vk_restored);
 
         // Test proof roundtrip
         let proof_bytes = <VrfDraft03 as VrfAlgorithm>::raw_serialize_proof(&proof);
-        let proof_restored = <VrfDraft03 as VrfAlgorithm>::raw_deserialize_proof(proof_bytes).unwrap();
+        let proof_restored =
+            <VrfDraft03 as VrfAlgorithm>::raw_deserialize_proof(proof_bytes).unwrap();
         assert_eq!(proof, proof_restored);
     }
 }
