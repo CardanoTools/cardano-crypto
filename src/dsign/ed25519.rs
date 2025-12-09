@@ -136,6 +136,7 @@ impl Ed25519VerificationKey {
     /// let recovered = cardano_crypto::dsign::ed25519::Ed25519VerificationKey::from_bytes(bytes);
     /// assert!(recovered.is_some());
     /// ```
+    #[inline]
     pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
         if bytes.len() != VERIFICATION_KEY_SIZE {
             return None;
@@ -168,6 +169,7 @@ impl Ed25519VerificationKey {
     /// let bytes = verification_key.as_bytes();
     /// assert_eq!(bytes.len(), 32);
     /// ```
+    #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> &[u8; VERIFICATION_KEY_SIZE] {
         &self.0
@@ -251,6 +253,7 @@ impl Ed25519SigningKey {
     /// let seed = [42u8; 32];
     /// let signing_key = Ed25519SigningKey::from_seed_bytes(&seed);
     /// ```
+    #[inline]
     pub fn from_seed_bytes(seed: &[u8]) -> Self {
         let mut seed_array = [0u8; SEED_SIZE];
         seed_array.copy_from_slice(seed);
@@ -277,6 +280,7 @@ impl Ed25519SigningKey {
     /// let extracted_seed = sk.seed_bytes();
     /// assert_eq!(seed, extracted_seed);
     /// ```
+    #[inline]
     #[must_use]
     pub fn seed_bytes(&self) -> [u8; SEED_SIZE] {
         let mut seed = [0u8; SEED_SIZE];
@@ -296,6 +300,7 @@ impl Ed25519SigningKey {
     /// let vk_bytes = sk.verifying_bytes();
     /// assert_eq!(vk_bytes.len(), 32);
     /// ```
+    #[inline]
     #[must_use]
     pub fn verifying_bytes(&self) -> [u8; VERIFICATION_KEY_SIZE] {
         let mut vk = [0u8; VERIFICATION_KEY_SIZE];
@@ -304,6 +309,7 @@ impl Ed25519SigningKey {
     }
 
     /// Get the dalek signing key for actual signing operations
+    #[inline]
     fn signing_key(&self) -> DalekSigningKey {
         let seed = self.seed_bytes();
         DalekSigningKey::from_bytes(&seed)
@@ -321,6 +327,7 @@ impl Ed25519SigningKey {
     /// let compound = sk.compound_bytes();
     /// assert_eq!(compound.len(), 64);
     /// ```
+    #[inline]
     #[must_use]
     pub fn compound_bytes(&self) -> &[u8; SECRET_COMPOUND_SIZE] {
         &self.0
@@ -377,6 +384,28 @@ impl core::fmt::Debug for Ed25519Signature {
 }
 
 impl Ed25519Signature {
+    /// Create from raw bytes
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cardano_crypto::dsign::ed25519::Ed25519Signature;
+    ///
+    /// let bytes = [0u8; 64];
+    /// let sig = Ed25519Signature::from_bytes(&bytes);
+    /// assert!(sig.is_some());
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
+        if bytes.len() != SIGNATURE_SIZE {
+            return None;
+        }
+        let mut arr = [0u8; SIGNATURE_SIZE];
+        arr.copy_from_slice(bytes);
+        Some(Self(arr))
+    }
+
     /// Create from dalek signature
     ///
     /// # Example
@@ -391,6 +420,7 @@ impl Ed25519Signature {
     /// let sig = Ed25519Signature::from_dalek(&dalek_sig);
     /// assert_eq!(sig.as_bytes().len(), 64);
     /// ```
+    #[inline]
     #[must_use]
     pub fn from_dalek(signature: &DalekSignature) -> Self {
         Self(signature.to_bytes())
@@ -410,6 +440,7 @@ impl Ed25519Signature {
     /// let bytes = sig.as_bytes();
     /// assert_eq!(bytes.len(), 64);
     /// ```
+    #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> &[u8; SIGNATURE_SIZE] {
         &self.0
@@ -518,6 +549,27 @@ impl super::DsignAlgorithm for Ed25519 {
             "Ed25519 seed must be exactly 32 bytes"
         );
         Ed25519SigningKey::from_seed_bytes(seed)
+    }
+
+    fn raw_serialize_verification_key(key: &Self::VerificationKey) -> &[u8] {
+        key.as_bytes()
+    }
+
+    fn raw_deserialize_verification_key(bytes: &[u8]) -> Option<Self::VerificationKey> {
+        Ed25519VerificationKey::from_bytes(bytes)
+    }
+
+    fn raw_serialize_signature(sig: &Self::Signature) -> &[u8] {
+        sig.as_bytes()
+    }
+
+    fn raw_deserialize_signature(bytes: &[u8]) -> Option<Self::Signature> {
+        if bytes.len() != SIGNATURE_SIZE {
+            return None;
+        }
+        let mut array = [0u8; SIGNATURE_SIZE];
+        array.copy_from_slice(bytes);
+        Some(Ed25519Signature(array))
     }
 }
 
@@ -807,6 +859,35 @@ mod tests {
             &signature,
         );
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_hash_verification_key() {
+        use crate::dsign::DsignAlgorithm;
+        use crate::hash::{Blake2b224, Blake2b256};
+
+        let seed = [42u8; 32];
+        let signing_key = Ed25519::gen_key(&seed);
+        let vk = <Ed25519 as DsignAlgorithm>::derive_verification_key(&signing_key);
+
+        // Hash with Blake2b-256
+        let hash_256 = Ed25519::hash_verification_key::<Blake2b256>(&vk);
+        assert_eq!(hash_256.len(), 32);
+
+        // Hash with Blake2b-224
+        let hash_224 = Ed25519::hash_verification_key::<Blake2b224>(&vk);
+        assert_eq!(hash_224.len(), 28);
+
+        // Different keys should produce different hashes
+        let seed2 = [43u8; 32];
+        let signing_key2 = Ed25519::gen_key(&seed2);
+        let vk2 = <Ed25519 as DsignAlgorithm>::derive_verification_key(&signing_key2);
+        let hash2_256 = Ed25519::hash_verification_key::<Blake2b256>(&vk2);
+        assert_ne!(hash_256, hash2_256);
+
+        // Same key should produce same hash
+        let hash_256_again = Ed25519::hash_verification_key::<Blake2b256>(&vk);
+        assert_eq!(hash_256, hash_256_again);
     }
 }
 

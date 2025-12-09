@@ -1,6 +1,6 @@
 [package]
 name = "cardano-crypto"
-version = "1.0.5"
+version = "1.0.6"
 edition = "2021"
 rust-version = "1.91"
 authors = ["FractionEstate <contact@fractionestate.io>"]
@@ -20,11 +20,11 @@ exclude = [
 ]
 
 [features]
-default = ["std", "thiserror", "vrf", "kes", "dsign", "hash"]
+default = ["std", "thiserror", "vrf", "kes", "dsign", "hash", "seed", "cbor", "key"]
 
 # Standard library support
-std = ["alloc", "sha2/std", "zeroize/std", "serde?/std"]
-alloc = ["curve25519-dalek/alloc", "zeroize/alloc"]
+std = ["alloc", "sha2/std", "zeroize/std", "serde?/std", "bech32?/std"]
+alloc = ["curve25519-dalek/alloc", "zeroize/alloc", "bech32?/alloc"]
 
 # Component features - allows users to enable only what they need
 vrf = ["dsign", "hash", "alloc"]
@@ -33,6 +33,8 @@ dsign = ["hash", "alloc"]
 hash = ["alloc"]
 cbor = ["alloc"]
 seed = ["hash", "alloc"]
+key = ["hash"]
+bech32-encoding = ["dep:bech32", "alloc", "key"]
 
 # VRF variants
 vrf-draft03 = ["vrf"]
@@ -55,7 +57,7 @@ kes-metrics = ["metrics"]
 curve25519-dalek = { version = "4.1", default-features = false, features = ["alloc"] }
 ed25519-dalek = { version = "2.1", default-features = false, features = ["alloc"] }
 sha2 = { version = "0.10", default-features = false }
-zeroize = { version = "1.8", default-features = false, features = ["alloc"] }
+zeroize = { version = "1.8", default-features = false, features = ["alloc", "derive"] }
 thiserror = { version = "1.0", optional = true }
 
 # Hash functions
@@ -67,6 +69,11 @@ subtle = { version = "2.6", default-features = false }
 
 # Serialization (optional)
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
+curve25519-elligator2 = { version = "0.1.0-alpha.2", default-features = false, features = ["elligator2", "digest"] }
+fiat-crypto = "0.3.0"
+
+# Bech32 encoding (optional, for human-readable key serialization)
+bech32 = { version = "0.11", default-features = false, features = ["alloc"], optional = true }
 
 [dev-dependencies]
 hex = "0.4"
@@ -89,6 +96,10 @@ required-features = ["kes"]
 [[example]]
 name = "dsign_sign_verify"
 required-features = ["dsign"]
+
+[[example]]
+name = "seed_derivation"
+required-features = ["seed", "dsign", "vrf", "kes"]
 
 # ============================================================================
 # Build Optimization Profiles

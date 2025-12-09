@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.6] - 2025-12-09
+
+### Added
+- **Key Module** (`key::*`) - Cardano-api compatible key types and serialization
+  - `key::bech32` - Complete Bech32 HRP prefix constants for all Cardano key types
+  - `key::text_envelope` - TextEnvelope type description constants
+  - `key::hash` - Blake2b-224 key hash types (`KeyHash`, `PoolKeyHash`, `VrfKeyHash`, etc.)
+  - `key::kes_period` - KES period handling with `kes_period_info()`, `is_valid_period()`, `kes_expiry_slot()`
+  - `key::encoding` - Full Bech32 encode/decode functions (requires `bech32-encoding` feature)
+
+- **Bech32 Encoding** (optional `bech32-encoding` feature)
+  - `encode_to_bech32()` / `decode_from_bech32()` - Generic Bech32 functions
+  - Type-specific functions for all key types: VRF, KES, Payment, Stake, Pool, Genesis, DRep, Committee
+  - Hash encoding: `encode_pool_id()`, `encode_key_hash()`, `encode_stake_address_hash()`
+  - Utility functions: `is_valid_bech32()`, `get_hrp()`
+
+- **New Example**: `seed_derivation.rs` - Comprehensive seed derivation and HD key generation
+
+### Changed
+- Added `key` feature flag (default enabled)
+- Improved feature flag organization for better modularity
+
+### Fixed
+- Fixed rustdoc broken link warnings in Elligator2 documentation
+- Fixed clippy `wrong_self_convention` warning in `fe25519.rs`
+
+### Tests
+- 209 unit tests passing
+- 19 KES golden tests passing
+- 17 VRF golden tests passing
+- 182 documentation tests passing
+- Zero compiler warnings
+- Zero clippy warnings
+
+## [1.0.5] - 2025-12-08
+
+### Added
+- **CBOR Size Expression Functions** - Complete set of size calculation functions
+  - `encoded_size_bytes()` - Generic CBOR size calculation
+  - DSIGN: `encoded_verification_key_dsign_size()`, `encoded_signing_key_dsign_size()`, `encoded_signature_dsign_size()`
+  - VRF: `encoded_verification_key_vrf_size()`, `encoded_signing_key_vrf_size()`, `encoded_proof_vrf_draft03_size()`, `encoded_proof_vrf_draft13_size()`, `encoded_output_vrf_size()`
+  - KES: `encoded_verification_key_kes_size()`, `encoded_signing_key_sum6kes_size()`, `encoded_signature_sum6kes_size()`
+  - Hash: `encoded_hash_blake2b224_size()`, `encoded_hash_blake2b256_size()`
+
+- **Wrapper Types with CBOR Traits**
+  - `ToCbor` and `FromCbor` traits for type-safe serialization
+  - `VrfVerificationKey`, `VrfSigningKey`, `VrfProof`, `OutputVrf` wrapper types
+  - `KesVerificationKey`, `KesSigningKey`, `KesSignature` wrapper types
+  - `DsignVerificationKey`, `DsignSigningKey`, `DsignSignature` wrapper types
+
 ## [0.1.0] - 2025-11-10
 
 ### Added

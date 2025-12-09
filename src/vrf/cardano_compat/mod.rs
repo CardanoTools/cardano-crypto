@@ -6,6 +6,8 @@
 //!
 //! # Module Organization
 //!
+//! - `fe25519` - Field element arithmetic for GF(2^255 - 19)
+//! - `elligator2` - Elligator2 hash-to-curve mapping
 //! - `point` - Edwards point operations and coordinate conversions
 //! - `prove` - VRF proof generation
 //! - `verify` - VRF proof verification
@@ -26,11 +28,14 @@
 //! let _verify: fn(&[u8;32], &[u8;80], &[u8]) -> CryptoResult<[u8;64]> = cardano_compat::cardano_vrf_verify;
 //! ```
 
+pub mod fe25519;
+pub mod elligator2;
 pub mod point;
 pub mod prove;
 pub mod verify;
 
 // Re-export main API
+pub use elligator2::{elligator2_to_edwards, hash_to_curve_elligator2};
 pub use point::{cardano_clear_cofactor, cardano_hash_to_curve, cardano_hash_to_curve_draft13};
 pub use prove::cardano_vrf_prove;
 pub use verify::cardano_vrf_verify;

@@ -390,6 +390,76 @@ impl VrfDraft03 {
     }
 }
 
+// ============================================================================
+// VrfAlgorithm trait implementation
+// ============================================================================
+
+impl crate::vrf::VrfAlgorithm for VrfDraft03 {
+    type SecretKey = [u8; SECRET_KEY_SIZE];
+    type VerificationKey = [u8; PUBLIC_KEY_SIZE];
+    type Proof = [u8; PROOF_SIZE];
+    type Output = [u8; OUTPUT_SIZE];
+
+    const ALGORITHM_NAME: &'static str = "ECVRF-ED25519-SHA512-Elligator2-Draft03";
+    const SEED_SIZE: usize = SEED_SIZE;
+    const SECRET_KEY_SIZE: usize = SECRET_KEY_SIZE;
+    const VERIFICATION_KEY_SIZE: usize = PUBLIC_KEY_SIZE;
+    const PROOF_SIZE: usize = PROOF_SIZE;
+    const OUTPUT_SIZE: usize = OUTPUT_SIZE;
+
+    fn keypair_from_seed(seed: &[u8; 32]) -> (Self::SecretKey, Self::VerificationKey) {
+        VrfDraft03::keypair_from_seed(seed)
+    }
+
+    fn derive_verification_key(sk: &Self::SecretKey) -> Self::VerificationKey {
+        let mut pk = [0u8; PUBLIC_KEY_SIZE];
+        pk.copy_from_slice(&sk[32..64]);
+        pk
+    }
+
+    fn prove(sk: &Self::SecretKey, message: &[u8]) -> CryptoResult<Self::Proof> {
+        VrfDraft03::prove(sk, message)
+    }
+
+    fn verify(
+        vk: &Self::VerificationKey,
+        proof: &Self::Proof,
+        message: &[u8],
+    ) -> CryptoResult<Self::Output> {
+        VrfDraft03::verify(vk, proof, message)
+    }
+
+    fn proof_to_hash(proof: &Self::Proof) -> CryptoResult<Self::Output> {
+        VrfDraft03::proof_to_hash(proof)
+    }
+
+    fn raw_serialize_verification_key(vk: &Self::VerificationKey) -> &[u8] {
+        vk.as_slice()
+    }
+
+    fn raw_deserialize_verification_key(bytes: &[u8]) -> Option<Self::VerificationKey> {
+        if bytes.len() != PUBLIC_KEY_SIZE {
+            return None;
+        }
+        let mut vk = [0u8; PUBLIC_KEY_SIZE];
+        vk.copy_from_slice(bytes);
+        Some(vk)
+    }
+
+    fn raw_serialize_proof(proof: &Self::Proof) -> &[u8] {
+        proof.as_slice()
+    }
+
+    fn raw_deserialize_proof(bytes: &[u8]) -> Option<Self::Proof> {
+        if bytes.len() != PROOF_SIZE {
+            return None;
+        }
+        let mut proof = [0u8; PROOF_SIZE];
+        proof.copy_from_slice(bytes);
+        Some(proof)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -452,5 +522,57 @@ mod tests {
         assert_eq!(PUBLIC_KEY_SIZE, 32);
         assert_eq!(OUTPUT_SIZE, 64);
         assert_eq!(SEED_SIZE, 32);
+    }
+
+    #[test]
+    fn test_vrf_algorithm_trait() {
+        use crate::vrf::VrfAlgorithm;
+        use crate::hash::Blake2b256;
+
+        let seed = [42u8; 32];
+        let (sk, vk) = <VrfDraft03 as VrfAlgorithm>::keypair_from_seed(&seed);
+
+        // Test trait constants
+        assert_eq!(<VrfDraft03 as VrfAlgorithm>::SEED_SIZE, 32);
+        assert_eq!(<VrfDraft03 as VrfAlgorithm>::SECRET_KEY_SIZE, 64);
+        assert_eq!(<VrfDraft03 as VrfAlgorithm>::VERIFICATION_KEY_SIZE, 32);
+        assert_eq!(<VrfDraft03 as VrfAlgorithm>::PROOF_SIZE, 80);
+        assert_eq!(<VrfDraft03 as VrfAlgorithm>::OUTPUT_SIZE, 64);
+
+        // Test prove/verify through trait
+        let message = b"test message";
+        let proof = <VrfDraft03 as VrfAlgorithm>::prove(&sk, message).unwrap();
+        let output = <VrfDraft03 as VrfAlgorithm>::verify(&vk, &proof, message).unwrap();
+        assert_eq!(output.len(), 64);
+
+        // Test hash_verification_key
+        let hash = <VrfDraft03 as VrfAlgorithm>::hash_verification_key::<Blake2b256>(&vk);
+        assert_eq!(hash.len(), 32);
+
+        // Different keys should have different hashes
+        let seed2 = [43u8; 32];
+        let (_, vk2) = <VrfDraft03 as VrfAlgorithm>::keypair_from_seed(&seed2);
+        let hash2 = <VrfDraft03 as VrfAlgorithm>::hash_verification_key::<Blake2b256>(&vk2);
+        assert_ne!(hash, hash2);
+    }
+
+    #[test]
+    fn test_serialization_roundtrip() {
+        use crate::vrf::VrfAlgorithm;
+
+        let seed = [99u8; 32];
+        let (sk, vk) = VrfDraft03::keypair_from_seed(&seed);
+        let message = b"test";
+        let proof = VrfDraft03::prove(&sk, message).unwrap();
+
+        // Test verification key roundtrip
+        let vk_bytes = <VrfDraft03 as VrfAlgorithm>::raw_serialize_verification_key(&vk);
+        let vk_restored = <VrfDraft03 as VrfAlgorithm>::raw_deserialize_verification_key(vk_bytes).unwrap();
+        assert_eq!(vk, vk_restored);
+
+        // Test proof roundtrip
+        let proof_bytes = <VrfDraft03 as VrfAlgorithm>::raw_serialize_proof(&proof);
+        let proof_restored = <VrfDraft03 as VrfAlgorithm>::raw_deserialize_proof(proof_bytes).unwrap();
+        assert_eq!(proof, proof_restored);
     }
 }

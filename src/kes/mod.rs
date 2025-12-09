@@ -197,7 +197,318 @@ pub trait KesAlgorithm {
 
     /// Securely forget/zeroize signing key
     fn forget_signing_key_kes(signing_key: Self::SigningKey);
+
+    /// Hash a verification key
+    ///
+    /// This corresponds to `hashVerKeyKES` in cardano-base. The default
+    /// implementation uses the raw serialization of the verification key.
+    ///
+    /// # Type Parameters
+    ///
+    /// - `H`: The hash algorithm to use
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use cardano_crypto::kes::{Sum6Kes, KesAlgorithm};
+    /// use cardano_crypto::hash::{Blake2b256, HashAlgorithm};
+    ///
+    /// let seed = [42u8; 32];
+    /// let signing_key = Sum6Kes::gen_key_kes_from_seed_bytes(&seed).unwrap();
+    /// let vk = Sum6Kes::derive_verification_key(&signing_key).unwrap();
+    /// let hash = Sum6Kes::hash_verification_key::<Blake2b256>(&vk);
+    /// assert_eq!(hash.len(), 32);
+    /// ```
+    #[cfg(feature = "alloc")]
+    fn hash_verification_key<H: crate::hash::HashAlgorithm>(key: &Self::VerificationKey) -> Vec<u8> {
+        let raw = Self::raw_serialize_verification_key_kes(key);
+        H::hash(&raw)
+    }
 }
+
+// ============================================================================
+// SignedKES wrapper
+// ============================================================================
+
+/// A value signed with KES at a specific period
+///
+/// Matches Cardano's `SignedKES v a` type from cardano-crypto-class.
+/// Associates a KES signature with the period at which it was created.
+///
+/// # Type Parameters
+///
+/// - `K`: The KES algorithm type
+///
+/// # Examples
+///
+/// ```
+/// use cardano_crypto::kes::{Sum6Kes, KesAlgorithm, SignedKes};
+///
+/// let seed = [42u8; 32];
+/// let signing_key = Sum6Kes::gen_key_kes_from_seed_bytes(&seed).unwrap();
+/// let verification_key = Sum6Kes::derive_verification_key(&signing_key).unwrap();
+///
+/// let message = b"Block data";
+/// let period = 0u64;
+///
+/// // Sign using SignedKes wrapper
+/// let signed = SignedKes::<Sum6Kes>::sign(&(), period, message, &signing_key).unwrap();
+///
+/// // Verify
+/// assert!(signed.verify(&(), &verification_key, period, message).is_ok());
+/// ```
+pub struct SignedKes<K: KesAlgorithm> {
+    /// The KES signature
+    pub signature: K::Signature,
+}
+
+impl<K: KesAlgorithm> core::fmt::Debug for SignedKes<K>
+where
+    K::Signature: core::fmt::Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SignedKes")
+            .field("signature", &self.signature)
+            .finish()
+    }
+}
+
+impl<K: KesAlgorithm> Clone for SignedKes<K>
+where
+    K::Signature: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            signature: self.signature.clone(),
+        }
+    }
+}
+
+impl<K: KesAlgorithm> SignedKes<K> {
+    /// Sign a message with KES at the given period
+    ///
+    /// Corresponds to `signedKES` in cardano-crypto-class.
+    ///
+    /// # Parameters
+    ///
+    /// * `context` - Algorithm context
+    /// * `period` - Current KES period
+    /// * `message` - Message to sign
+    /// * `signing_key` - KES signing key
+    ///
+    /// # Returns
+    ///
+    /// A `SignedKes` containing the signature
+    pub fn sign(
+        context: &K::Context,
+        period: Period,
+        message: &[u8],
+        signing_key: &K::SigningKey,
+    ) -> Result<Self> {
+        let signature = K::sign_kes(context, period, message, signing_key)?;
+        Ok(Self { signature })
+    }
+
+    /// Verify this SignedKes
+    ///
+    /// Corresponds to `verifySignedKES` in cardano-crypto-class.
+    ///
+    /// # Parameters
+    ///
+    /// * `context` - Algorithm context
+    /// * `verification_key` - KES verification key
+    /// * `period` - Period at which message was signed
+    /// * `message` - Original message
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if verification succeeds
+    /// * `Err(...)` if verification fails
+    pub fn verify(
+        &self,
+        context: &K::Context,
+        verification_key: &K::VerificationKey,
+        period: Period,
+        message: &[u8],
+    ) -> Result<()> {
+        K::verify_kes(context, verification_key, period, message, &self.signature)
+    }
+
+    /// Get the underlying signature
+    pub fn get_signature(&self) -> &K::Signature {
+        &self.signature
+    }
+
+    /// Create from a raw signature
+    pub fn from_signature(signature: K::Signature) -> Self {
+        Self { signature }
+    }
+}
+
+// ============================================================================
+// SignKeyWithPeriodKES - Sign key bundled with its period
+// ============================================================================
+
+/// A KES signing key bundled with its current period
+///
+/// Matches Cardano's `SignKeyWithPeriodKES v` type.
+/// Useful for tracking the current period alongside the key.
+///
+/// # Example
+///
+/// ```
+/// use cardano_crypto::kes::{Sum6Kes, KesAlgorithm, SignKeyWithPeriodKes};
+///
+/// let seed = [42u8; 32];
+/// let signing_key = Sum6Kes::gen_key_kes_from_seed_bytes(&seed).unwrap();
+///
+/// let mut keyed = SignKeyWithPeriodKes::<Sum6Kes>::new(signing_key, 0);
+/// assert_eq!(keyed.period(), 0);
+/// ```
+pub struct SignKeyWithPeriodKes<K: KesAlgorithm> {
+    /// The signing key
+    pub signing_key: K::SigningKey,
+    /// Current period for this key
+    pub period: Period,
+}
+
+impl<K: KesAlgorithm> core::fmt::Debug for SignKeyWithPeriodKes<K> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SignKeyWithPeriodKes")
+            .field("signing_key", &"<redacted>")
+            .field("period", &self.period)
+            .finish()
+    }
+}
+
+impl<K: KesAlgorithm> SignKeyWithPeriodKes<K> {
+    /// Create a new sign key with period
+    pub fn new(signing_key: K::SigningKey, period: Period) -> Self {
+        Self { signing_key, period }
+    }
+
+    /// Get the current period
+    pub fn period(&self) -> Period {
+        self.period
+    }
+
+    /// Get a reference to the signing key
+    pub fn signing_key(&self) -> &K::SigningKey {
+        &self.signing_key
+    }
+
+    /// Update the key to the next period
+    ///
+    /// Returns `Ok(Some(self))` if update succeeded,
+    /// `Ok(None)` if key has expired.
+    pub fn update(self, context: &K::Context) -> Result<Option<Self>> {
+        let current = self.period;
+        match K::update_kes(context, self.signing_key, current)? {
+            Some(new_key) => Ok(Some(Self {
+                signing_key: new_key,
+                period: current + 1,
+            })),
+            None => Ok(None),
+        }
+    }
+}
+
+// ============================================================================
+// Cardano-node compatible type aliases
+// ============================================================================
+
+/// KES signing key type (matches cardano-node's `KesSigningKey`)
+///
+/// This is a generic alias for a KES signing key. For concrete types,
+/// use `Sum6Kes::SigningKey` directly.
+pub type KesSigningKey<K> = <K as KesAlgorithm>::SigningKey;
+
+/// KES verification key type (matches cardano-node's `KesVerificationKey`)
+///
+/// This is a generic alias for a KES verification key.
+pub type KesVerificationKey<K> = <K as KesAlgorithm>::VerificationKey;
+
+/// KES signature type
+///
+/// This is a generic alias for a KES signature.
+pub type KesSignature<K> = <K as KesAlgorithm>::Signature;
+
+/// KES key pair (matches cardano-node's `KeyPair KesKey`)
+///
+/// Contains both the signing key (with period) and verification key.
+///
+/// # Type Parameters
+///
+/// - `K`: The KES algorithm type (e.g., `Sum6Kes`)
+///
+/// # Example
+///
+/// ```
+/// use cardano_crypto::kes::{Sum6Kes, KesAlgorithm, KesKeyPair};
+///
+/// let seed = [42u8; 32];
+/// let keypair = KesKeyPair::<Sum6Kes>::generate(&seed).unwrap();
+///
+/// let message = b"test";
+/// let signature = Sum6Kes::sign_kes(&(), keypair.period(), message, keypair.signing_key()).unwrap();
+/// assert!(Sum6Kes::verify_kes(&(), &keypair.verification_key, keypair.period(), message, &signature).is_ok());
+/// ```
+pub struct KesKeyPair<K: KesAlgorithm> {
+    /// The KES signing key with period tracking
+    pub signing_key_with_period: SignKeyWithPeriodKes<K>,
+    /// The KES verification key
+    pub verification_key: K::VerificationKey,
+}
+
+impl<K: KesAlgorithm> core::fmt::Debug for KesKeyPair<K>
+where
+    K::VerificationKey: core::fmt::Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("KesKeyPair")
+            .field("signing_key", &"<redacted>")
+            .field("period", &self.signing_key_with_period.period)
+            .field("verification_key", &self.verification_key)
+            .finish()
+    }
+}
+
+impl<K: KesAlgorithm> KesKeyPair<K> {
+    /// Generate a KES key pair from a seed (starts at period 0)
+    pub fn generate(seed: &[u8]) -> Result<Self> {
+        let signing_key = K::gen_key_kes_from_seed_bytes(seed)?;
+        let verification_key = K::derive_verification_key(&signing_key)?;
+        Ok(Self {
+            signing_key_with_period: SignKeyWithPeriodKes::new(signing_key, 0),
+            verification_key,
+        })
+    }
+
+    /// Get the current period
+    pub fn period(&self) -> Period {
+        self.signing_key_with_period.period()
+    }
+
+    /// Get a reference to the signing key
+    pub fn signing_key(&self) -> &K::SigningKey {
+        self.signing_key_with_period.signing_key()
+    }
+
+    /// Update the key pair to the next period
+    ///
+    /// Returns `Ok(Some(self))` if update succeeded,
+    /// `Ok(None)` if key has expired.
+    pub fn update(self, context: &K::Context) -> Result<Option<Self>> {
+        match self.signing_key_with_period.update(context)? {
+            Some(new_sk) => Ok(Some(Self {
+                signing_key_with_period: new_sk,
+                verification_key: self.verification_key,
+            })),
+            None => Ok(None),
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

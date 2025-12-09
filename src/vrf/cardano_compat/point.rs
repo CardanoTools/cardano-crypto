@@ -123,41 +123,24 @@ pub fn cardano_hash_to_curve(pk: &[u8], message: &[u8]) -> CryptoResult<(Edwards
     hasher.update(message);
     let r_hash = hasher.finalize();
 
-    // Take first 32 bytes and ensure valid point encoding
+    // Take first 32 bytes for Elligator2 input
     let mut r_bytes = [0u8; 32];
     r_bytes.copy_from_slice(&r_hash[0..32]);
 
-    // Clear the sign bit (critical for Cardano compatibility)
-    r_bytes[31] &= 0x7f;
+    // Use Elligator2 mapping to convert the field element to a curve point
+    // The elligator2_to_edwards function already clears cofactor internally
+    use super::elligator2::elligator2_to_edwards;
 
-    // Try to decompress as an Edwards point
-    // If it fails, we apply Elligator2 mapping (simplified here)
-    match CompressedEdwardsY(r_bytes).decompress() {
+    match elligator2_to_edwards(&r_bytes) {
         Some(point) => {
-            // CRITICAL: Clear cofactor to ensure point is torsion-free
-            // This is required for curve25519-dalek v4 to properly handle scalar multiplication
-            let cleared = cardano_clear_cofactor(&point);
-            Ok((cleared, r_bytes))
+            // elligator2_to_edwards already clears cofactor
+            // Return the compressed point representation
+            let compressed = point.compress();
+            Ok((point, compressed.0))
         }
         None => {
-            // Simplified fallback - in production use full Elligator2
-            // For now, hash again with a counter until we get a valid point
-            for i in 0..=255u8 {
-                let mut retry_hasher = Sha512::new();
-                retry_hasher.update(r_bytes);
-                retry_hasher.update([i]);
-                let retry_hash = retry_hasher.finalize();
-
-                let mut retry_bytes = [0u8; 32];
-                retry_bytes.copy_from_slice(&retry_hash[0..32]);
-                retry_bytes[31] &= 0x7f;
-
-                if let Some(point) = CompressedEdwardsY(retry_bytes).decompress() {
-                    let cleared = cardano_clear_cofactor(&point);
-                    return Ok((cleared, retry_bytes));
-                }
-            }
-
+            // Elligator2 should always produce a valid point
+            // If this fails, there's a bug in the implementation
             Err(CryptoError::InvalidPoint)
         }
     }

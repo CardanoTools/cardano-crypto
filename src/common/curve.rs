@@ -53,6 +53,7 @@ use super::error::{CryptoError, CryptoResult};
 /// # Returns
 ///
 /// The decompressed Edwards curve point, or an error if decompression fails
+#[inline]
 pub fn bytes_to_point(bytes: &[u8; 32]) -> CryptoResult<EdwardsPoint> {
     CompressedEdwardsY(*bytes)
         .decompress()
@@ -90,6 +91,7 @@ pub fn bytes_to_point(bytes: &[u8; 32]) -> CryptoResult<EdwardsPoint> {
 /// # Returns
 ///
 /// 32-byte compressed representation of the point
+#[inline]
 #[must_use]
 pub fn point_to_bytes(point: &EdwardsPoint) -> [u8; 32] {
     point.compress().to_bytes()
@@ -125,6 +127,7 @@ pub fn point_to_bytes(point: &EdwardsPoint) -> [u8; 32] {
 /// # Returns
 ///
 /// Scalar value in the range [0, ℓ) where ℓ is the Ed25519 group order
+#[inline]
 #[must_use]
 pub fn bytes_to_scalar(bytes: &[u8; 32]) -> Scalar {
     Scalar::from_bytes_mod_order(*bytes)
@@ -160,6 +163,7 @@ pub fn bytes_to_scalar(bytes: &[u8; 32]) -> Scalar {
 /// # Returns
 ///
 /// 32-byte little-endian representation of the scalar
+#[inline]
 #[must_use]
 pub fn scalar_to_bytes(scalar: &Scalar) -> [u8; 32] {
     scalar.to_bytes()

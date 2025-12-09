@@ -32,6 +32,7 @@ impl HashAlgorithm for Blake2b224 {
     const OUTPUT_SIZE: usize = 28;
     const ALGORITHM_NAME: &'static str = "blake2b_224";
 
+    #[inline]
     fn hash(data: &[u8]) -> Vec<u8> {
         let mut hasher = Blake2b::<U28>::new();
         hasher.update(data);
@@ -61,6 +62,7 @@ impl HashAlgorithm for Blake2b256 {
     const OUTPUT_SIZE: usize = 32;
     const ALGORITHM_NAME: &'static str = "blake2b_256";
 
+    #[inline]
     fn hash(data: &[u8]) -> Vec<u8> {
         let mut hasher = Blake2b::<U32>::new();
         hasher.update(data);
@@ -89,6 +91,7 @@ impl HashAlgorithm for Blake2b512 {
     const OUTPUT_SIZE: usize = 64;
     const ALGORITHM_NAME: &'static str = "blake2b_512";
 
+    #[inline]
     fn hash(data: &[u8]) -> Vec<u8> {
         use blake2::Blake2b512 as Blake2b512Hasher;
 
