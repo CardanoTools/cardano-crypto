@@ -40,7 +40,7 @@
 //! ```
 
 #[cfg(feature = "alloc")]
-use alloc::vec::Vec;
+use alloc::{format, vec::Vec};
 
 pub mod cardano_compat;
 pub mod draft03;
