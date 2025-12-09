@@ -292,6 +292,8 @@ mod cbor_impl {
     use crate::cbor::{
         decode_bytes, encode_bytes, encoded_size_bytes, CborError, FromCbor, ToCbor,
     };
+    #[cfg(feature = "alloc")]
+    use alloc::vec::Vec;
 
     // Implementation for Ed25519-specific SignedDsign
     impl ToCbor for SignedDsign<Ed25519> {

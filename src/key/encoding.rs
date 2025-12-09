@@ -54,7 +54,7 @@
 //! - `cardano-api` key serialization
 //! - `cardano-cli` key file formats
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use bech32::{Bech32, Hrp};
