@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.7] - 2025-12-13
+
+### Fixed
+- **docs.rs compatibility**: Changed `rust-version` from 1.91 to 1.81 to allow docs.rs to build documentation
+- **CI workflow**: Updated MSRV in CI matrix from 1.91.0 to 1.81.0 to match Cargo.toml
+- **README badge**: Updated Rust version badge from 1.91+ to 1.81+
+- **GitHub Pages deployment**: Fixed docs workflow to only deploy from main branch (not tags) to avoid environment protection rule conflicts
+
 ## [1.0.6] - 2025-12-09
 
 ### Added

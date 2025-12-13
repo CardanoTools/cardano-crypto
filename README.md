@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/cardano-crypto/badge.svg)](https://docs.rs/cardano-crypto)
 [![Docs](https://img.shields.io/badge/docs-github.io-blue)](https://fractionestate.github.io/cardano-crypto/)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE-MIT)
-[![Rust](https://img.shields.io/badge/rust-1.91%2B-orange.svg)](https://www.rust-lang.org)
+[![Rust](https://img.shields.io/badge/rust-1.81%2B-orange.svg)](https://www.rust-lang.org)
 [![CI](https://github.com/FractionEstate/cardano-crypto/workflows/CI/badge.svg)](https://github.com/FractionEstate/cardano-crypto/actions)
 
 Pure Rust implementation of Cardano cryptographic primitives, providing a unified interface for **VRF** (Verifiable Random Functions), **KES** (Key Evolving Signatures), **DSIGN** (Digital Signatures), and **Hash** algorithms.

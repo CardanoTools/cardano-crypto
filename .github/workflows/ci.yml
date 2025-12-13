@@ -17,13 +17,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [stable, beta, nightly, 1.91.0]
+        rust: [stable, beta, nightly, 1.81.0]
         exclude:
           # Reduce matrix size - only test MSRV on Linux
           - os: windows-latest
-            rust: 1.91.0
+            rust: 1.81.0
           - os: macos-latest
-            rust: 1.91.0
+            rust: 1.81.0
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
