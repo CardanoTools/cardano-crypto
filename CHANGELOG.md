@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Extensive Test Suite** - New comprehensive test files for Cardano compatibility:
+  - `tests/kes_interop_tests.rs` - KES Haskell interoperability tests with Cardano's test seed
+  - `tests/cbor_compat_tests.rs` - CBOR encoding tests matching Cardano.Binary format
+  - `tests/hash_compat_tests.rs` - Hash algorithm tests (Blake2b-224/256/512, SHA-256/512)
+  - `tests/dsign_compat_tests.rs` - Ed25519 tests with RFC 8032 vectors
+- **KES Test Vector Documentation** - `tests/test_vectors/kes/README.md` documenting Haskell test vector generation
+
 ## [1.0.8] - 2025-12-13
 
 ### Fixed
