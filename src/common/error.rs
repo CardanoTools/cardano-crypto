@@ -65,12 +65,38 @@ pub enum CryptoError {
     KesPeriodError,
 
     /// Invalid key length
-    #[cfg_attr(feature = "thiserror", error("Invalid key length"))]
-    InvalidKeyLength,
+    #[cfg_attr(feature = "thiserror", error("Invalid key length: expected {expected}, got {got}"))]
+    InvalidKeyLength {
+        /// Expected length in bytes
+        expected: usize,
+        /// Actual length in bytes
+        got: usize,
+    },
+
+    /// Invalid signature length
+    #[cfg_attr(feature = "thiserror", error("Invalid signature length: expected {expected}, got {got}"))]
+    InvalidSignatureLength {
+        /// Expected length in bytes
+        expected: usize,
+        /// Actual length in bytes
+        got: usize,
+    },
 
     /// Invalid signature
     #[cfg_attr(feature = "thiserror", error("Invalid signature"))]
     InvalidSignature,
+
+    /// Signature verification failed
+    #[cfg_attr(feature = "thiserror", error("Signature verification failed"))]
+    SignatureVerificationFailed,
+
+    /// Signing failed
+    #[cfg_attr(feature = "thiserror", error("Signing failed"))]
+    SigningFailed,
+
+    /// Invalid private key
+    #[cfg_attr(feature = "thiserror", error("Invalid private key"))]
+    InvalidPrivateKey,
 
     /// Key expired (for KES)
     #[cfg_attr(feature = "thiserror", error("Key has expired"))]
@@ -116,8 +142,16 @@ impl fmt::Display for CryptoError {
             CryptoError::KeyGenerationFailed => write!(f, "Key generation failed"),
             CryptoError::KesEvolutionError => write!(f, "KES evolution error"),
             CryptoError::KesPeriodError => write!(f, "KES period out of range"),
-            CryptoError::InvalidKeyLength => write!(f, "Invalid key length"),
+            CryptoError::InvalidKeyLength { expected, got } => {
+                write!(f, "Invalid key length: expected {}, got {}", expected, got)
+            }
+            CryptoError::InvalidSignatureLength { expected, got } => {
+                write!(f, "Invalid signature length: expected {}, got {}", expected, got)
+            }
             CryptoError::InvalidSignature => write!(f, "Invalid signature"),
+            CryptoError::SignatureVerificationFailed => write!(f, "Signature verification failed"),
+            CryptoError::SigningFailed => write!(f, "Signing failed"),
+            CryptoError::InvalidPrivateKey => write!(f, "Invalid private key"),
             CryptoError::KeyExpired => write!(f, "Key has expired"),
             CryptoError::InvalidPeriod => write!(f, "Invalid period"),
             CryptoError::SerializationError => write!(f, "Serialization error"),

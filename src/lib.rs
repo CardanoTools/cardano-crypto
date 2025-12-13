@@ -117,6 +117,11 @@ pub mod kes;
 #[cfg_attr(docsrs, doc(cfg(feature = "cbor")))]
 pub mod cbor;
 
+/// BLS12-381 curve operations for Plutus V2+ (CIP-0381)
+#[cfg(feature = "bls")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bls")))]
+pub mod bls;
+
 /// Key types, serialization, and utilities matching cardano-api
 pub mod key;
 
@@ -146,6 +151,20 @@ pub use kes::{
     CompactSum6Kes, CompactSum7Kes, KesAlgorithm, KesError, KesKeyPair, KesSignature,
     KesSigningKey, KesVerificationKey, Period, SignKeyWithPeriodKes, SignedKes, SingleKes, Sum0Kes,
     Sum1Kes, Sum2Kes, Sum3Kes, Sum4Kes, Sum5Kes, Sum6Kes, Sum7Kes,
+};
+
+#[cfg(feature = "bls")]
+pub use bls::{
+    bls_verify, bls_verify_with_dst, Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature,
+    G1Point, G2Point, PairingResult, Scalar, G1_COMPRESSED_SIZE, G2_COMPRESSED_SIZE, SCALAR_SIZE,
+};
+
+// Re-export secp256k1 types when feature is enabled
+#[cfg(feature = "secp256k1")]
+pub use dsign::{
+    Secp256k1Ecdsa, Secp256k1EcdsaSignature, Secp256k1EcdsaSigningKey,
+    Secp256k1EcdsaVerificationKey, Secp256k1Schnorr, Secp256k1SchnorrSignature,
+    Secp256k1SchnorrSigningKey, Secp256k1SchnorrVerificationKey,
 };
 
 #[cfg(feature = "cbor")]

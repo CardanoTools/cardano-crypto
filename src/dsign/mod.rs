@@ -3,9 +3,16 @@
 //! Provides digital signature schemes used in Cardano:
 //!
 //! - [`Ed25519`] - Standard Ed25519 signatures (used in Cardano transactions)
-//! - Additional signature schemes for cross-chain compatibility
+//! - [`Secp256k1Ecdsa`] - ECDSA on secp256k1 for Bitcoin/Plutus interop (CIP-0049)
+//! - [`Secp256k1Schnorr`] - Schnorr on secp256k1 for Plutus (CIP-0049, BIP-340)
+//!
+//! # CIP Support
+//!
+//! - [CIP-0049](https://cips.cardano.org/cip/CIP-0049) - ECDSA and Schnorr signatures in Plutus
 //!
 //! # Examples
+//!
+//! ## Ed25519 (Standard Cardano)
 //!
 //! ```
 //! use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
@@ -22,11 +29,37 @@
 //! // Verify the signature
 //! assert!(Ed25519::verify(&verification_key, message, &signature).is_ok());
 //! ```
+//!
+//! ## ECDSA secp256k1 (Plutus interop)
+//!
+#![cfg_attr(feature = "secp256k1", doc = "```")]
+#![cfg_attr(not(feature = "secp256k1"), doc = "```ignore")]
+//! use cardano_crypto::dsign::secp256k1::{Secp256k1Ecdsa, Secp256k1Schnorr};
+//!
+//! // ECDSA signatures
+//! let seed = [42u8; 32];
+//! let signing_key = Secp256k1Ecdsa::gen_key(&seed);
+//! let verification_key = Secp256k1Ecdsa::derive_verification_key(&signing_key);
+//! let signature = Secp256k1Ecdsa::sign(&signing_key, b"message");
+//! assert!(Secp256k1Ecdsa::verify(&verification_key, b"message", &signature).is_ok());
+//! ```
 
 /// Digital signature module providing Ed25519 implementation
 pub mod ed25519;
 
+/// secp256k1 signature algorithms (ECDSA and Schnorr) for Plutus interop
+#[cfg(feature = "secp256k1")]
+#[cfg_attr(docsrs, doc(cfg(feature = "secp256k1")))]
+pub mod secp256k1;
+
 pub use ed25519::Ed25519;
+
+#[cfg(feature = "secp256k1")]
+pub use secp256k1::{
+    Secp256k1Ecdsa, Secp256k1EcdsaSignature, Secp256k1EcdsaSigningKey,
+    Secp256k1EcdsaVerificationKey, Secp256k1Schnorr, Secp256k1SchnorrSignature,
+    Secp256k1SchnorrSigningKey, Secp256k1SchnorrVerificationKey,
+};
 
 /// Trait for digital signature algorithms
 pub trait DsignAlgorithm: Clone + Send + Sync + 'static {

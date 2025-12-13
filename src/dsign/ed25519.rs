@@ -602,7 +602,10 @@ impl CommonDsignAlgorithm for Ed25519 {
     /// ```
     fn gen_key_from_seed(seed: &[u8]) -> Result<Self::SigningKey> {
         if seed.len() != SEED_SIZE {
-            return Err(CommonCryptoError::InvalidKeyLength);
+            return Err(CommonCryptoError::InvalidKeyLength {
+                expected: SEED_SIZE,
+                got: seed.len(),
+            });
         }
         Ok(Ed25519SigningKey::from_seed_bytes(seed))
     }

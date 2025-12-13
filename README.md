@@ -7,54 +7,75 @@
 [![Rust](https://img.shields.io/badge/rust-1.81%2B-orange.svg)](https://www.rust-lang.org)
 [![CI](https://github.com/FractionEstate/cardano-crypto/workflows/CI/badge.svg)](https://github.com/FractionEstate/cardano-crypto/actions)
 
-Pure Rust implementation of Cardano cryptographic primitives, providing a unified interface for **VRF** (Verifiable Random Functions), **KES** (Key Evolving Signatures), **DSIGN** (Digital Signatures), and **Hash** algorithms.
+Pure Rust implementation of Cardano cryptographic primitives, providing a unified interface for **VRF** (Verifiable Random Functions), **KES** (Key Evolving Signatures), **DSIGN** (Digital Signatures), **Hash** algorithms, and **Plutus-compatible** cryptographic primitives.
 
-This crate consolidates all Cardano cryptographic components into a single, cohesive package with zero external cryptographic dependencies. All implementations are in-house, ensuring full control, auditability, and binary compatibility with Cardano consensus requirements.
+This crate consolidates all Cardano cryptographic components into a single, cohesive package with minimal external dependencies. All implementations ensure full control, auditability, and binary compatibility with Cardano consensus requirements.
 
+## Features
 
+### Core Cardano Primitives
+- **VRF (Verifiable Random Functions)**: IETF VRF Draft-03 and Draft-13 with Cardano libsodium compatibility
+- **KES (Key Evolving Signatures)**: Single, Sum, and Compact variants for forward-secure signatures
+- **DSIGN (Digital Signatures)**: Ed25519 signatures with deterministic key generation
+- **Hash Algorithms**: Blake2b (224/256/512), SHA-2 family, and other Cardano hash functions
+- **Seed Management**: Deterministic entropy generation and key derivation
+- **CBOR Support**: Optional serialization for Cardano binary formats
 
+### Plutus Smart Contract Support (NEW)
+- **secp256k1 ECDSA** (CIP-0049): Bitcoin-compatible ECDSA signatures
+- **secp256k1 Schnorr** (CIP-0049): BIP-340 Schnorr signatures for Plutus
+- **BLS12-381** (CIP-0381): Full pairing-friendly curve operations for Plutus V2+
+  - G1/G2 point arithmetic (add, neg, scalar multiply)
+  - Hash-to-curve operations
+  - Miller loop and final exponentiation
+  - BLS signature support
 
-## Features## Features
+### Additional Highlights
+- ✅ **Binary Compatible** - Matches Haskell `cardano-crypto-class` implementation
+- ✅ **No Standard Library Required** - `no_std` compatible with `alloc`
+- ✅ **Comprehensive Tests** - Full test vector coverage from Cardano
+- ✅ **Well Documented** - Complete API documentation and examples
 
+## Installation
 
+Add to your `Cargo.toml`:
 
-- **VRF (Verifiable Random Functions)**: IETF VRF Draft-03 and Draft-13 with Cardano libsodium compatibility- ✅ **Complete KES Implementation** - SingleKES, SumKES, CompactSingleKES, CompactSumKES
+```toml
+[dependencies]
+cardano-crypto = "1.0"
+```
 
-- **KES (Key Evolving Signatures)**: Single, Sum, and Compact variants for forward-secure signatures- ✅ **Binary Compatible** - Matches Haskell `cardano-crypto-class` implementation
+### Feature Flags
 
-- **DSIGN (Digital Signatures)**: Ed25519 signatures with deterministic key generation- ✅ **No Standard Library Required** - `no_std` compatible with `alloc`
+```toml
+# Default features (VRF, KES, DSIGN, Hash, Seed, CBOR, Key)
+cardano-crypto = "1.0"
 
-- **Hash Algorithms**: Blake2b (224/256/512), SHA-2 family, and other Cardano hash functions- ✅ **Zero Unsafe Code** - Pure safe Rust implementation
+# Add Plutus support (secp256k1 + BLS12-381)
+cardano-crypto = { version = "1.0", features = ["plutus"] }
 
-- **Seed Management**: Deterministic entropy generation and key derivation- ✅ **Comprehensive Tests** - Full test vector coverage from Cardano
+# Only specific features
+cardano-crypto = { version = "1.0", default-features = false, features = ["vrf", "kes"] }
 
-- **CBOR Support**: Optional serialization for Cardano binary formats- ✅ **Well Documented** - Complete API documentation and examples
+# secp256k1 only (ECDSA + Schnorr)
+cardano-crypto = { version = "1.0", features = ["secp256k1"] }
 
-- **no_std Compatible**: Works in embedded and WebAssembly environments
+# BLS12-381 only
+cardano-crypto = { version = "1.0", features = ["bls"] }
+```
 
-- **Feature Flags**: Include only the components you need## What is KES?
-
-
-
-## InstallationKey Evolving Signatures (KES) provide **forward security** - once a key evolves to a new period, it cannot sign for previous periods, even if compromised. This is critical for blockchain consensus where stake pool operators must protect against key theft.
-
-
-
-Add to your `Cargo.toml`:### KES Families
-
-
-
-```toml| Algorithm | Periods | Use Case |
-
-[dependencies]|-----------|---------|----------|
-
-cardano-crypto = "0.1"| `SingleKES` | 1 | Base case (wraps Ed25519) |
-
-```| `SumKES` | 2^n | Standard composition with full VK storage |
-
-| `CompactSingleKES` | 1 | Base with embedded VK in signature |
-
-### Selective Features| `CompactSumKES` | 2^n | Optimized composition (smaller signatures) |
+Available features:
+- `std` (default) - Standard library support
+- `vrf` - VRF implementations
+- `kes` - KES implementations
+- `dsign` - Digital signatures (Ed25519)
+- `hash` - Hash functions
+- `seed` - Seed derivation
+- `cbor` - CBOR serialization
+- `key` - Key types and Bech32 encoding
+- `secp256k1` - ECDSA/Schnorr on secp256k1 (CIP-0049)
+- `bls` - BLS12-381 primitives (CIP-0381)
+- `plutus` - Both secp256k1 and BLS12-381
 
 
 

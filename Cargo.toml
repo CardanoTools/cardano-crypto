@@ -1,14 +1,14 @@
 [package]
 name = "cardano-crypto"
-version = "1.0.8"
+version = "1.1.0"
 edition = "2021"
 rust-version = "1.81"
-authors = ["FractionEstate <contact@fractionestate.io>"]
+authors = ["FractionEstate <contact@fraction.estate>"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/FractionEstate/cardano-crypto"
 documentation = "https://docs.rs/cardano-crypto"
 homepage = "https://github.com/FractionEstate/cardano-crypto"
-description = "Pure Rust implementation of Cardano cryptographic primitives (VRF, KES, DSIGN, Hash) with 100% compatibility with cardano-node"
+description = "Pure Rust implementation of Cardano cryptographic primitives (VRF, KES, DSIGN, Hash, BLS12-381, secp256k1) with 100% compatibility with cardano-node and Plutus"
 keywords = ["cardano", "cryptography", "vrf", "kes", "blockchain"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
@@ -23,8 +23,8 @@ exclude = [
 default = ["std", "thiserror", "vrf", "kes", "dsign", "hash", "seed", "cbor", "key"]
 
 # Standard library support
-std = ["alloc", "sha2/std", "zeroize/std", "serde?/std", "bech32?/std"]
-alloc = ["curve25519-dalek/alloc", "zeroize/alloc", "bech32?/alloc"]
+std = ["alloc", "sha2/std", "zeroize/std", "serde?/std", "bech32?/std", "k256?/std", "blst?/std"]
+alloc = ["curve25519-dalek/alloc", "zeroize/alloc", "bech32?/alloc", "k256?/alloc"]
 
 # Component features - allows users to enable only what they need
 vrf = ["dsign", "hash", "alloc"]
@@ -35,6 +35,12 @@ cbor = ["alloc"]
 seed = ["hash", "alloc"]
 key = ["hash"]
 bech32-encoding = ["dep:bech32", "alloc", "key"]
+
+# secp256k1 support for Plutus (CIP-0049)
+secp256k1 = ["dep:k256", "dsign", "alloc"]
+
+# BLS12-381 support for Plutus V2+ (CIP-0381)
+bls = ["dep:blst", "alloc"]
 
 # VRF variants
 vrf-draft03 = ["vrf"]
@@ -51,6 +57,9 @@ metrics = []
 logging = []
 vrf-debug = ["logging"]
 kes-metrics = ["metrics"]
+
+# Full Plutus support (secp256k1 + BLS12-381)
+plutus = ["secp256k1", "bls"]
 
 [dependencies]
 # Core cryptographic dependencies (required for Cardano compatibility)
@@ -78,6 +87,12 @@ fiat-crypto = "0.3.0"
 # Bech32 encoding (optional, for human-readable key serialization)
 bech32 = { version = "0.11", default-features = false, features = ["alloc"], optional = true }
 
+# secp256k1 curve for ECDSA/Schnorr (CIP-0049)
+k256 = { version = "0.13", default-features = false, features = ["alloc", "ecdsa", "schnorr"], optional = true }
+
+# BLS12-381 curve (CIP-0381)
+blst = { version = "0.3", optional = true }
+
 [dev-dependencies]
 hex = "0.4"
 serde_json = "1.0"
@@ -103,6 +118,10 @@ required-features = ["dsign"]
 [[example]]
 name = "seed_derivation"
 required-features = ["seed", "dsign", "vrf", "kes"]
+
+[[example]]
+name = "plutus_crypto"
+required-features = ["secp256k1", "bls"]
 
 # ============================================================================
 # Build Optimization Profiles

@@ -5,15 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2025-01-XX
 
 ### Added
+- **secp256k1 Support** (CIP-0049) - New `secp256k1` feature for Plutus interoperability:
+  - `Secp256k1Ecdsa` - ECDSA signatures on secp256k1 curve for Bitcoin/Plutus compatibility
+  - `Secp256k1Schnorr` - BIP-340 Schnorr signatures for Plutus builtins
+  - Prehashed signing/verification for both algorithms
+  - Full key and signature serialization support
+
+- **BLS12-381 Support** (CIP-0381) - New `bls` feature for Plutus V2+ primitives:
+  - `G1Point` / `G2Point` - Curve point types with full arithmetic operations
+  - `Bls12381` - Operations matching Plutus builtins:
+    - `bls12_381_G1_add`, `bls12_381_G1_neg`, `bls12_381_G1_scalarMul`, `bls12_381_G1_compress/uncompress`
+    - `bls12_381_G2_add`, `bls12_381_G2_neg`, `bls12_381_G2_scalarMul`, `bls12_381_G2_compress/uncompress`
+    - `bls12_381_G1_hashToGroup`, `bls12_381_G2_hashToGroup`
+    - `bls12_381_millerLoop`, `bls12_381_finalVerify`
+  - `BlsSecretKey`, `BlsPublicKey`, `BlsSignature` - Full BLS signature support
+  - `bls_verify()` / `bls_verify_with_dst()` - Signature verification
+
+- **Plutus Feature** - New `plutus` convenience feature enabling both `secp256k1` and `bls`
+
+- **New Example**: `plutus_crypto.rs` - Demonstrates all Plutus cryptographic primitives
+
+- **New Tests**: `tests/plutus_crypto_tests.rs` - Comprehensive tests for CIP-0049 and CIP-0381 primitives
+
 - **Extensive Test Suite** - New comprehensive test files for Cardano compatibility:
   - `tests/kes_interop_tests.rs` - KES Haskell interoperability tests with Cardano's test seed
   - `tests/cbor_compat_tests.rs` - CBOR encoding tests matching Cardano.Binary format
   - `tests/hash_compat_tests.rs` - Hash algorithm tests (Blake2b-224/256/512, SHA-256/512)
   - `tests/dsign_compat_tests.rs` - Ed25519 tests with RFC 8032 vectors
 - **KES Test Vector Documentation** - `tests/test_vectors/kes/README.md` documenting Haskell test vector generation
+
+### Changed
+- Updated crate description to include BLS12-381 and secp256k1
+- `CryptoError::InvalidKeyLength` now includes `expected` and `got` fields for better error messages
+- Added `InvalidSignatureLength`, `SignatureVerificationFailed`, `SigningFailed`, `InvalidPrivateKey` error variants
 
 ## [1.0.8] - 2025-12-13
 
