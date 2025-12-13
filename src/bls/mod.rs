@@ -347,7 +347,9 @@ impl Scalar {
         }
         let mut scalar_bytes = [0u8; SCALAR_SIZE];
         scalar_bytes.copy_from_slice(bytes);
-        Ok(Self { bytes: scalar_bytes })
+        Ok(Self {
+            bytes: scalar_bytes,
+        })
     }
 
     /// Returns the scalar as big-endian bytes.
@@ -601,9 +603,7 @@ impl Bls12381 {
     ///
     /// This is useful for BLS signature verification where we check:
     /// e(sig, g2_gen) * e(-hash, pk) == 1
-    pub fn verify_pairing_equation(
-        pairs: &[(G1Point, G2Point)],
-    ) -> bool {
+    pub fn verify_pairing_equation(pairs: &[(G1Point, G2Point)]) -> bool {
         if pairs.is_empty() {
             return true;
         }

@@ -66,26 +66,35 @@ fn main() {
     // =========================================================================
     println!("--- Part 3: BLS12-381 (CIP-0381) ---");
 
-    use cardano_crypto::bls::{Bls12381, G1Point, G2Point, Scalar, BlsSecretKey, bls_verify};
+    use cardano_crypto::bls::{bls_verify, Bls12381, BlsSecretKey, G1Point, G2Point, Scalar};
 
     // G1 operations
     println!("\nG1 Operations:");
     let g1_gen = G1Point::generator();
     let g1_compressed = Bls12381::g1_compress(&g1_gen);
-    println!("  G1 generator (48 bytes): {}...", hex::encode(&g1_compressed[..8]));
+    println!(
+        "  G1 generator (48 bytes): {}...",
+        hex::encode(&g1_compressed[..8])
+    );
 
     // G2 operations
     println!("\nG2 Operations:");
     let g2_gen = G2Point::generator();
     let g2_compressed = Bls12381::g2_compress(&g2_gen);
-    println!("  G2 generator (96 bytes): {}...", hex::encode(&g2_compressed[..8]));
+    println!(
+        "  G2 generator (96 bytes): {}...",
+        hex::encode(&g2_compressed[..8])
+    );
 
     // Scalar multiplication
     let mut scalar_bytes = [0u8; 32];
     scalar_bytes[31] = 42;
     let scalar = Scalar::from_bytes_be(&scalar_bytes).unwrap();
     let g1_scaled = Bls12381::g1_scalar_mul(&scalar, &g1_gen);
-    println!("\n  G1 * 42 = {}...", hex::encode(&Bls12381::g1_compress(&g1_scaled)[..8]));
+    println!(
+        "\n  G1 * 42 = {}...",
+        hex::encode(&Bls12381::g1_compress(&g1_scaled)[..8])
+    );
 
     // Pairing
     println!("\nPairing Operations:");
@@ -96,7 +105,10 @@ fn main() {
     println!("\nHash to Curve:");
     let dst = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
     let h1 = Bls12381::g1_hash_to_curve(b"test message", dst);
-    println!("  H1('test message') = {}...", hex::encode(&Bls12381::g1_compress(&h1)[..8]));
+    println!(
+        "  H1('test message') = {}...",
+        hex::encode(&Bls12381::g1_compress(&h1)[..8])
+    );
 
     // =========================================================================
     // Part 4: BLS Signatures
@@ -116,7 +128,10 @@ fn main() {
     let bls_signature = bls_sk.sign(bls_message);
 
     println!("BLS Signature (96 bytes):");
-    println!("  {:?}...", hex::encode(&bls_signature.to_compressed()[..32]));
+    println!(
+        "  {:?}...",
+        hex::encode(&bls_signature.to_compressed()[..32])
+    );
 
     // Verify the signature
     match bls_verify(&bls_pk, bls_message, &bls_signature) {

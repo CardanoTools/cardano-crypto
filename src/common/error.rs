@@ -65,7 +65,10 @@ pub enum CryptoError {
     KesPeriodError,
 
     /// Invalid key length
-    #[cfg_attr(feature = "thiserror", error("Invalid key length: expected {expected}, got {got}"))]
+    #[cfg_attr(
+        feature = "thiserror",
+        error("Invalid key length: expected {expected}, got {got}")
+    )]
     InvalidKeyLength {
         /// Expected length in bytes
         expected: usize,
@@ -74,7 +77,10 @@ pub enum CryptoError {
     },
 
     /// Invalid signature length
-    #[cfg_attr(feature = "thiserror", error("Invalid signature length: expected {expected}, got {got}"))]
+    #[cfg_attr(
+        feature = "thiserror",
+        error("Invalid signature length: expected {expected}, got {got}")
+    )]
     InvalidSignatureLength {
         /// Expected length in bytes
         expected: usize,
