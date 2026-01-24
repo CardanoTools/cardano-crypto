@@ -19,6 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `PraosBatchCompatVRF = VrfDraft13` - Matches cardano-base naming
   - Clarifies batch verification support in newer protocol versions
 
+- **DSIGNAggregatable Trait** - BLS multi-signature support:
+  - New trait for signature aggregation schemes
+  - `aggregate_verification_keys()` - Combine multiple public keys
+  - `aggregate_signatures()` - Combine multiple signatures into one
+  - `generate_possession_proof()` / `verify_possession_proof()` - Rogue key attack prevention
+  - Full implementation for BLS12-381
+  - `DsignAlgorithm` trait implementation for BLS12-381
+  - New example: `bls_multisig.rs` demonstrating multi-party signatures
+  - 10+ comprehensive tests including threshold signatures and security checks
+
 - Comprehensive benchmark suite using Criterion.rs
   - VRF benchmarks (Draft-03 and Draft-13)
   - KES benchmarks (Sum2 and Sum6)

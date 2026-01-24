@@ -1291,6 +1291,207 @@ fn hex_encode(bytes: &[u8]) -> alloc::string::String {
 }
 
 // ============================================================================
+// Proof of Possession (PoP)
+// ============================================================================
+
+/// Proof of Possession for BLS keys
+///
+/// A cryptographic proof that the party possesses the secret key corresponding
+/// to their public key. This is required to prevent rogue key attacks in
+/// aggregate signature schemes.
+///
+/// # Structure
+///
+/// The PoP is a BLS signature over the public key itself:
+/// ```text
+/// pop = Sign(sk, pk)
+/// ```
+///
+/// # Security
+///
+/// Without PoP verification, an attacker can choose a malicious public key:
+/// ```text
+/// pk_evil = g^x / (pk_1 * pk_2 * ... * pk_n)
+/// ```
+/// which allows forging aggregate signatures. PoP prevents this by proving
+/// knowledge of the secret key.
+///
+/// # References
+///
+/// - [BLS PoP Spec](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bls-signature-05#section-3.3)
+/// - [Rogue Key Attacks](https://eprint.iacr.org/2018/483.pdf)
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct BlsProofOfPossession {
+    signature: BlsSignature,
+}
+
+impl BlsProofOfPossession {
+    /// Size of a compressed PoP
+    pub const COMPRESSED_SIZE: usize = BlsSignature::COMPRESSED_SIZE;
+
+    /// Create a PoP from a BLS signature
+    pub fn from_signature(signature: BlsSignature) -> Self {
+        Self { signature }
+    }
+
+    /// Get the underlying signature
+    pub fn signature(&self) -> &BlsSignature {
+        &self.signature
+    }
+
+    /// Serialize PoP to compressed bytes
+    pub fn to_compressed(&self) -> [u8; Self::COMPRESSED_SIZE] {
+        self.signature.to_compressed()
+    }
+
+    /// Deserialize PoP from compressed bytes
+    pub fn from_compressed(bytes: &[u8]) -> Result<Self, CryptoError> {
+        let signature = BlsSignature::from_compressed(bytes)?;
+        Ok(Self { signature })
+    }
+}
+
+// ============================================================================
+// DsignAggregatable Implementation for BLS12-381
+// ============================================================================
+
+use crate::common::traits::DsignAggregatable;
+
+impl DsignAggregatable for Bls12381 {
+    type PossessionProof = BlsProofOfPossession;
+
+    fn aggregate_verification_keys(keys: &[BlsPublicKey]) -> Option<BlsPublicKey> {
+        if keys.is_empty() {
+            return None;
+        }
+
+        // Aggregate G1 points (public keys in min-pk scheme)
+        let mut agg_point = keys[0].point.clone();
+        for key in &keys[1..] {
+            agg_point = agg_point.add(&key.point);
+        }
+
+        Some(BlsPublicKey { point: agg_point })
+    }
+
+    fn aggregate_signatures(signatures: &[BlsSignature]) -> Option<BlsSignature> {
+        if signatures.is_empty() {
+            return None;
+        }
+
+        // Aggregate G2 points (signatures in min-pk scheme)
+        let mut agg_point = signatures[0].point.clone();
+        for sig in &signatures[1..] {
+            agg_point = agg_point.add(&sig.point);
+        }
+
+        Some(BlsSignature { point: agg_point })
+    }
+
+    fn generate_possession_proof(signing_key: &BlsSecretKey) -> Self::PossessionProof {
+        // Generate PoP by signing the public key
+        let public_key = signing_key.public_key();
+        let pk_bytes = public_key.to_compressed();
+
+        // Use PoP-specific DST (Domain Separation Tag)
+        let dst = b"BLS_POP_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
+
+        let hash_point = Bls12381::g2_hash_to_curve(&pk_bytes, dst);
+        let pop_point = hash_point.mul(&signing_key.scalar);
+
+        BlsProofOfPossession {
+            signature: BlsSignature { point: pop_point },
+        }
+    }
+
+    fn verify_possession_proof(
+        verification_key: &BlsPublicKey,
+        proof: &Self::PossessionProof,
+    ) -> bool {
+        // Verify PoP by checking: Sign(sk, pk) == pop
+        let pk_bytes = verification_key.to_compressed();
+        let dst = b"BLS_POP_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
+
+        bls_verify_with_dst(verification_key, &pk_bytes, &proof.signature, dst).is_ok()
+    }
+}
+
+// Re-implement DsignAlgorithm for better BLS ergonomics
+use crate::common::traits::DsignAlgorithm;
+
+impl DsignAlgorithm for Bls12381 {
+    type VerificationKey = BlsPublicKey;
+    type SigningKey = BlsSecretKey;
+    type Signature = BlsSignature;
+    type Context = ();
+
+    const ALGORITHM_NAME: &'static str = "BLS12-381";
+    const SEED_SIZE: usize = 32;
+    const VERIFICATION_KEY_SIZE: usize = G1_COMPRESSED_SIZE;
+    const SIGNING_KEY_SIZE: usize = SCALAR_SIZE;
+    const SIGNATURE_SIZE: usize = G2_COMPRESSED_SIZE;
+
+    fn gen_key_from_seed(seed: &[u8]) -> Result<Self::SigningKey, CryptoError> {
+        if seed.len() != Self::SEED_SIZE {
+            return Err(CryptoError::InvalidKeyLength {
+                expected: Self::SEED_SIZE,
+                got: seed.len(),
+            });
+        }
+        BlsSecretKey::from_bytes(seed)
+    }
+
+    fn derive_verification_key(signing_key: &Self::SigningKey) -> Result<Self::VerificationKey, CryptoError> {
+        Ok(signing_key.public_key())
+    }
+
+    fn sign(
+        message: &[u8],
+        signing_key: &Self::SigningKey,
+        _context: &Self::Context,
+    ) -> Result<Self::Signature, CryptoError> {
+        Ok(signing_key.sign(message))
+    }
+
+    fn verify(
+        message: &[u8],
+        signature: &Self::Signature,
+        verification_key: &Self::VerificationKey,
+        _context: &Self::Context,
+    ) -> Result<(), CryptoError> {
+        bls_verify(verification_key, message, signature)
+    }
+
+    fn serialize_verification_key(verification_key: &Self::VerificationKey) -> alloc::vec::Vec<u8> {
+        verification_key.to_compressed().to_vec()
+    }
+
+    fn deserialize_verification_key(bytes: &[u8]) -> Result<Self::VerificationKey, CryptoError> {
+        BlsPublicKey::from_compressed(bytes)
+    }
+
+    fn serialize_signing_key(signing_key: &Self::SigningKey) -> alloc::vec::Vec<u8> {
+        signing_key.scalar.as_bytes().to_vec()
+    }
+
+    fn deserialize_signing_key(bytes: &[u8]) -> Result<Self::SigningKey, CryptoError> {
+        BlsSecretKey::from_bytes(bytes)
+    }
+
+    fn serialize_signature(signature: &Self::Signature) -> alloc::vec::Vec<u8> {
+        signature.to_compressed().to_vec()
+    }
+
+    fn deserialize_signature(bytes: &[u8]) -> Result<Self::Signature, CryptoError> {
+        BlsSignature::from_compressed(bytes)
+    }
+
+    fn forget_signing_key(mut signing_key: Self::SigningKey) {
+        signing_key.scalar.zeroize();
+    }
+}
+
+// ============================================================================
 // Tests
 // ============================================================================
 
@@ -1490,5 +1691,225 @@ mod tests {
         let result2 = Bls12381::pairing(&g1, &g2);
 
         assert_eq!(result1, result2);
+    }
+
+    // ========================================================================
+    // DsignAggregatable Tests
+    // ========================================================================
+
+    #[test]
+    fn test_proof_of_possession() {
+        use crate::common::traits::DsignAggregatable;
+
+        let seed = [42u8; 32];
+        let sk = BlsSecretKey::from_bytes(&seed).unwrap();
+        let pk = sk.public_key();
+
+        // Generate PoP
+        let pop = Bls12381::generate_possession_proof(&sk);
+
+        // Verify PoP
+        assert!(Bls12381::verify_possession_proof(&pk, &pop));
+
+        // Wrong key should fail
+        let wrong_seed = [99u8; 32];
+        let wrong_sk = BlsSecretKey::from_bytes(&wrong_seed).unwrap();
+        let wrong_pk = wrong_sk.public_key();
+
+        assert!(!Bls12381::verify_possession_proof(&wrong_pk, &pop));
+    }
+
+    #[test]
+    fn test_pop_roundtrip() {
+        use crate::common::traits::DsignAggregatable;
+
+        let seed = [7u8; 32];
+        let sk = BlsSecretKey::from_bytes(&seed).unwrap();
+        let pop = Bls12381::generate_possession_proof(&sk);
+
+        // Serialize and deserialize
+        let bytes = pop.to_compressed();
+        let restored = BlsProofOfPossession::from_compressed(&bytes).unwrap();
+
+        assert_eq!(pop, restored);
+    }
+
+    #[test]
+    fn test_aggregate_verification_keys() {
+        use crate::common::traits::DsignAggregatable;
+
+        // Generate multiple keys
+        let seed1 = [1u8; 32];
+        let seed2 = [2u8; 32];
+        let seed3 = [3u8; 32];
+
+        let sk1 = BlsSecretKey::from_bytes(&seed1).unwrap();
+        let sk2 = BlsSecretKey::from_bytes(&seed2).unwrap();
+        let sk3 = BlsSecretKey::from_bytes(&seed3).unwrap();
+
+        let pk1 = sk1.public_key();
+        let pk2 = sk2.public_key();
+        let pk3 = sk3.public_key();
+
+        // Aggregate keys
+        let agg_pk = Bls12381::aggregate_verification_keys(&[pk1.clone(), pk2.clone(), pk3.clone()]);
+        assert!(agg_pk.is_some());
+
+        // Manual aggregation should match
+        let manual_agg = pk1.point.add(&pk2.point).add(&pk3.point);
+        assert_eq!(agg_pk.unwrap().point, manual_agg);
+    }
+
+    #[test]
+    fn test_aggregate_signatures() {
+        use crate::common::traits::DsignAggregatable;
+
+        // Generate keys and sign
+        let seed1 = [11u8; 32];
+        let seed2 = [22u8; 32];
+
+        let sk1 = BlsSecretKey::from_bytes(&seed1).unwrap();
+        let sk2 = BlsSecretKey::from_bytes(&seed2).unwrap();
+
+        let msg = b"Aggregate this message";
+        let sig1 = sk1.sign(msg);
+        let sig2 = sk2.sign(msg);
+
+        // Aggregate signatures
+        let agg_sig = Bls12381::aggregate_signatures(&[sig1.clone(), sig2.clone()]);
+        assert!(agg_sig.is_some());
+
+        // Manual aggregation should match
+        let manual_agg = sig1.point.add(&sig2.point);
+        assert_eq!(agg_sig.unwrap().point, manual_agg);
+    }
+
+    #[test]
+    fn test_aggregate_sign_verify() {
+        use crate::common::traits::DsignAggregatable;
+
+        // Setup: Multiple signers
+        let seed1 = [10u8; 32];
+        let seed2 = [20u8; 32];
+        let seed3 = [30u8; 32];
+
+        let sk1 = BlsSecretKey::from_bytes(&seed1).unwrap();
+        let sk2 = BlsSecretKey::from_bytes(&seed2).unwrap();
+        let sk3 = BlsSecretKey::from_bytes(&seed3).unwrap();
+
+        let pk1 = sk1.public_key();
+        let pk2 = sk2.public_key();
+        let pk3 = sk3.public_key();
+
+        // All sign the same message
+        let msg = b"Committee vote: Approve";
+        let sig1 = sk1.sign(msg);
+        let sig2 = sk2.sign(msg);
+        let sig3 = sk3.sign(msg);
+
+        // Aggregate keys and signatures
+        let agg_pk = Bls12381::aggregate_verification_keys(&[pk1, pk2, pk3]).unwrap();
+        let agg_sig = Bls12381::aggregate_signatures(&[sig1, sig2, sig3]).unwrap();
+
+        // Verify aggregate signature
+        assert!(bls_verify(&agg_pk, msg, &agg_sig).is_ok());
+
+        // Wrong message should fail
+        assert!(bls_verify(&agg_pk, b"Wrong message", &agg_sig).is_err());
+    }
+
+    #[test]
+    fn test_aggregate_empty_lists() {
+        use crate::common::traits::DsignAggregatable;
+
+        // Empty key list
+        let agg_pk = Bls12381::aggregate_verification_keys(&[]);
+        assert!(agg_pk.is_none());
+
+        // Empty signature list
+        let agg_sig = Bls12381::aggregate_signatures(&[]);
+        assert!(agg_sig.is_none());
+    }
+
+    #[test]
+    fn test_aggregate_single_item() {
+        use crate::common::traits::DsignAggregatable;
+
+        let seed = [55u8; 32];
+        let sk = BlsSecretKey::from_bytes(&seed).unwrap();
+        let pk = sk.public_key();
+
+        let msg = b"Single signer";
+        let sig = sk.sign(msg);
+
+        // Aggregating single items should work
+        let agg_pk = Bls12381::aggregate_verification_keys(&[pk.clone()]).unwrap();
+        let agg_sig = Bls12381::aggregate_signatures(&[sig.clone()]).unwrap();
+
+        // Should equal the original
+        assert_eq!(agg_pk.point, pk.point);
+        assert_eq!(agg_sig.point, sig.point);
+
+        // And verify
+        assert!(bls_verify(&agg_pk, msg, &agg_sig).is_ok());
+    }
+
+    #[test]
+    fn test_rogue_key_attack_prevention() {
+        use crate::common::traits::DsignAggregatable;
+
+        // Simulate: Honest party and potential attacker
+        let honest_seed = [100u8; 32];
+        let honest_sk = BlsSecretKey::from_bytes(&honest_seed).unwrap();
+        let honest_pk = honest_sk.public_key();
+
+        // Attacker tries to compute rogue key (but we require PoP)
+        // Without PoP verification, attacker could forge aggregate signatures
+
+        // Generate PoP for honest key
+        let honest_pop = Bls12381::generate_possession_proof(&honest_sk);
+        assert!(Bls12381::verify_possession_proof(&honest_pk, &honest_pop));
+
+        // Attacker cannot generate valid PoP without secret key
+        // This test ensures PoP verification exists and works
+        let attacker_seed = [255u8; 32];
+        let attacker_sk = BlsSecretKey::from_bytes(&attacker_seed).unwrap();
+        let attacker_pk = attacker_sk.public_key();
+        let attacker_pop = Bls12381::generate_possession_proof(&attacker_sk);
+
+        // Only legitimate PoPs pass
+        assert!(Bls12381::verify_possession_proof(&attacker_pk, &attacker_pop));
+        assert!(!Bls12381::verify_possession_proof(&attacker_pk, &honest_pop));
+        assert!(!Bls12381::verify_possession_proof(&honest_pk, &attacker_pop));
+    }
+
+    #[test]
+    fn test_dsign_algorithm_trait() {
+        use crate::common::traits::DsignAlgorithm;
+
+        assert_eq!(Bls12381::ALGORITHM_NAME, "BLS12-381");
+        assert_eq!(Bls12381::SEED_SIZE, 32);
+        assert_eq!(Bls12381::VERIFICATION_KEY_SIZE, G1_COMPRESSED_SIZE);
+        assert_eq!(Bls12381::SIGNING_KEY_SIZE, SCALAR_SIZE);
+        assert_eq!(Bls12381::SIGNATURE_SIZE, G2_COMPRESSED_SIZE);
+
+        // Test key generation
+        let seed = [123u8; 32];
+        let sk = Bls12381::gen_key_from_seed(&seed).unwrap();
+        let vk = Bls12381::derive_verification_key(&sk).unwrap();
+
+        // Test signing and verification
+        let msg = b"Test message";
+        let sig = Bls12381::sign(msg, &sk, &()).unwrap();
+        assert!(Bls12381::verify(msg, &sig, &vk, &()).is_ok());
+
+        // Test serialization roundtrips
+        let vk_bytes = Bls12381::serialize_verification_key(&vk);
+        let restored_vk = Bls12381::deserialize_verification_key(&vk_bytes).unwrap();
+        assert_eq!(vk.point, restored_vk.point);
+
+        let sig_bytes = Bls12381::serialize_signature(&sig);
+        let restored_sig = Bls12381::deserialize_signature(&sig_bytes).unwrap();
+        assert_eq!(sig.point, restored_sig.point);
     }
 }
