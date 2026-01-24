@@ -416,10 +416,13 @@ impl G1Point {
         let mut result = blst_p1::default();
         // SAFETY: blst_p1_mult performs scalar multiplication.
         // - self.point is a valid blst_p1
-        // - scalar.bytes.as_ptr() points to 32 valid bytes
+        // - scalar bytes must be in LITTLE-ENDIAN order for blst
         // - 256 is the bit length of the scalar
+        // Note: Scalar stores bytes in big-endian, so we need to reverse them
+        let mut scalar_le = scalar.bytes;
+        scalar_le.reverse(); // Convert big-endian to little-endian
         unsafe {
-            blst_p1_mult(&mut result, &self.point, scalar.bytes.as_ptr(), 256);
+            blst_p1_mult(&mut result, &self.point, scalar_le.as_ptr(), 256);
         }
         Self { point: result }
     }
@@ -573,8 +576,11 @@ impl G2Point {
     /// Scalar multiplication.
     pub fn mul(&self, scalar: &Scalar) -> Self {
         let mut result = blst_p2::default();
+        // Note: Scalar stores bytes in big-endian, but blst expects little-endian
+        let mut scalar_le = scalar.bytes;
+        scalar_le.reverse(); // Convert big-endian to little-endian
         unsafe {
-            blst_p2_mult(&mut result, &self.point, scalar.bytes.as_ptr(), 256);
+            blst_p2_mult(&mut result, &self.point, scalar_le.as_ptr(), 256);
         }
         Self { point: result }
     }
@@ -1347,12 +1353,6 @@ mod tests {
         let scalar = Scalar::from_bytes_be(&scalar_bytes).unwrap();
 
         let also_doubled = gen.mul(&scalar);
-        
-        // Debug output
-        eprintln!("Generator compressed: {:?}", hex::encode(&gen.to_compressed()[..16]));
-        eprintln!("Doubled (add) compressed: {:?}", hex::encode(&doubled.to_compressed()[..16]));
-        eprintln!("Doubled (mul) compressed: {:?}", hex::encode(&also_doubled.to_compressed()[..16]));
-        
         assert_eq!(doubled, also_doubled);
     }
 
