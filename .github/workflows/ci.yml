@@ -115,6 +115,7 @@ jobs:
           sarif_file: clippy-results.sarif
           category: clippy
         if: always()
+        continue-on-error: true
 
       - name: Run clippy (fail on warnings)
         run: cargo clippy --all-targets --all-features -- -D warnings

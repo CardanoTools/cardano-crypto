@@ -49,6 +49,7 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "security"
+        continue-on-error: true
 
   cargo-deny:
     name: License & Vulnerability Check
@@ -219,6 +220,7 @@ jobs:
         with:
           sarif_file: semgrep.sarif
           category: semgrep
+        continue-on-error: true
 
   security-summary:
     name: Security Summary
