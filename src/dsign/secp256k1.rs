@@ -32,7 +32,6 @@ use k256::{
         VerifyingKey as K256VerifyingKey,
     },
     schnorr::{
-        signature::{Signer as SchnorrSigner, Verifier as SchnorrVerifier},
         Signature as K256SchnorrSignature, SigningKey as K256SchnorrSigningKey,
         VerifyingKey as K256SchnorrVerifyingKey,
     },
@@ -210,7 +209,7 @@ impl Secp256k1SchnorrSigningKey {
         let mut key_bytes = [0u8; Self::SIZE];
         key_bytes.copy_from_slice(bytes);
         // Validate that the key is valid
-        K256SchnorrSigningKey::from_bytes((&key_bytes).into())
+        K256SchnorrSigningKey::from_bytes(&key_bytes)
             .map_err(|_| CryptoError::InvalidPrivateKey)?;
         Ok(Self { bytes: key_bytes })
     }
@@ -222,7 +221,7 @@ impl Secp256k1SchnorrSigningKey {
 
     /// Converts to the k256 schnorr signing key.
     fn to_k256_signing_key(&self) -> K256SchnorrSigningKey {
-        K256SchnorrSigningKey::from_bytes((&self.bytes).into())
+        K256SchnorrSigningKey::from_bytes(&self.bytes)
             .expect("validated in constructor")
     }
 }

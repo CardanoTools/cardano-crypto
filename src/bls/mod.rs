@@ -31,12 +31,12 @@
 
 use crate::common::error::CryptoError;
 use blst::{
-    blst_final_exp, blst_fp12, blst_fp12_is_one, blst_miller_loop, blst_p1, blst_p1_add,
-    blst_p1_affine, blst_p1_cneg, blst_p1_compress, blst_p1_from_affine, blst_p1_mult,
-    blst_p1_on_curve, blst_p1_to_affine, blst_p1_uncompress, blst_p2, blst_p2_add, blst_p2_affine,
-    blst_p2_cneg, blst_p2_compress, blst_p2_from_affine, blst_p2_mult, blst_p2_on_curve,
-    blst_p2_to_affine, blst_p2_uncompress, blst_scalar, blst_scalar_from_bendian, min_pk,
-    BLST_ERROR,
+    blst_encode_to_g1, blst_encode_to_g2, blst_final_exp, blst_fp12, blst_fp12_is_one,
+    blst_miller_loop, blst_p1, blst_p1_add, blst_p1_affine, blst_p1_cneg, blst_p1_compress,
+    blst_p1_from_affine, blst_p1_mult, blst_p1_on_curve, blst_p1_to_affine, blst_p1_uncompress,
+    blst_p2, blst_p2_add, blst_p2_affine, blst_p2_cneg, blst_p2_compress, blst_p2_from_affine,
+    blst_p2_mult, blst_p2_on_curve, blst_p2_to_affine, blst_p2_uncompress, blst_scalar,
+    blst_scalar_from_bendian, min_pk, BLST_ERROR,
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -78,11 +78,11 @@ impl G1Point {
 
     /// Returns the generator point of G1.
     pub fn generator() -> Self {
-        let mut point = blst_p1::default();
         unsafe {
-            blst::blst_p1_generator(&mut point as *mut _);
+            let gen_ptr = blst::blst_p1_generator();
+            let point = *gen_ptr;
+            Self { point }
         }
-        Self { point }
     }
 
     /// Creates the identity (zero) point of G1.
@@ -210,11 +210,11 @@ impl G2Point {
 
     /// Returns the generator point of G2.
     pub fn generator() -> Self {
-        let mut point = blst_p2::default();
         unsafe {
-            blst::blst_p2_generator(&mut point as *mut _);
+            let gen_ptr = blst::blst_p2_generator();
+            let point = *gen_ptr;
+            Self { point }
         }
-        Self { point }
     }
 
     /// Creates the identity (zero) point of G2.
@@ -490,10 +490,19 @@ impl Bls12381 {
     ///
     /// Corresponds to `bls12_381_G1_hashToGroup` in Plutus.
     pub fn g1_hash_to_curve(msg: &[u8], dst: &[u8]) -> G1Point {
-        let point = min_pk::Signature::hash_to_point(msg, dst);
-        G1Point {
-            point: unsafe { *(point.to_affine().as_ref() as *const _ as *const blst_p1) },
+        let mut point = blst_p1::default();
+        unsafe {
+            blst_encode_to_g1(
+                &mut point,
+                msg.as_ptr(),
+                msg.len(),
+                dst.as_ptr(),
+                dst.len(),
+                core::ptr::null(),
+                0,
+            );
         }
+        G1Point { point }
     }
 
     // ========================================================================
@@ -546,10 +555,19 @@ impl Bls12381 {
     ///
     /// Corresponds to `bls12_381_G2_hashToGroup` in Plutus.
     pub fn g2_hash_to_curve(msg: &[u8], dst: &[u8]) -> G2Point {
-        let point = min_pk::PublicKey::hash_to_point(msg, dst);
-        G2Point {
-            point: unsafe { *(point.to_affine().as_ref() as *const _ as *const blst_p2) },
+        let mut point = blst_p2::default();
+        unsafe {
+            blst_encode_to_g2(
+                &mut point,
+                msg.as_ptr(),
+                msg.len(),
+                dst.as_ptr(),
+                dst.len(),
+                core::ptr::null(),
+                0,
+            );
         }
+        G2Point { point }
     }
 
     // ========================================================================
