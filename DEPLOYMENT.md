@@ -1,9 +1,9 @@
-# Deployment Checklist for cardano-crypto v0.1.0
+# Deployment Checklist for cardano-crypto v1.1.0
 
 ## Pre-Deployment Verification ✅
 
 ### Code Quality
-- [x] All 112 tests passing (95 lib + 9 KES + 8 VRF + 4 doc)
+- [x] All tests passing (comprehensive test suite)
 - [x] Zero compiler warnings
 - [x] Zero clippy warnings
 - [x] Clean release build
@@ -12,13 +12,13 @@
 
 ### Files Ready for Deployment
 - [x] Cargo.toml properly configured
-  - [x] Version: 0.1.0
+  - [x] Version: 1.1.0
   - [x] Repository URL updated
   - [x] Authors, license, keywords set
   - [x] Documentation URL configured
   - [x] Exclude patterns for CI files
 - [x] README.md complete with badges and examples
-- [x] CHANGELOG.md updated with v0.1.0 changes
+- [x] CHANGELOG.md updated with v1.1.0 changes
 - [x] LICENSE-MIT and LICENSE-APACHE present
 - [x] CONTRIBUTING.md with development guidelines
 - [x] PUBLISHING.md with release instructions
@@ -208,7 +208,7 @@ If issues are discovered:
    ```
 3. Fix issues and publish corrected version
 
-## Next Steps After v0.1.0
+## Next Steps After v1.1.0
 
 ### v0.1.1 (Patch)
 - Bug fixes only

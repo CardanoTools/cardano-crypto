@@ -32,7 +32,7 @@ Update version in `Cargo.toml`:
 
 ```toml
 [package]
-version = "0.1.0"  # Update this
+version = "1.1.0"  # Current version
 ```
 
 Follow [Semantic Versioning](https://semver.org/):
@@ -62,12 +62,12 @@ cargo publish --dry-run
 ```bash
 # Commit version changes
 git add Cargo.toml CHANGELOG.md README.md
-git commit -m "Release v0.1.0"
+git commit -m "Release v1.2.0"  # Example for next release
 
 # Create and push tag
-git tag -a v0.1.0 -m "Release version 0.1.0"
+git tag -a v1.2.0 -m "Release version 1.2.0"
 git push origin main
-git push origin v0.1.0
+git push origin v1.2.0
 ```
 
 ### 5. Automatic Publishing
