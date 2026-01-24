@@ -71,6 +71,7 @@ deny = [
 # Skip certain crates during duplicate version checks
 skip = [
     # Common transitive dependencies that often have multiple versions
+    { name = "wit-bindgen", reason = "Transitive dependency with newer edition parsed by cargo-deny action image" },
 ]
 # Skip the tree root crate during duplicate version checks
 skip-tree = []
