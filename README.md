@@ -1,11 +1,22 @@
 # Cardano Crypto - Pure Rust Implementation
 
+<div align="center">
+
 [![Crates.io](https://img.shields.io/crates/v/cardano-crypto.svg)](https://crates.io/crates/cardano-crypto)
 [![Documentation](https://docs.rs/cardano-crypto/badge.svg)](https://docs.rs/cardano-crypto)
 [![Docs](https://img.shields.io/badge/docs-github.io-blue)](https://fractionestate.github.io/cardano-crypto/)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE-MIT)
 [![Rust](https://img.shields.io/badge/rust-1.81%2B-orange.svg)](https://www.rust-lang.org)
-[![CI](https://github.com/FractionEstate/cardano-crypto/workflows/CI/badge.svg)](https://github.com/FractionEstate/cardano-crypto/actions)
+
+[![CI](https://github.com/FractionEstate/cardano-crypto/workflows/CI/badge.svg)](https://github.com/FractionEstate/cardano-crypto/actions/workflows/ci.yml)
+[![Security](https://github.com/FractionEstate/cardano-crypto/workflows/Security/badge.svg)](https://github.com/FractionEstate/cardano-crypto/actions/workflows/security.yml)
+[![Codecov](https://codecov.io/gh/FractionEstate/cardano-crypto/branch/main/graph/badge.svg)](https://codecov.io/gh/FractionEstate/cardano-crypto)
+[![Dependencies](https://deps.rs/repo/github/FractionEstate/cardano-crypto/status.svg)](https://deps.rs/repo/github/FractionEstate/cardano-crypto)
+
+[![Downloads](https://img.shields.io/crates/d/cardano-crypto.svg)](https://crates.io/crates/cardano-crypto)
+[![GitHub Stars](https://img.shields.io/github/stars/FractionEstate/cardano-crypto?style=social)](https://github.com/FractionEstate/cardano-crypto)
+
+</div>
 
 Pure Rust implementation of Cardano cryptographic primitives, providing a unified interface for **VRF** (Verifiable Random Functions), **KES** (Key Evolving Signatures), **DSIGN** (Digital Signatures), **Hash** algorithms, and **Plutus-compatible** cryptographic primitives.
 

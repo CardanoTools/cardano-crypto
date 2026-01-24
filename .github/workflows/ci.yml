@@ -99,7 +99,24 @@ jobs:
         with:
           components: clippy
 
-      - name: Run clippy
+      - name: Install clippy-sarif and sarif-fmt
+        run: |
+          cargo install clippy-sarif sarif-fmt --locked
+
+      - name: Run clippy with SARIF output
+        run: |
+          cargo clippy --all-targets --all-features --message-format=json | \
+          clippy-sarif | tee clippy-results.sarif | sarif-fmt
+        continue-on-error: true
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: clippy-results.sarif
+          category: clippy
+        if: always()
+
+      - name: Run clippy (fail on warnings)
         run: cargo clippy --all-targets --all-features -- -D warnings
 
   fmt:
@@ -142,17 +159,29 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
 
       - name: Generate coverage
-        run: cargo tarpaulin --all-features --workspace --timeout 300 --out xml
+        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          files: ./cobertura.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lcov.info
+          flags: unittests
+          name: cardano-crypto
           fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload coverage summary
+        run: |
+          if [ -f lcov.info ]; then
+            echo "Coverage report generated successfully"
+            # Extract coverage percentage
+            cargo llvm-cov report --summary-only || true
+          fi
 
   msrv:
     name: Minimum Supported Rust Version

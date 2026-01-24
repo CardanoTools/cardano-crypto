@@ -1,6 +1,6 @@
 [package]
 name = "cardano-crypto"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2021"
 rust-version = "1.81"
 authors = ["FractionEstate <contact@fraction.estate>"]
@@ -12,12 +12,28 @@ description = "Pure Rust implementation of Cardano cryptographic primitives (VRF
 keywords = ["cardano", "cryptography", "vrf", "kes", "blockchain"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
+publish = true
 exclude = [
     "/.github",
     "/target",
     "*.profraw",
     "*.profdata",
+    "/.vscode",
+    "/.pre-commit-config.yaml",
+    "/WORKFLOW_IMPROVEMENT_PLAN.md",
+    "/WORKFLOW_IMPLEMENTATION_SUMMARY.md",
+    "/PHASE4_COMPLETION.md",
+    "/TEST_COVERAGE_ANALYSIS.md",
+    "/PROPERTY_TEST_IMPLEMENTATION.md",
 ]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[badges]
+maintenance = { status = "actively-developed" }
 
 [features]
 default = ["std", "thiserror", "vrf", "kes", "dsign", "hash", "seed", "cbor", "key", "hd"]

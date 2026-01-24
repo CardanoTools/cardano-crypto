@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@nightly  # Use nightly for doc coverage
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -48,11 +48,59 @@ jobs:
           path: target
           key: ${{ runner.os }}-docs-target-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Check documentation coverage
+        run: |
+          cargo +nightly rustdoc --all-features -- -Z unstable-options --show-coverage | tee doc-coverage.txt
+          # Extract coverage percentage
+          COVERAGE=$(grep "^[[:space:]]*[0-9]\+\.[0-9]\+% " doc-coverage.txt | tail -1 | awk '{print $1}')
+          echo "Documentation coverage: $COVERAGE"
+          echo "DOC_COVERAGE=$COVERAGE" >> $GITHUB_ENV
+        continue-on-error: true
+
       - name: Build documentation
         run: |
-          cargo doc --all-features --no-deps --document-private-items
+          cargo +nightly doc --all-features --no-deps --document-private-items
         env:
-          RUSTDOCFLAGS: "-D warnings"
+          RUSTDOCFLAGS: "-D warnings --cfg docsrs"
+
+      - name: Check for broken links
+        run: |
+          cargo install lychee --locked || true
+          if command -v lychee &> /dev/null; then
+            lychee --verbose --no-progress './target/doc/**/*.html' --exclude-path 'target/doc/src' || true
+          fi
+        continue-on-error: true
+
+      - name: Generate documentation metrics
+        run: |
+          mkdir -p target/doc/metrics
+          cat > target/doc/metrics/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Documentation Metrics</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 40px; }
+              .metric { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+              .metric h2 { margin-top: 0; }
+              .coverage { font-size: 2em; font-weight: bold; color: #28a745; }
+            </style>
+          </head>
+          <body>
+            <h1>📊 Documentation Metrics</h1>
+            <div class="metric">
+              <h2>Documentation Coverage</h2>
+              <div class="coverage">${DOC_COVERAGE:-N/A}</div>
+            </div>
+            <div class="metric">
+              <h2>Generated</h2>
+              <p>$(date -u +"%Y-%m-%d %H:%M:%S UTC")</p>
+            </div>
+            <p><a href="../index.html">← Back to Documentation</a></p>
+          </body>
+          </html>
+          EOF
+        continue-on-error: true
 
       - name: Add index redirect
         run: |
