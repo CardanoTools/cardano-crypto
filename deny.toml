@@ -4,8 +4,11 @@
 [advisories]
 # The URL of the advisory database to use (OVERRIDE: Use RustSec by default)
 db-urls = ["https://github.com/rustsec/advisory-db"]
-# Deny all security vulnerabilities
-vulnerability = "deny"
+# Version requirements: specify which advisories are errors vs warnings
+# The 'version' field specifies the minimum version of cargo-deny required for this config
+version = 2
+# Lint level for crates with known security vulnerabilities
+severity = "deny"
 # Warn about unmaintained crates
 unmaintained = "warn"
 # Warn about yanked crates
