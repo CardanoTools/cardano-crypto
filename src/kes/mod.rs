@@ -157,6 +157,32 @@ pub trait KesAlgorithm {
     /// Derive verification key from signing key
     fn derive_verification_key(signing_key: &Self::SigningKey) -> Result<Self::VerificationKey>;
 
+    /// Generate a KES keypair from seed bytes
+    ///
+    /// Convenience method that combines `gen_key_kes_from_seed_bytes` and `derive_verification_key`.
+    ///
+    /// # Arguments
+    ///
+    /// * `seed` - 32-byte seed for key generation
+    ///
+    /// # Returns
+    ///
+    /// Tuple of (signing_key, verification_key)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use cardano_crypto::kes::{Sum6Kes, KesAlgorithm};
+    ///
+    /// let seed = [42u8; 32];
+    /// let (sk, vk) = Sum6Kes::keygen(&seed).unwrap();
+    /// ```
+    fn keygen(seed: &[u8]) -> Result<(Self::SigningKey, Self::VerificationKey)> {
+        let signing_key = Self::gen_key_kes_from_seed_bytes(seed)?;
+        let verification_key = Self::derive_verification_key(&signing_key)?;
+        Ok((signing_key, verification_key))
+    }
+
     /// Sign a message at a specific period
     fn sign_kes(
         context: &Self::Context,

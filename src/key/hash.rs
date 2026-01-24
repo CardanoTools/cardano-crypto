@@ -62,55 +62,55 @@ pub mod role {
     /// Payment key role - Spending funds from addresses
     ///
     /// Payment keys are used to control UTxOs and authorize spending.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
     pub struct Payment;
 
     /// Staking key role - Delegating stake and withdrawing rewards
     ///
     /// Staking keys are used for delegation certificates and reward withdrawals.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
     pub struct Staking;
 
     /// Genesis key role - Genesis block signing and initial distribution
     ///
     /// Genesis keys are used in the genesis block and initial stake distribution.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
     pub struct Genesis;
 
     /// Pool operator key role - Stake pool cold keys
     ///
     /// Pool operator keys identify stake pools and sign operational certificates.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
     pub struct PoolOperator;
 
     /// Genesis delegate key role - Genesis delegation keys
     ///
     /// Genesis delegate keys are used for genesis delegation certificates.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
     pub struct GenesisDelegate;
 
     /// Delegated representative key role - Governance voting
     ///
     /// DRep keys are used for governance voting in CIP-1694.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
     pub struct DRep;
 
     /// Constitutional committee cold key role - Committee membership
     ///
     /// Committee cold keys identify constitutional committee members.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
     pub struct CommitteeCold;
 
     /// Constitutional committee hot key role - Committee voting
     ///
     /// Committee hot keys are used for actual voting by committee members.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
     pub struct CommitteeHot;
 
     /// VRF key role - Verifiable random functions
     ///
     /// VRF keys are used for leader election in the consensus protocol.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
     pub struct Vrf;
 }
 
@@ -153,7 +153,7 @@ pub mod role {
 /// ```haskell
 /// newtype KeyHash (r :: KeyRole) crypto = KeyHash (Hash crypto VerKey)
 /// ```
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct KeyHash<R> {
     hash: [u8; KEY_HASH_SIZE],
     _role: PhantomData<R>,

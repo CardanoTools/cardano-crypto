@@ -1,8 +1,13 @@
 //! Property-based tests for Operational Certificate functionality
 //!
 //! These tests verify operational certificate invariants using property-based testing.
+//!
+//! Note: This test file requires the `kes` feature to be enabled.
+
+#![cfg(feature = "kes")]
 
 use cardano_crypto::common::Result;
+use cardano_crypto::dsign::{DsignAlgorithm, Ed25519};
 use cardano_crypto::key::{
     operational_cert::{
         compute_operational_cert_hash, create_operational_certificate, verify_operational_certificate,
@@ -50,12 +55,12 @@ proptest! {
             .expect("KES key generation should succeed");
         let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)
             .expect("KES verkey derivation should succeed");
-        
+
         // Generate cold key (using Ed25519 for simplicity)
         use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
         let cold_sk = Ed25519::gen_key_from_seed(&cold_seed);
         let cold_vk = Ed25519::derive_verification_key(&cold_sk);
-        
+
         // Create operational certificate
         let ocert = create_operational_certificate(
             &kes_vk,
@@ -63,7 +68,7 @@ proptest! {
             start_period,
             &cold_sk,
         ).expect("OCert creation should succeed");
-        
+
         // Verify operational certificate
         let result = verify_operational_certificate(
             &ocert,
@@ -72,7 +77,7 @@ proptest! {
             start_period,
             &cold_vk,
         );
-        
+
         prop_assert!(result.is_ok(), "OCert verification should succeed");
     }
 
@@ -86,17 +91,17 @@ proptest! {
         start_period in start_period_strategy()
     ) {
         prop_assume!(create_counter != verify_counter);
-        
+
         use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
-        
+
         let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)
             .expect("KES key generation should succeed");
         let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)
             .expect("KES verkey derivation should succeed");
-        
+
         let cold_sk = Ed25519::gen_key_from_seed(&cold_seed);
         let cold_vk = Ed25519::derive_verification_key(&cold_sk);
-        
+
         // Create with one counter
         let ocert = create_operational_certificate(
             &kes_vk,
@@ -104,7 +109,7 @@ proptest! {
             start_period,
             &cold_sk,
         ).expect("OCert creation should succeed");
-        
+
         // Verify with different counter
         let result = verify_operational_certificate(
             &ocert,
@@ -113,7 +118,7 @@ proptest! {
             start_period,
             &cold_vk,
         );
-        
+
         prop_assert!(result.is_err(), "OCert with wrong counter should fail verification");
     }
 
@@ -127,24 +132,24 @@ proptest! {
         verify_period in start_period_strategy()
     ) {
         prop_assume!(create_period != verify_period);
-        
+
         use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
-        
+
         let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)
             .expect("KES key generation should succeed");
         let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)
             .expect("KES verkey derivation should succeed");
-        
+
         let cold_sk = Ed25519::gen_key_from_seed(&cold_seed);
         let cold_vk = Ed25519::derive_verification_key(&cold_sk);
-        
+
         let ocert = create_operational_certificate(
             &kes_vk,
             counter,
             create_period,
             &cold_sk,
         ).expect("OCert creation should succeed");
-        
+
         let result = verify_operational_certificate(
             &ocert,
             &kes_vk,
@@ -152,7 +157,7 @@ proptest! {
             verify_period,
             &cold_vk,
         );
-        
+
         prop_assert!(result.is_err(), "OCert with wrong start period should fail");
     }
 
@@ -166,18 +171,18 @@ proptest! {
         start_period in start_period_strategy()
     ) {
         prop_assume!(cold_seed1 != cold_seed2);
-        
+
         use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
-        
+
         let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)
             .expect("KES key generation should succeed");
         let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)
             .expect("KES verkey derivation should succeed");
-        
+
         let cold_sk1 = Ed25519::gen_key_from_seed(&cold_seed1);
         let cold_sk2 = Ed25519::gen_key_from_seed(&cold_seed2);
         let cold_vk2 = Ed25519::derive_verification_key(&cold_sk2);
-        
+
         // Create with first cold key
         let ocert = create_operational_certificate(
             &kes_vk,
@@ -185,7 +190,7 @@ proptest! {
             start_period,
             &cold_sk1,
         ).expect("OCert creation should succeed");
-        
+
         // Verify with second cold key
         let result = verify_operational_certificate(
             &ocert,
@@ -194,7 +199,7 @@ proptest! {
             start_period,
             &cold_vk2,
         );
-        
+
         prop_assert!(result.is_err(), "OCert with wrong cold key should fail");
     }
 
@@ -209,13 +214,13 @@ proptest! {
             .expect("KES key generation should succeed");
         let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)
             .expect("KES verkey derivation should succeed");
-        
+
         // Compute hash twice
         let hash1 = compute_operational_cert_hash(&kes_vk, counter, start_period)
             .expect("Hash computation should succeed");
         let hash2 = compute_operational_cert_hash(&kes_vk, counter, start_period)
             .expect("Hash computation should succeed");
-        
+
         prop_assert_eq!(
             hash1, hash2,
             "OCert hash should be deterministic"
@@ -231,22 +236,22 @@ proptest! {
         start_period in start_period_strategy()
     ) {
         prop_assume!(kes_seed1 != kes_seed2);
-        
+
         let kes_sk1 = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed1)
             .expect("KES key generation should succeed");
         let kes_vk1 = Sum6Kes::derive_verification_key(&kes_sk1)
             .expect("KES verkey derivation should succeed");
-        
+
         let kes_sk2 = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed2)
             .expect("KES key generation should succeed");
         let kes_vk2 = Sum6Kes::derive_verification_key(&kes_sk2)
             .expect("KES verkey derivation should succeed");
-        
+
         let hash1 = compute_operational_cert_hash(&kes_vk1, counter, start_period)
             .expect("Hash computation should succeed");
         let hash2 = compute_operational_cert_hash(&kes_vk2, counter, start_period)
             .expect("Hash computation should succeed");
-        
+
         prop_assert_ne!(
             hash1, hash2,
             "Different inputs should produce different hashes"
@@ -267,7 +272,7 @@ proptest! {
     ) {
         let period1 = compute_kes_period(slot, slots_per_period);
         let period2 = compute_kes_period(slot, slots_per_period);
-        
+
         prop_assert_eq!(period1, period2, "KES period should be deterministic");
     }
 
@@ -279,10 +284,10 @@ proptest! {
         slots_per_period in 1..10_000u64
     ) {
         prop_assume!(slot1 <= slot2);
-        
+
         let period1 = compute_kes_period(slot1, slots_per_period);
         let period2 = compute_kes_period(slot2, slots_per_period);
-        
+
         prop_assert!(
             period1 <= period2,
             "Later slot should have >= period: slot1={}, period1={}, slot2={}, period2={}",
@@ -298,10 +303,10 @@ proptest! {
         offset in 0..100u64
     ) {
         prop_assume!(offset < slots_per_period);
-        
+
         let slot = period_num * slots_per_period + offset;
         let computed_period = compute_kes_period(slot, slots_per_period);
-        
+
         prop_assert_eq!(
             computed_period, period_num,
             "Slot {} should be in period {} (slots_per_period={})",
@@ -317,20 +322,20 @@ proptest! {
 #[test]
 fn test_ocert_empty_signature() {
     use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
-    
+
     let kes_seed = [0u8; 32];
     let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)
         .expect("KES key generation should succeed");
     let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)
         .expect("KES verkey derivation should succeed");
-    
+
     let cold_seed = [0x42u8; 32];
     let cold_sk = Ed25519::gen_key_from_seed(&cold_seed);
     let cold_vk = Ed25519::derive_verification_key(&cold_sk);
-    
+
     // Empty signature
     let empty_sig: Vec<u8> = vec![];
-    
+
     let result = verify_operational_certificate(
         &empty_sig,
         &kes_vk,
@@ -338,7 +343,7 @@ fn test_ocert_empty_signature() {
         0,
         &cold_vk,
     );
-    
+
     assert!(
         result.is_err(),
         "Empty signature should fail verification"
@@ -348,78 +353,78 @@ fn test_ocert_empty_signature() {
 #[test]
 fn test_ocert_corrupted_signature() -> Result<()> {
     use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
-    
+
     let kes_seed = [0u8; 32];
     let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)?;
     let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)?;
-    
+
     let cold_seed = [0x42u8; 32];
     let cold_sk = Ed25519::gen_key_from_seed(&cold_seed);
     let cold_vk = Ed25519::derive_verification_key(&cold_sk);
-    
+
     let mut ocert = create_operational_certificate(&kes_vk, 0, 0, &cold_sk)?;
-    
+
     // Corrupt the signature
     if !ocert.is_empty() {
         ocert[0] ^= 0xff;
-        
+
         let result = verify_operational_certificate(&ocert, &kes_vk, 0, 0, &cold_vk);
         assert!(
             result.is_err(),
             "Corrupted OCert should fail verification"
         );
     }
-    
+
     Ok(())
 }
 
 #[test]
 fn test_ocert_counter_overflow() -> Result<()> {
     use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
-    
+
     let kes_seed = [0xffu8; 32];
     let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)?;
     let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)?;
-    
+
     let cold_seed = [0xaau8; 32];
     let cold_sk = Ed25519::gen_key_from_seed(&cold_seed);
     let cold_vk = Ed25519::derive_verification_key(&cold_sk);
-    
+
     // Maximum counter value
     let max_counter = u64::MAX;
     let ocert = create_operational_certificate(&kes_vk, max_counter, 0, &cold_sk)?;
-    
+
     let result = verify_operational_certificate(&ocert, &kes_vk, max_counter, 0, &cold_vk);
     assert!(
         result.is_ok(),
         "Maximum counter value should be handled correctly"
     );
-    
+
     Ok(())
 }
 
 #[test]
 fn test_ocert_very_large_start_period() -> Result<()> {
     use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
-    
+
     let kes_seed = [0x99u8; 32];
     let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)?;
     let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)?;
-    
+
     let cold_seed = [0x66u8; 32];
     let cold_sk = Ed25519::gen_key_from_seed(&cold_seed);
     let cold_vk = Ed25519::derive_verification_key(&cold_sk);
-    
+
     // Very large start period
     let large_period = 1_000_000_000u64;
     let ocert = create_operational_certificate(&kes_vk, 0, large_period, &cold_sk)?;
-    
+
     let result = verify_operational_certificate(&ocert, &kes_vk, 0, large_period, &cold_vk);
     assert!(
         result.is_ok(),
         "Large start period should be handled correctly"
     );
-    
+
     Ok(())
 }
 
@@ -429,10 +434,10 @@ fn test_kes_period_zero_slots_per_period() {
     // Should be handled gracefully (though this is invalid config)
     let slot = 100u64;
     let slots_per_period = 0u64;
-    
+
     // This should not panic
     let _period = compute_kes_period(slot, slots_per_period);
-    
+
     // Note: The implementation should either return a sensible default
     // or handle this edge case appropriately
 }
@@ -442,32 +447,32 @@ fn test_kes_period_max_values() {
     // Test with maximum u64 values
     let max_slot = u64::MAX;
     let slots_per_period = 129600u64; // Mainnet value
-    
+
     let _period = compute_kes_period(max_slot, slots_per_period);
-    
+
     // Should not panic or overflow
 }
 
 #[test]
 fn test_ocert_zero_values() -> Result<()> {
     use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
-    
+
     let kes_seed = [0u8; 32];
     let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)?;
     let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)?;
-    
+
     let cold_seed = [0u8; 32];
     let cold_sk = Ed25519::gen_key_from_seed(&cold_seed);
     let cold_vk = Ed25519::derive_verification_key(&cold_sk);
-    
+
     // All zero values
     let ocert = create_operational_certificate(&kes_vk, 0, 0, &cold_sk)?;
-    
+
     let result = verify_operational_certificate(&ocert, &kes_vk, 0, 0, &cold_vk);
     assert!(
         result.is_ok(),
         "Zero values should be valid"
     );
-    
+
     Ok(())
 }

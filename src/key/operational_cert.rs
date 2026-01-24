@@ -95,11 +95,10 @@ use crate::common::error::{CryptoError, Result};
 use crate::dsign::{DsignAlgorithm, Ed25519};
 use crate::{Ed25519Signature, Ed25519SigningKey, Ed25519VerificationKey};
 use crate::kes::{KesVerificationKey, Sum6Kes};
-use crate::key::kes_period::KESPeriod;
+use crate::key::kes_period::KesPeriod;
 
 // Type aliases for operational certificates (using Sum6Kes which is Cardano mainnet default)
 type VerificationKeyKes = KesVerificationKey<Sum6Kes>;
-type KesPeriod = KESPeriod;
 
 /// Operational Certificate
 ///
@@ -469,7 +468,7 @@ impl OCertSignable {
         encode_u64(&mut bytes, self.counter);
 
         // Element 3: KES period (u64)
-        encode_u64(&mut bytes, self.kes_period as u64);
+        encode_u64(&mut bytes, self.kes_period.value() as u64);
 
         bytes
     }
@@ -647,7 +646,7 @@ mod tests {
         let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
 
         // Certificate starts at period 0
-        let ocert = OperationalCertificate::new(kes_vk, 0, KesPeriod(0), &cold_sk);
+        let ocert = OperationalCertificate::new(kes_vk.clone(), 0, KesPeriod(0), &cold_sk);
 
         // Valid: within 62 evolution steps (period 62 = 0 + 62)
         assert!(

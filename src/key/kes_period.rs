@@ -28,7 +28,7 @@
 //! ```rust
 //! use cardano_crypto::key::kes_period::{KESPeriod, kes_period_info};
 //!
-//! let period: KESPeriod = 0;
+//! let period = KesPeriod(0);
 //! let info = kes_period_info::<cardano_crypto::Sum6Kes>(period);
 //! assert!(info.is_valid);
 //! assert_eq!(info.total_periods, 64);
@@ -36,16 +36,64 @@
 
 use crate::kes::KesAlgorithm;
 
-/// KES period type
+/// KES period newtype wrapper
 ///
 /// Represents a specific period in the KES key's lifetime.
 /// Period 0 is the initial period after key generation.
-pub type KESPeriod = u32;
+///
+/// This is a newtype wrapper around `u32` for type safety.
+///
+/// # Examples
+///
+/// ```rust
+/// use cardano_crypto::key::kes_period::KesPeriod;
+///
+/// let period = KesPeriod(100);
+/// assert_eq!(period.0, 100);
+/// assert_eq!(u32::from(period), 100);
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct KesPeriod(pub u32);
+
+impl KesPeriod {
+    /// Create a new KES period
+    #[inline]
+    pub fn new(value: u32) -> Self {
+        Self(value)
+    }
+
+    /// Get the inner value
+    #[inline]
+    pub fn value(self) -> u32 {
+        self.0
+    }
+}
+
+impl From<u32> for KesPeriod {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
+impl From<KesPeriod> for u32 {
+    fn from(period: KesPeriod) -> Self {
+        period.0
+    }
+}
+
+impl core::fmt::Display for KesPeriod {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+/// Type alias for backwards compatibility
+pub type KESPeriod = KesPeriod;
 
 /// Maximum KES period for Sum6KES (mainnet default)
 ///
 /// Sum6KES supports 2^6 = 64 periods (0-63).
-pub const KES_MAX_PERIOD_SUM6: KESPeriod = 63;
+pub const KES_MAX_PERIOD_SUM6: KesPeriod = KesPeriod(63);
 
 /// Number of slots per KES period on mainnet
 ///
@@ -87,25 +135,25 @@ pub struct KESPeriodInfo {
 /// # Examples
 ///
 /// ```rust
-/// use cardano_crypto::key::kes_period::kes_period_info;
+/// use cardano_crypto::key::kes_period::{kes_period_info, KesPeriod};
 /// use cardano_crypto::Sum6Kes;
 ///
-/// let info = kes_period_info::<Sum6Kes>(0);
+/// let info = kes_period_info::<Sum6Kes>(KesPeriod(0));
 /// assert!(info.is_valid);
 /// assert_eq!(info.total_periods, 64);
 /// assert_eq!(info.remaining_periods, 64);
 ///
-/// let info = kes_period_info::<Sum6Kes>(63);
+/// let info = kes_period_info::<Sum6Kes>(KesPeriod(63));
 /// assert!(info.is_valid);
 /// assert_eq!(info.remaining_periods, 1);
 ///
-/// let info = kes_period_info::<Sum6Kes>(64);
+/// let info = kes_period_info::<Sum6Kes>(KesPeriod(64));
 /// assert!(!info.is_valid);
 /// ```
-pub fn kes_period_info<K: KesAlgorithm>(period: KESPeriod) -> KESPeriodInfo {
+pub fn kes_period_info<K: KesAlgorithm>(period: KesPeriod) -> KESPeriodInfo {
     let total_periods = K::total_periods() as u32;
-    let is_valid = (period as u64) < K::total_periods();
-    let remaining_periods = if is_valid { total_periods - period } else { 0 };
+    let is_valid = (period.0 as u64) < K::total_periods();
+    let remaining_periods = if is_valid { total_periods - period.0 } else { 0 };
 
     KESPeriodInfo {
         period,
@@ -131,15 +179,15 @@ pub fn kes_period_info<K: KesAlgorithm>(period: KESPeriod) -> KESPeriodInfo {
 /// # Examples
 ///
 /// ```rust
-/// use cardano_crypto::key::kes_period::is_valid_period;
+/// use cardano_crypto::key::kes_period::{is_valid_period, KesPeriod};
 /// use cardano_crypto::Sum6Kes;
 ///
-/// assert!(is_valid_period::<Sum6Kes>(0));
-/// assert!(is_valid_period::<Sum6Kes>(63));
-/// assert!(!is_valid_period::<Sum6Kes>(64));
+/// assert!(is_valid_period::<Sum6Kes>(KesPeriod(0)));
+/// assert!(is_valid_period::<Sum6Kes>(KesPeriod(63)));
+/// assert!(!is_valid_period::<Sum6Kes>(KesPeriod(64)));
 /// ```
-pub fn is_valid_period<K: KesAlgorithm>(period: KESPeriod) -> bool {
-    (period as u64) < K::total_periods()
+pub fn is_valid_period<K: KesAlgorithm>(period: KesPeriod) -> bool {
+    (period.0 as u64) < K::total_periods()
 }
 
 /// Calculate the slot number from a KES period
@@ -160,16 +208,16 @@ pub fn is_valid_period<K: KesAlgorithm>(period: KESPeriod) -> bool {
 /// # Examples
 ///
 /// ```rust
-/// use cardano_crypto::key::kes_period::{slot_from_period, KES_SLOTS_PER_PERIOD_MAINNET};
+/// use cardano_crypto::key::kes_period::{slot_from_period, KesPeriod, KES_SLOTS_PER_PERIOD_MAINNET};
 ///
 /// // Period 0 starts at start_slot
-/// assert_eq!(slot_from_period(0, KES_SLOTS_PER_PERIOD_MAINNET, 0), 0);
+/// assert_eq!(slot_from_period(KesPeriod(0), KES_SLOTS_PER_PERIOD_MAINNET, 0), 0);
 ///
 /// // Period 1 starts after one period's worth of slots
-/// assert_eq!(slot_from_period(1, KES_SLOTS_PER_PERIOD_MAINNET, 0), 129_600);
+/// assert_eq!(slot_from_period(KesPeriod(1), KES_SLOTS_PER_PERIOD_MAINNET, 0), 129_600);
 /// ```
-pub fn slot_from_period(period: KESPeriod, slots_per_period: u64, start_slot: u64) -> u64 {
-    start_slot + (period as u64) * slots_per_period
+pub fn slot_from_period(period: KesPeriod, slots_per_period: u64, start_slot: u64) -> u64 {
+    start_slot + (period.0 as u64) * slots_per_period
 }
 
 /// Calculate the KES period from a slot number
@@ -189,22 +237,22 @@ pub fn slot_from_period(period: KESPeriod, slots_per_period: u64, start_slot: u6
 /// # Examples
 ///
 /// ```rust
-/// use cardano_crypto::key::kes_period::{period_from_slot, KES_SLOTS_PER_PERIOD_MAINNET};
+/// use cardano_crypto::key::kes_period::{period_from_slot, KesPeriod, KES_SLOTS_PER_PERIOD_MAINNET};
 ///
 /// // Slot 0 is in period 0
-/// assert_eq!(period_from_slot(0, KES_SLOTS_PER_PERIOD_MAINNET, 0), 0);
+/// assert_eq!(period_from_slot(0, KES_SLOTS_PER_PERIOD_MAINNET, 0), KesPeriod(0));
 ///
 /// // Slot 129,599 is still in period 0
-/// assert_eq!(period_from_slot(129_599, KES_SLOTS_PER_PERIOD_MAINNET, 0), 0);
+/// assert_eq!(period_from_slot(129_599, KES_SLOTS_PER_PERIOD_MAINNET, 0), KesPeriod(0));
 ///
 /// // Slot 129,600 is in period 1
-/// assert_eq!(period_from_slot(129_600, KES_SLOTS_PER_PERIOD_MAINNET, 0), 1);
+/// assert_eq!(period_from_slot(129_600, KES_SLOTS_PER_PERIOD_MAINNET, 0), KesPeriod(1));
 /// ```
-pub fn period_from_slot(slot: u64, slots_per_period: u64, start_slot: u64) -> KESPeriod {
+pub fn period_from_slot(slot: u64, slots_per_period: u64, start_slot: u64) -> KesPeriod {
     if slot < start_slot {
-        0
+        KesPeriod(0)
     } else {
-        ((slot - start_slot) / slots_per_period) as KESPeriod
+        KesPeriod(((slot - start_slot) / slots_per_period) as u32)
     }
 }
 
@@ -280,79 +328,79 @@ mod tests {
 
     #[test]
     fn test_kes_period_info_sum6() {
-        let info = kes_period_info::<Sum6Kes>(0);
+        let info = kes_period_info::<Sum6Kes>(KesPeriod(0));
         assert!(info.is_valid);
         assert_eq!(info.total_periods, 64);
         assert_eq!(info.remaining_periods, 64);
 
-        let info = kes_period_info::<Sum6Kes>(32);
+        let info = kes_period_info::<Sum6Kes>(KesPeriod(32));
         assert!(info.is_valid);
         assert_eq!(info.remaining_periods, 32);
 
-        let info = kes_period_info::<Sum6Kes>(63);
+        let info = kes_period_info::<Sum6Kes>(KesPeriod(63));
         assert!(info.is_valid);
         assert_eq!(info.remaining_periods, 1);
 
-        let info = kes_period_info::<Sum6Kes>(64);
+        let info = kes_period_info::<Sum6Kes>(KesPeriod(64));
         assert!(!info.is_valid);
         assert_eq!(info.remaining_periods, 0);
     }
 
     #[test]
     fn test_kes_period_info_sum0() {
-        let info = kes_period_info::<Sum0Kes>(0);
+        let info = kes_period_info::<Sum0Kes>(KesPeriod(0));
         assert!(info.is_valid);
         assert_eq!(info.total_periods, 1);
         assert_eq!(info.remaining_periods, 1);
 
-        let info = kes_period_info::<Sum0Kes>(1);
+        let info = kes_period_info::<Sum0Kes>(KesPeriod(1));
         assert!(!info.is_valid);
     }
 
     #[test]
     fn test_kes_period_info_sum1() {
-        let info = kes_period_info::<Sum1Kes>(0);
+        let info = kes_period_info::<Sum1Kes>(KesPeriod(0));
         assert!(info.is_valid);
         assert_eq!(info.total_periods, 2);
 
-        let info = kes_period_info::<Sum1Kes>(1);
+        let info = kes_period_info::<Sum1Kes>(KesPeriod(1));
         assert!(info.is_valid);
 
-        let info = kes_period_info::<Sum1Kes>(2);
+        let info = kes_period_info::<Sum1Kes>(KesPeriod(2));
         assert!(!info.is_valid);
     }
 
     #[test]
     fn test_is_valid_period() {
-        assert!(is_valid_period::<Sum6Kes>(0));
-        assert!(is_valid_period::<Sum6Kes>(63));
-        assert!(!is_valid_period::<Sum6Kes>(64));
-        assert!(!is_valid_period::<Sum6Kes>(100));
+        assert!(is_valid_period::<Sum6Kes>(KesPeriod(0)));
+        assert!(is_valid_period::<Sum6Kes>(KesPeriod(63)));
+        assert!(!is_valid_period::<Sum6Kes>(KesPeriod(64)));
+        assert!(!is_valid_period::<Sum6Kes>(KesPeriod(100)));
     }
 
     #[test]
     fn test_slot_from_period() {
-        assert_eq!(slot_from_period(0, 129_600, 0), 0);
-        assert_eq!(slot_from_period(1, 129_600, 0), 129_600);
-        assert_eq!(slot_from_period(2, 129_600, 0), 259_200);
+        assert_eq!(slot_from_period(KesPeriod(0), 129_600, 0), 0);
+        assert_eq!(slot_from_period(KesPeriod(1), 129_600, 0), 129_600);
+        assert_eq!(slot_from_period(KesPeriod(2), 129_600, 0), 259_200);
 
         // With non-zero start slot
-        assert_eq!(slot_from_period(0, 129_600, 1000), 1000);
-        assert_eq!(slot_from_period(1, 129_600, 1000), 130_600);
+        assert_eq!(slot_from_period(KesPeriod(0), 129_600, 1000), 1000);
+        assert_eq!(slot_from_period(KesPeriod(1), 129_600, 1000), 130_600);
     }
 
     #[test]
     fn test_period_from_slot() {
-        assert_eq!(period_from_slot(0, 129_600, 0), 0);
-        assert_eq!(period_from_slot(129_599, 129_600, 0), 0);
-        assert_eq!(period_from_slot(129_600, 129_600, 0), 1);
-        assert_eq!(period_from_slot(259_199, 129_600, 0), 1);
-        assert_eq!(period_from_slot(259_200, 129_600, 0), 2);
+        assert_eq!(period_from_slot(0, 129_600, 0), KesPeriod(0));
+        assert_eq!(period_from_slot(129_599, 129_600, 0), KesPeriod(0));
+        assert_eq!(period_from_slot(129_600, 129_600, 0), KesPeriod(1));
+        assert_eq!(period_from_slot(259_199, 129_600, 0), KesPeriod(1));
+        assert_eq!(period_from_slot(259_200, 129_600, 0), KesPeriod(2));
 
         // With non-zero start slot
-        assert_eq!(period_from_slot(1000, 129_600, 1000), 0);
-        assert_eq!(period_from_slot(130_599, 129_600, 1000), 0);
-        assert_eq!(period_from_slot(130_600, 129_600, 1000), 1);
+        assert_eq!(period_from_slot(1000, 129_600, 1000), KesPeriod(0));
+        assert_eq!(period_from_slot(130_599, 129_600, 1000), KesPeriod(0));
+        assert_eq!(period_from_slot(130_600, 129_600, 1000), KesPeriod(1));
     }
 
     #[test]
@@ -385,7 +433,7 @@ mod tests {
 
     #[test]
     fn test_kes_constants() {
-        assert_eq!(KES_MAX_PERIOD_SUM6, 63);
+        assert_eq!(KES_MAX_PERIOD_SUM6, KesPeriod(63));
         assert_eq!(KES_SLOTS_PER_PERIOD_MAINNET, 129_600);
     }
 }

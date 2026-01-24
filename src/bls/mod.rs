@@ -1890,8 +1890,8 @@ mod tests {
 
         // Test signing and verification
         let msg = b"Test message";
-        let sig = Bls12381::sign(msg, &sk, &()).unwrap();
-        assert!(Bls12381::verify(msg, &sig, &vk, &()).is_ok());
+        let sig = Bls12381::sign(msg, &sk).unwrap();
+        assert!(Bls12381::verify(msg, &sig, &vk).is_ok());
 
         // Test serialization roundtrips
         let vk_bytes = Bls12381::serialize_verification_key(&vk);

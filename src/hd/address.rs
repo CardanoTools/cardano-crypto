@@ -207,41 +207,42 @@ pub fn hash_verification_key(vk_bytes: &[u8; 32]) -> [u8; 28] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::key::hash::KeyHash;
 
     #[test]
     fn test_base_address() {
-        let payment = [1u8; 28];
-        let stake = [2u8; 28];
+        let payment = KeyHash::from_bytes([1u8; 28]);
+        let stake = KeyHash::from_bytes([2u8; 28]);
         let addr = Address::base(Network::Mainnet, payment, stake);
-        
+
         let bytes = addr.to_bytes();
         assert_eq!(bytes.len(), 57);
         assert_eq!(bytes[0] & 0b11110000, 0);
-        
+
         let decoded = Address::from_bytes(&bytes).unwrap();
         assert_eq!(addr, decoded);
     }
 
     #[test]
     fn test_enterprise_address() {
-        let payment = [3u8; 28];
+        let payment = KeyHash::from_bytes([3u8; 28]);
         let addr = Address::enterprise(Network::Testnet, payment);
-        
+
         let bytes = addr.to_bytes();
         assert_eq!(bytes.len(), 29);
-        
+
         let decoded = Address::from_bytes(&bytes).unwrap();
         assert_eq!(addr, decoded);
     }
 
     #[test]
     fn test_reward_address() {
-        let stake = [4u8; 28];
+        let stake = KeyHash::from_bytes([4u8; 28]);
         let addr = Address::reward(Network::Mainnet, stake);
-        
+
         let bytes = addr.to_bytes();
         assert_eq!(bytes.len(), 29);
-        
+
         let decoded = Address::from_bytes(&bytes).unwrap();
         assert_eq!(addr, decoded);
     }

@@ -4,12 +4,12 @@
 //! pool registration certificates on the Cardano blockchain.
 
 use cardano_crypto::key::hash::{
-    hash_pool_verification_key, hash_stake_verification_key, hash_vrf_verification_key,
-    PoolKeyHash, StakeKeyHash,
+    hash_pool_verification_key, hash_stake_verification_key, PoolKeyHash, StakeKeyHash,
 };
 use cardano_crypto::key::stake_pool::{
     PoolMetadata, Rational, RewardAccount, StakePoolParams, StakePoolRelay, VrfKeyHash,
 };
+use cardano_crypto::hash::{Blake2b256, HashAlgorithm};
 use std::collections::BTreeSet;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -24,8 +24,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Pool ID (cold key hash): {}", pool_id);
 
     // VRF key (for leader election)
+    // VRF key hash uses Blake2b-256 (32 bytes) for stake pool registration
     let vrf_vk = [2u8; 32];
-    let vrf_hash: VrfKeyHash = hash_vrf_verification_key(&vrf_vk).to_bytes();
+    let vrf_hash_vec = Blake2b256::hash(&vrf_vk);
+    let vrf_hash: VrfKeyHash = {
+        let mut arr = [0u8; 32];
+        arr.copy_from_slice(&vrf_hash_vec);
+        arr
+    };
     println!("VRF key hash: {}", hex::encode(&vrf_hash));
 
     // Step 2: Define economic parameters
@@ -76,6 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 5: Create pool parameters
     println!("\n--- Step 5: Pool Registration Parameters ---");
 
+    let margin_for_display = margin.clone();
     let mut params = StakePoolParams::new(
         pool_id,
         vrf_hash,
@@ -165,7 +172,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "│ Cost:       {:>10} ADA/epoch             │",
         cost / 1_000_000
     );
-    println!("│ Margin:     {:>10.2}%                     │", margin.to_f64() * 100.0);
+    println!("│ Margin:     {:>10.2}%                     │", margin_for_display.to_f64() * 100.0);
     println!("│ Owners:     {:>10}                        │", params.owners.len());
     println!("│ Relays:     {:>10}                        │", params.relays.len());
     println!("│ Metadata:   {:>10}                        │", if params.metadata.is_some() { "Yes" } else { "No" });

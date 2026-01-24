@@ -32,8 +32,9 @@ fn main() {
 
     let kes_seed = [99u8; 32]; // In production: Use secure random seed
     let (kes_signing_key, kes_verification_key) = Sum6Kes::keygen(&kes_seed).unwrap();
+    let kes_vk_bytes = Sum6Kes::raw_serialize_verification_key_kes(&kes_verification_key);
 
-    println!("   KES verification key hash: {:02x?}...", &kes_verification_key.as_bytes()[..8]);
+    println!("   KES verification key hash: {:02x?}...", &kes_vk_bytes[..8]);
     println!("   KES key total periods: {}", Sum6Kes::total_periods());
     println!();
 
@@ -146,13 +147,14 @@ fn main() {
     println!("9. Signing block with KES key (period {})...", current_period.0);
 
     let block_hash = b"block_header_hash_12345";
-    let kes_signature = Sum6Kes::sign(&kes_signing_key, current_period.0, block_hash).unwrap();
+    let kes_signature = Sum6Kes::sign_kes(&(), u64::from(current_period.value()), block_hash, &kes_signing_key).unwrap();
 
+    let sig_bytes = Sum6Kes::raw_serialize_signature_kes(&kes_signature);
     println!("   Block signed successfully");
-    println!("   Signature size: {} bytes", kes_signature.to_bytes().len());
+    println!("   Signature size: {} bytes", sig_bytes.len());
 
     // Verify block signature
-    match Sum6Kes::verify(&kes_verification_key, current_period.0, block_hash, &kes_signature) {
+    match Sum6Kes::verify_kes(&(), &kes_verification_key, u64::from(current_period.value()), block_hash, &kes_signature) {
         Ok(()) => println!("   ✓ Block signature verified"),
         Err(e) => println!("   ✗ Block verification failed: {:?}", e),
     }

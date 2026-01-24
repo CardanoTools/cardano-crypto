@@ -149,6 +149,18 @@ required-features = ["secp256k1", "bls"]
 name = "hd_wallet"
 required-features = ["hd"]
 
+[[example]]
+name = "bls_multisig"
+required-features = ["bls"]
+
+[[example]]
+name = "operational_cert"
+required-features = ["kes", "dsign", "key"]
+
+[[example]]
+name = "stake_pool_registration"
+required-features = ["key", "vrf"]
+
 # ============================================================================
 # Build Optimization Profiles
 # ============================================================================

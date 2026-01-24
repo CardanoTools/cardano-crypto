@@ -5,18 +5,19 @@
 //!
 //! # Test Categories
 //!
-//! 1. **Basic Type Encoding** - Integers, bytes, text strings
-//! 2. **Variable-Length Encoding** - CBOR's compact integer encoding
-//! 3. **Collection Encoding** - Arrays and maps (definite and indefinite)
-//! 4. **Cardano-Specific** - encodeBytes/decodeBytes with length prefix
+//! 1. **Basic Type Encoding** - Byte strings with length prefixes
+//! 2. **Cardano-Specific** - encodeBytes/decodeBytes with length prefix
+//! 3. **ToCbor/FromCbor Traits** - Trait implementations for common types
 //!
 //! # Reference
 //!
 //! - RFC 8949: Concise Binary Object Representation (CBOR)
 //! - Cardano.Binary from cardano-base
 
-use cardano_crypto::cbor::{decode_bytes, encode_bytes, Cbor, CborBuilder, FromCbor, ToCbor};
-use cardano_crypto::common::Result;
+use cardano_crypto::cbor::{
+    decode_bytes, decode_signature, decode_verification_key, encode_bytes, encode_signature,
+    encode_verification_key, CborError, FromCbor, ToCbor,
+};
 
 // ============================================================================
 // Helper Functions
@@ -34,314 +35,59 @@ fn hex_encode(bytes: &[u8]) -> String {
 }
 
 // ============================================================================
-// CBOR Integer Encoding Tests
-// ============================================================================
-
-/// Test CBOR unsigned integer encoding (major type 0)
-#[test]
-fn test_cbor_unsigned_integer_encoding() {
-    // Small integers (0-23) encode as single byte
-    let test_cases: &[(u64, &str)] = &[
-        (0, "00"),
-        (1, "01"),
-        (10, "0a"),
-        (23, "17"),
-        // 1-byte additional info (24-255)
-        (24, "1818"),
-        (100, "1864"),
-        (255, "18ff"),
-        // 2-byte additional info (256-65535)
-        (256, "190100"),
-        (1000, "1903e8"),
-        (65535, "19ffff"),
-        // 4-byte additional info (65536-4294967295)
-        (65536, "1a00010000"),
-        (1000000, "1a000f4240"),
-        // 8-byte additional info
-        (1000000000000u64, "1b000000e8d4a51000"),
-    ];
-
-    for (value, expected_hex) in test_cases {
-        let mut builder = CborBuilder::new();
-        builder.write_unsigned(*value);
-        let encoded = builder.build();
-        assert_eq!(
-            hex_encode(&encoded),
-            *expected_hex,
-            "Encoding of {} failed",
-            value
-        );
-    }
-}
-
-/// Test CBOR negative integer encoding (major type 1)
-#[test]
-fn test_cbor_negative_integer_encoding() {
-    // CBOR negative integers: encode -(n+1)
-    let test_cases: &[(i64, &str)] = &[
-        (-1, "20"),
-        (-10, "29"),
-        (-24, "37"),
-        (-25, "3818"),
-        (-100, "3863"),
-        (-1000, "3903e7"),
-    ];
-
-    for (value, expected_hex) in test_cases {
-        let mut builder = CborBuilder::new();
-        builder.write_negative(*value);
-        let encoded = builder.build();
-        assert_eq!(
-            hex_encode(&encoded),
-            *expected_hex,
-            "Encoding of {} failed",
-            value
-        );
-    }
-}
-
-// ============================================================================
-// CBOR Bytes Encoding Tests
+// CBOR Byte String Encoding Tests (Major Type 2)
 // ============================================================================
 
 /// Test CBOR byte string encoding (major type 2)
 #[test]
-fn test_cbor_bytes_encoding() {
-    let test_cases: &[(&[u8], &str)] = &[
-        // Empty bytes
-        (&[], "40"),
-        // Single byte
-        (&[0x01], "4101"),
-        // Multiple bytes
-        (&[0x01, 0x02, 0x03, 0x04], "4401020304"),
-        // 23 bytes (max single-byte length)
-        (
-            &[0xAA; 23],
-            "57aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        ),
-        // 24 bytes (requires 1-byte length)
-        (
-            &[0xBB; 24],
-            "5818bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        ),
-    ];
+fn test_cbor_byte_string_encoding() {
+    // Empty byte string
+    let empty = encode_bytes(&[]);
+    assert_eq!(hex_encode(&empty), "40");
 
-    for (bytes, expected_hex) in test_cases {
-        let mut builder = CborBuilder::new();
-        builder.write_bytes(bytes);
-        let encoded = builder.build();
-        assert_eq!(
-            hex_encode(&encoded),
-            *expected_hex,
-            "Encoding of {:?} failed",
-            bytes
-        );
-    }
+    // Short byte strings (0-23 bytes) - length in header
+    let bytes_4 = encode_bytes(&[1, 2, 3, 4]);
+    assert_eq!(hex_encode(&bytes_4), "4401020304");
+
+    // 23 bytes - max short form
+    let bytes_23 = encode_bytes(&vec![0xAB; 23]);
+    assert_eq!(bytes_23[0], 0x57); // 0x40 + 23
+
+    // 24 bytes - requires 1-byte length
+    let bytes_24 = encode_bytes(&vec![0xCD; 24]);
+    assert_eq!(bytes_24[0], 0x58); // 0x58 = major type 2 + additional info 24
+    assert_eq!(bytes_24[1], 24); // length byte
+
+    // 256 bytes - requires 2-byte length
+    let bytes_256 = encode_bytes(&vec![0xEF; 256]);
+    assert_eq!(bytes_256[0], 0x59); // 0x59 = major type 2 + additional info 25
+    assert_eq!(bytes_256[1], 0x01); // length high byte
+    assert_eq!(bytes_256[2], 0x00); // length low byte
 }
 
-/// Test CBOR indefinite byte string encoding
+/// Test CBOR byte string decoding
 #[test]
-fn test_cbor_indefinite_bytes_encoding() {
-    let mut builder = CborBuilder::new();
-    builder.begin_bytes();
-    builder.write_bytes(&[0x01, 0x02]);
-    builder.write_bytes(&[0x03, 0x04]);
-    builder.end();
-    let encoded = builder.build();
+fn test_cbor_byte_string_decoding() -> std::result::Result<(), CborError> {
+    // Empty byte string
+    let decoded = decode_bytes(&hex_decode("40"))?;
+    assert!(decoded.is_empty());
 
-    // 5f = indefinite bytes, 42 = 2-byte string, 42 = 2-byte string, ff = break
-    assert_eq!(hex_encode(&encoded), "5f42010242030fff");
+    // Short byte string
+    let decoded = decode_bytes(&hex_decode("4401020304"))?;
+    assert_eq!(decoded, vec![1, 2, 3, 4]);
+
+    // 24-byte string with 1-byte length
+    let mut cbor = vec![0x58, 24];
+    cbor.extend_from_slice(&vec![0xAB; 24]);
+    let decoded = decode_bytes(&cbor)?;
+    assert_eq!(decoded, vec![0xAB; 24]);
+
+    Ok(())
 }
 
-// ============================================================================
-// CBOR Text String Encoding Tests
-// ============================================================================
-
-/// Test CBOR text string encoding (major type 3)
+/// Test encode/decode roundtrip
 #[test]
-fn test_cbor_text_encoding() {
-    let test_cases: &[(&str, &str)] = &[
-        ("", "60"),
-        ("a", "6161"),
-        ("IETF", "6449455446"),
-        ("\"\\", "62225c"),
-        // UTF-8: ü
-        ("\u{00fc}", "62c3bc"),
-        // UTF-8: 水
-        ("\u{6c34}", "63e6b0b4"),
-    ];
-
-    for (text, expected_hex) in test_cases {
-        let mut builder = CborBuilder::new();
-        builder.write_text(text);
-        let encoded = builder.build();
-        assert_eq!(
-            hex_encode(&encoded),
-            *expected_hex,
-            "Encoding of {:?} failed",
-            text
-        );
-    }
-}
-
-// ============================================================================
-// CBOR Array Encoding Tests
-// ============================================================================
-
-/// Test CBOR definite-length array encoding (major type 4)
-#[test]
-fn test_cbor_array_encoding() {
-    // Empty array
-    let mut builder = CborBuilder::new();
-    builder.begin_array(Some(0));
-    let encoded = builder.build();
-    assert_eq!(hex_encode(&encoded), "80");
-
-    // [1, 2, 3]
-    let mut builder = CborBuilder::new();
-    builder.begin_array(Some(3));
-    builder.write_unsigned(1);
-    builder.write_unsigned(2);
-    builder.write_unsigned(3);
-    let encoded = builder.build();
-    assert_eq!(hex_encode(&encoded), "83010203");
-
-    // [1, [2, 3], [4, 5]]
-    let mut builder = CborBuilder::new();
-    builder.begin_array(Some(3));
-    builder.write_unsigned(1);
-    builder.begin_array(Some(2));
-    builder.write_unsigned(2);
-    builder.write_unsigned(3);
-    builder.begin_array(Some(2));
-    builder.write_unsigned(4);
-    builder.write_unsigned(5);
-    let encoded = builder.build();
-    assert_eq!(hex_encode(&encoded), "8301820203820405");
-}
-
-/// Test CBOR indefinite-length array encoding
-#[test]
-fn test_cbor_indefinite_array_encoding() {
-    let mut builder = CborBuilder::new();
-    builder.begin_array(None); // indefinite
-    builder.write_unsigned(1);
-    builder.write_unsigned(2);
-    builder.write_unsigned(3);
-    builder.end(); // break
-    let encoded = builder.build();
-
-    // 9f = indefinite array, 01 02 03 = items, ff = break
-    assert_eq!(hex_encode(&encoded), "9f010203ff");
-}
-
-// ============================================================================
-// CBOR Map Encoding Tests
-// ============================================================================
-
-/// Test CBOR map encoding (major type 5)
-#[test]
-fn test_cbor_map_encoding() {
-    // Empty map
-    let mut builder = CborBuilder::new();
-    builder.begin_map(Some(0));
-    let encoded = builder.build();
-    assert_eq!(hex_encode(&encoded), "a0");
-
-    // {1: 2, 3: 4}
-    let mut builder = CborBuilder::new();
-    builder.begin_map(Some(2));
-    builder.write_unsigned(1);
-    builder.write_unsigned(2);
-    builder.write_unsigned(3);
-    builder.write_unsigned(4);
-    let encoded = builder.build();
-    assert_eq!(hex_encode(&encoded), "a201020304");
-}
-
-// ============================================================================
-// CBOR Tags Tests
-// ============================================================================
-
-/// Test CBOR tag encoding (major type 6)
-#[test]
-fn test_cbor_tag_encoding() {
-    // Tag 0 (standard date/time string)
-    let mut builder = CborBuilder::new();
-    builder.write_tag(0);
-    builder.write_text("2013-03-21T20:04:00Z");
-    let encoded = builder.build();
-    assert_eq!(
-        hex_encode(&encoded),
-        "c074323031332d30332d32315432303a30343a30305a"
-    );
-
-    // Tag 1 (epoch-based date/time)
-    let mut builder = CborBuilder::new();
-    builder.write_tag(1);
-    builder.write_unsigned(1363896240);
-    let encoded = builder.build();
-    assert_eq!(hex_encode(&encoded), "c11a514b67b0");
-}
-
-// ============================================================================
-// CBOR Special Values Tests
-// ============================================================================
-
-/// Test CBOR special value encoding (major type 7)
-#[test]
-fn test_cbor_special_values() {
-    // false
-    let mut builder = CborBuilder::new();
-    builder.write_bool(false);
-    assert_eq!(hex_encode(&builder.build()), "f4");
-
-    // true
-    let mut builder = CborBuilder::new();
-    builder.write_bool(true);
-    assert_eq!(hex_encode(&builder.build()), "f5");
-
-    // null
-    let mut builder = CborBuilder::new();
-    builder.write_null();
-    assert_eq!(hex_encode(&builder.build()), "f6");
-}
-
-// ============================================================================
-// Cardano-Specific encodeBytes/decodeBytes Tests
-// ============================================================================
-
-/// Test Cardano's encodeBytes format (CBOR bytes with leading length tag)
-#[test]
-fn test_cardano_encode_bytes() {
-    // Empty bytes
-    let encoded = encode_bytes(&[]);
-    assert_eq!(
-        hex_encode(&encoded),
-        "40",
-        "Empty bytes should encode as 40"
-    );
-
-    // Small bytes (< 24)
-    let encoded = encode_bytes(&[0x01, 0x02, 0x03]);
-    assert_eq!(hex_encode(&encoded), "43010203");
-
-    // 24 bytes (1-byte length prefix)
-    let data: Vec<u8> = (0..24).collect();
-    let encoded = encode_bytes(&data);
-    // 58 18 = bytes with 1-byte length (24)
-    assert!(encoded.starts_with(&[0x58, 0x18]));
-
-    // 256 bytes (2-byte length prefix)
-    let data: Vec<u8> = (0..=255).collect();
-    let encoded = encode_bytes(&data);
-    // 59 01 00 = bytes with 2-byte length (256)
-    assert!(encoded.starts_with(&[0x59, 0x01, 0x00]));
-}
-
-/// Test Cardano's decodeBytes roundtrip
-#[test]
-fn test_cardano_encode_decode_roundtrip() -> Result<()> {
+fn test_encode_decode_roundtrip() -> std::result::Result<(), CborError> {
     let test_cases: &[&[u8]] = &[
         &[],
         &[0x00],
@@ -354,157 +100,186 @@ fn test_cardano_encode_decode_roundtrip() -> Result<()> {
 
     for original in test_cases {
         let encoded = encode_bytes(original);
-        let (decoded, consumed) = decode_bytes(&encoded)?;
+        let decoded = decode_bytes(&encoded)?;
         assert_eq!(decoded, *original, "Roundtrip failed for {:?}", original);
-        assert_eq!(consumed, encoded.len(), "Should consume all bytes");
     }
 
     Ok(())
 }
 
 // ============================================================================
-// CBOR Decoding Tests
+// Cardano-Specific Encoding Tests
 // ============================================================================
 
-/// Test decoding of various CBOR values
+/// Test verification key encoding (32 bytes - Ed25519)
 #[test]
-fn test_cbor_decoding() -> Result<()> {
-    // Decode unsigned integers
-    let test_cases: &[(&str, u64)] = &[
-        ("00", 0),
-        ("01", 1),
-        ("17", 23),
-        ("1818", 24),
-        ("1903e8", 1000),
-        ("1a000f4240", 1000000),
-    ];
+fn test_verification_key_encoding() -> std::result::Result<(), CborError> {
+    let vk = [0x42u8; 32];
+    let encoded = encode_verification_key(&vk);
 
-    for (hex, expected) in test_cases {
-        let data = hex_decode(hex);
-        let cbor = Cbor::from_slice(&data)?;
-        if let Cbor::Unsigned(n) = cbor {
-            assert_eq!(n, *expected, "Decoding {} failed", hex);
-        } else {
-            panic!("Expected unsigned integer for {}", hex);
-        }
-    }
-
-    Ok(())
-}
-
-/// Test decoding of CBOR byte strings
-#[test]
-fn test_cbor_bytes_decoding() -> Result<()> {
-    let test_cases: &[(&str, &[u8])] = &[
-        ("40", &[]),
-        ("4101", &[0x01]),
-        ("4401020304", &[0x01, 0x02, 0x03, 0x04]),
-    ];
-
-    for (hex, expected) in test_cases {
-        let data = hex_decode(hex);
-        let cbor = Cbor::from_slice(&data)?;
-        if let Cbor::Bytes(bytes) = cbor {
-            assert_eq!(bytes.as_ref(), *expected, "Decoding {} failed", hex);
-        } else {
-            panic!("Expected bytes for {}", hex);
-        }
-    }
-
-    Ok(())
-}
-
-// ============================================================================
-// Size Expression Tests (Cardano compatibility)
-// ============================================================================
-
-/// Test that size expressions match Cardano's encodedSizeExpr
-#[test]
-fn test_cbor_size_expressions() {
-    // Test size calculation for various data types
-    // Cardano uses these for pre-calculating transaction sizes
-
-    // Empty bytes: 1 byte (0x40)
-    assert_eq!(encode_bytes(&[]).len(), 1);
-
-    // 23 bytes: 1 + 23 = 24 bytes
-    assert_eq!(encode_bytes(&[0u8; 23]).len(), 24);
-
-    // 24 bytes: 2 + 24 = 26 bytes (needs 1-byte length)
-    assert_eq!(encode_bytes(&[0u8; 24]).len(), 26);
-
-    // 255 bytes: 2 + 255 = 257 bytes
-    assert_eq!(encode_bytes(&[0u8; 255]).len(), 257);
-
-    // 256 bytes: 3 + 256 = 259 bytes (needs 2-byte length)
-    assert_eq!(encode_bytes(&[0u8; 256]).len(), 259);
-}
-
-// ============================================================================
-// Real-World Cardano Data Tests
-// ============================================================================
-
-/// Test encoding of a structure similar to Cardano transaction hash
-#[test]
-fn test_cardano_tx_hash_encoding() {
-    // Transaction hash is 32 bytes, encoded as CBOR bytes
-    let tx_hash = [0x42u8; 32];
-    let encoded = encode_bytes(&tx_hash);
-
-    // Should be: 58 20 (bytes with 1-byte length 32) + 32 bytes
-    assert_eq!(encoded.len(), 34);
-    assert_eq!(encoded[0], 0x58); // bytes, 1-byte length follows
-    assert_eq!(encoded[1], 0x20); // length = 32
-    assert_eq!(&encoded[2..], &tx_hash[..]);
-}
-
-/// Test encoding of a structure similar to Cardano block header hash
-#[test]
-fn test_cardano_block_hash_encoding() {
-    // Block header hash is also 32 bytes
-    let block_hash = hex_decode("5c196e7394ace0449ba5a51c919369699b13896e97432894b4f0354dce8670b6");
-    let encoded = encode_bytes(&block_hash);
-
+    // Should be 0x58 (major type 2, 1-byte length) + 0x20 (32) + 32 bytes
     assert_eq!(encoded.len(), 34);
     assert_eq!(encoded[0], 0x58);
     assert_eq!(encoded[1], 0x20);
+    assert_eq!(&encoded[2..], &vk);
+
+    // Decode and verify
+    let decoded = decode_verification_key(&encoded)?;
+    assert_eq!(&decoded[..], &vk[..]);
+
+    Ok(())
+}
+
+/// Test signature encoding (64 bytes - Ed25519)
+#[test]
+fn test_signature_encoding() -> std::result::Result<(), CborError> {
+    let sig = [0x99u8; 64];
+    let encoded = encode_signature(&sig);
+
+    // Should be 0x58 (major type 2, 1-byte length) + 0x40 (64) + 64 bytes
+    assert_eq!(encoded.len(), 66);
+    assert_eq!(encoded[0], 0x58);
+    assert_eq!(encoded[1], 0x40);
+    assert_eq!(&encoded[2..], &sig);
+
+    // Decode and verify
+    let decoded = decode_signature(&encoded)?;
+    assert_eq!(&decoded[..], &sig[..]);
+
+    Ok(())
 }
 
 // ============================================================================
 // ToCbor/FromCbor Trait Tests
 // ============================================================================
 
-/// Test ToCbor trait implementation for built-in types
+/// Test ToCbor trait implementation for byte arrays
 #[test]
 fn test_to_cbor_trait() {
-    // u64
-    let value: u64 = 1000;
-    let encoded = value.to_cbor_bytes();
-    assert_eq!(hex_encode(&encoded), "1903e8");
+    // [u8; 32]
+    let bytes: [u8; 32] = [1u8; 32];
+    let encoded = bytes.to_cbor();
+    // Should be: header (0x58, 0x20 = 32) + 32 bytes
+    assert_eq!(encoded.len(), 2 + 32);
+    assert_eq!(encoded[0], 0x58); // Major type 2, 1-byte length
+    assert_eq!(encoded[1], 0x20); // Length = 32
 
     // Vec<u8>
     let bytes: Vec<u8> = vec![1, 2, 3, 4];
-    let encoded = bytes.to_cbor_bytes();
+    let encoded = bytes.to_cbor();
     assert_eq!(hex_encode(&encoded), "4401020304");
-
-    // bool
-    let b = true;
-    let encoded = b.to_cbor_bytes();
-    assert_eq!(hex_encode(&encoded), "f5");
 }
 
 /// Test FromCbor trait implementation
 #[test]
-fn test_from_cbor_trait() -> Result<()> {
-    // u64
-    let data = hex_decode("1903e8");
-    let (value, _): (u64, _) = u64::from_cbor_bytes(&data)?;
-    assert_eq!(value, 1000);
-
+fn test_from_cbor_trait() -> std::result::Result<(), CborError> {
     // Vec<u8>
     let data = hex_decode("4401020304");
-    let (bytes, _): (Vec<u8>, _) = Vec::<u8>::from_cbor_bytes(&data)?;
+    let bytes = Vec::<u8>::from_cbor(&data)?;
     assert_eq!(bytes, vec![1, 2, 3, 4]);
+
+    // [u8; 32]
+    let mut cbor_encoded = vec![0x58, 0x20]; // Major type 2, length 32
+    cbor_encoded.extend_from_slice(&[0xABu8; 32]);
+    let decoded = <[u8; 32]>::from_cbor(&cbor_encoded)?;
+    assert_eq!(decoded, [0xAB; 32]);
+
+    Ok(())
+}
+
+// ============================================================================
+// Error Handling Tests
+// ============================================================================
+
+/// Test decoding of invalid CBOR
+#[test]
+fn test_invalid_cbor_decoding() {
+    // Empty input
+    assert!(decode_bytes(&[]).is_err());
+
+    // Wrong major type (integer instead of bytes)
+    assert!(decode_bytes(&[0x00]).is_err());
+
+    // Truncated data
+    assert!(decode_bytes(&[0x44, 0x01, 0x02]).is_err()); // Claims 4 bytes, has 2
+
+    // Invalid length header
+    assert!(decode_bytes(&[0x58]).is_err()); // 1-byte length missing
+}
+
+/// Test decoding with wrong length for fixed-size types
+#[test]
+fn test_wrong_length_decoding() {
+    // 31 bytes when 32 expected
+    let mut cbor = vec![0x58, 31];
+    cbor.extend_from_slice(&[0xAB; 31]);
+    assert!(<[u8; 32]>::from_cbor(&cbor).is_err());
+
+    // 33 bytes when 32 expected
+    let mut cbor = vec![0x58, 33];
+    cbor.extend_from_slice(&[0xAB; 33]);
+    assert!(<[u8; 32]>::from_cbor(&cbor).is_err());
+}
+
+// ============================================================================
+// Edge Case Tests
+// ============================================================================
+
+/// Test encoding/decoding of maximum short-form length (23 bytes)
+#[test]
+fn test_short_form_boundary() -> std::result::Result<(), CborError> {
+    // 23 bytes - last value that fits in short form
+    let data_23 = vec![0xFFu8; 23];
+    let encoded_23 = encode_bytes(&data_23);
+    assert_eq!(encoded_23[0], 0x40 + 23); // Short form header
+    let decoded_23 = decode_bytes(&encoded_23)?;
+    assert_eq!(decoded_23, data_23);
+
+    // 24 bytes - first value requiring 1-byte length
+    let data_24 = vec![0xFFu8; 24];
+    let encoded_24 = encode_bytes(&data_24);
+    assert_eq!(encoded_24[0], 0x58); // 1-byte length header
+    assert_eq!(encoded_24[1], 24);
+    let decoded_24 = decode_bytes(&encoded_24)?;
+    assert_eq!(decoded_24, data_24);
+
+    Ok(())
+}
+
+/// Test encoding/decoding of 2-byte length boundary (255-256 bytes)
+#[test]
+fn test_two_byte_length_boundary() -> std::result::Result<(), CborError> {
+    // 255 bytes - last value that fits in 1-byte length
+    let data_255 = vec![0xAAu8; 255];
+    let encoded_255 = encode_bytes(&data_255);
+    assert_eq!(encoded_255[0], 0x58); // 1-byte length header
+    assert_eq!(encoded_255[1], 255);
+    let decoded_255 = decode_bytes(&encoded_255)?;
+    assert_eq!(decoded_255, data_255);
+
+    // 256 bytes - first value requiring 2-byte length
+    let data_256 = vec![0xBBu8; 256];
+    let encoded_256 = encode_bytes(&data_256);
+    assert_eq!(encoded_256[0], 0x59); // 2-byte length header
+    assert_eq!(encoded_256[1], 0x01);
+    assert_eq!(encoded_256[2], 0x00);
+    let decoded_256 = decode_bytes(&encoded_256)?;
+    assert_eq!(decoded_256, data_256);
+
+    Ok(())
+}
+
+/// Test all-zeros and all-ones patterns
+#[test]
+fn test_bit_patterns() -> std::result::Result<(), CborError> {
+    let zeros = vec![0x00u8; 100];
+    let ones = vec![0xFFu8; 100];
+
+    let decoded_zeros = decode_bytes(&encode_bytes(&zeros))?;
+    assert_eq!(decoded_zeros, zeros);
+
+    let decoded_ones = decode_bytes(&encode_bytes(&ones))?;
+    assert_eq!(decoded_ones, ones);
 
     Ok(())
 }
