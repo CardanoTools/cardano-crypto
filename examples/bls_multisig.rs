@@ -14,7 +14,7 @@ fn main() {
 #[cfg(feature = "bls")]
 fn main() {
     use cardano_crypto::bls::{Bls12381, BlsSecretKey};
-    use cardano_crypto::common::traits::{DsignAggregatable, DsignAlgorithm};
+    use cardano_crypto::common::traits::DsignAggregatable;
 
     println!("=== BLS Multi-Signature Example ===\n");
 
@@ -40,7 +40,6 @@ fn main() {
     ];
 
     let mut keys = Vec::new();
-    let mut pops = Vec::new();
 
     for (name, seed) in &members {
         let sk = BlsSecretKey::from_bytes(seed).unwrap();
@@ -174,10 +173,10 @@ fn main() {
     let wrong_message = b"VOTE: Reject Proposal #42";
     match bls_verify(&aggregate_key, wrong_message, &aggregate_signature) {
         Ok(()) => {
-            println!("   ✗ SECURITY FAILURE - Wrong message verified!"),
+            println!("   ✗ SECURITY FAILURE - Wrong message verified!");
         }
         Err(_) => {
-            println!("   ✓ Wrong message correctly rejected"),
+            println!("   ✓ Wrong message correctly rejected");
         }
     }
     println!();
