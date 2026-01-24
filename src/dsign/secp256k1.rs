@@ -39,9 +39,6 @@ use k256::{
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-#[cfg(feature = "alloc")]
-use alloc::vec::Vec;
-
 // ============================================================================
 // ECDSA Types
 // ============================================================================
@@ -67,8 +64,7 @@ impl Secp256k1EcdsaSigningKey {
         let mut key_bytes = [0u8; Self::SIZE];
         key_bytes.copy_from_slice(bytes);
         // Validate that the key is valid
-        SecretKey::from_bytes((&key_bytes).into())
-            .map_err(|_| CryptoError::InvalidPrivateKey)?;
+        SecretKey::from_bytes((&key_bytes).into()).map_err(|_| CryptoError::InvalidPrivateKey)?;
         Ok(Self { bytes: key_bytes })
     }
 
@@ -79,8 +75,7 @@ impl Secp256k1EcdsaSigningKey {
 
     /// Converts to the k256 signing key.
     fn to_k256_signing_key(&self) -> K256SigningKey {
-        K256SigningKey::from_bytes((&self.bytes).into())
-            .expect("validated in constructor")
+        K256SigningKey::from_bytes((&self.bytes).into()).expect("validated in constructor")
     }
 }
 
@@ -113,8 +108,7 @@ impl Secp256k1EcdsaVerificationKey {
         let mut key_bytes = [0u8; Self::SIZE];
         key_bytes.copy_from_slice(bytes);
         // Validate that the key is valid
-        K256VerifyingKey::from_sec1_bytes(&key_bytes)
-            .map_err(|_| CryptoError::InvalidPublicKey)?;
+        K256VerifyingKey::from_sec1_bytes(&key_bytes).map_err(|_| CryptoError::InvalidPublicKey)?;
         Ok(Self { bytes: key_bytes })
     }
 
@@ -125,8 +119,7 @@ impl Secp256k1EcdsaVerificationKey {
 
     /// Converts to the k256 verifying key.
     fn to_k256_verifying_key(&self) -> K256VerifyingKey {
-        K256VerifyingKey::from_sec1_bytes(&self.bytes)
-            .expect("validated in constructor")
+        K256VerifyingKey::from_sec1_bytes(&self.bytes).expect("validated in constructor")
     }
 }
 
@@ -159,8 +152,7 @@ impl Secp256k1EcdsaSignature {
         let mut sig_bytes = [0u8; Self::SIZE];
         sig_bytes.copy_from_slice(bytes);
         // Validate that the signature is valid
-        K256EcdsaSignature::from_slice(&sig_bytes)
-            .map_err(|_| CryptoError::InvalidSignature)?;
+        K256EcdsaSignature::from_slice(&sig_bytes).map_err(|_| CryptoError::InvalidSignature)?;
         Ok(Self { bytes: sig_bytes })
     }
 
@@ -171,8 +163,7 @@ impl Secp256k1EcdsaSignature {
 
     /// Converts to the k256 signature.
     fn to_k256_signature(&self) -> K256EcdsaSignature {
-        K256EcdsaSignature::from_slice(&self.bytes)
-            .expect("validated in constructor")
+        K256EcdsaSignature::from_slice(&self.bytes).expect("validated in constructor")
     }
 }
 
@@ -221,8 +212,7 @@ impl Secp256k1SchnorrSigningKey {
 
     /// Converts to the k256 schnorr signing key.
     fn to_k256_signing_key(&self) -> K256SchnorrSigningKey {
-        K256SchnorrSigningKey::from_bytes(&self.bytes)
-            .expect("validated in constructor")
+        K256SchnorrSigningKey::from_bytes(&self.bytes).expect("validated in constructor")
     }
 }
 
@@ -267,8 +257,7 @@ impl Secp256k1SchnorrVerificationKey {
 
     /// Converts to the k256 schnorr verifying key.
     fn to_k256_verifying_key(&self) -> K256SchnorrVerifyingKey {
-        K256SchnorrVerifyingKey::from_bytes(&self.bytes)
-            .expect("validated in constructor")
+        K256SchnorrVerifyingKey::from_bytes(&self.bytes).expect("validated in constructor")
     }
 }
 
@@ -313,8 +302,7 @@ impl Secp256k1SchnorrSignature {
 
     /// Converts to the k256 schnorr signature.
     fn to_k256_signature(&self) -> K256SchnorrSignature {
-        K256SchnorrSignature::try_from(&self.bytes[..])
-            .expect("validated in constructor")
+        K256SchnorrSignature::try_from(&self.bytes[..]).expect("validated in constructor")
     }
 }
 
@@ -352,8 +340,7 @@ impl Secp256k1Ecdsa {
 
     /// Generates a signing key from a 32-byte seed.
     pub fn gen_key(seed: &[u8; 32]) -> Secp256k1EcdsaSigningKey {
-        Secp256k1EcdsaSigningKey::from_bytes(seed)
-            .expect("32-byte seed is valid")
+        Secp256k1EcdsaSigningKey::from_bytes(seed).expect("32-byte seed is valid")
     }
 
     /// Derives the verification key from a signing key.
@@ -371,10 +358,7 @@ impl Secp256k1Ecdsa {
     /// Signs a message using the signing key.
     ///
     /// The message is hashed with SHA-256 before signing (standard ECDSA).
-    pub fn sign(
-        signing_key: &Secp256k1EcdsaSigningKey,
-        message: &[u8],
-    ) -> Secp256k1EcdsaSignature {
+    pub fn sign(signing_key: &Secp256k1EcdsaSigningKey, message: &[u8]) -> Secp256k1EcdsaSignature {
         let k256_sk = signing_key.to_k256_signing_key();
         let signature: K256EcdsaSignature = k256_sk.sign(message);
         let mut bytes = [0u8; 64];
@@ -448,8 +432,7 @@ impl Secp256k1Schnorr {
 
     /// Generates a signing key from a 32-byte seed.
     pub fn gen_key(seed: &[u8; 32]) -> Secp256k1SchnorrSigningKey {
-        Secp256k1SchnorrSigningKey::from_bytes(seed)
-            .expect("32-byte seed is valid")
+        Secp256k1SchnorrSigningKey::from_bytes(seed).expect("32-byte seed is valid")
     }
 
     /// Derives the verification key from a signing key.
@@ -459,7 +442,9 @@ impl Secp256k1Schnorr {
         let k256_sk = signing_key.to_k256_signing_key();
         let k256_vk = k256_sk.verifying_key();
         let bytes = k256_vk.to_bytes();
-        Secp256k1SchnorrVerificationKey { bytes: bytes.into() }
+        Secp256k1SchnorrVerificationKey {
+            bytes: bytes.into(),
+        }
     }
 
     /// Signs a message using the signing key.
@@ -471,7 +456,7 @@ impl Secp256k1Schnorr {
     ) -> Secp256k1SchnorrSignature {
         let k256_sk = signing_key.to_k256_signing_key();
         let signature: K256SchnorrSignature = k256_sk.sign(message);
-        let bytes: [u8; 64] = signature.to_bytes().into();
+        let bytes: [u8; 64] = signature.to_bytes();
         Secp256k1SchnorrSignature { bytes }
     }
 
@@ -502,7 +487,7 @@ impl Secp256k1Schnorr {
         let signature: K256SchnorrSignature = k256_sk
             .sign_prehash(message_hash)
             .map_err(|_| CryptoError::SigningFailed)?;
-        let bytes: [u8; 64] = signature.to_bytes().into();
+        let bytes: [u8; 64] = signature.to_bytes();
         Ok(Secp256k1SchnorrSignature { bytes })
     }
 
@@ -585,7 +570,7 @@ mod tests {
 
     #[test]
     fn test_ecdsa_prehashed() {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
 
         let seed = [2u8; 32];
         let signing_key = Secp256k1Ecdsa::gen_key(&seed);

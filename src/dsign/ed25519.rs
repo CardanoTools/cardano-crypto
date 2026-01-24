@@ -268,6 +268,21 @@ impl Ed25519SigningKey {
         Self(compound)
     }
 
+    /// Create a signing key from compound bytes (seed + public key)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use cardano_crypto::dsign::ed25519::Ed25519SigningKey;
+    ///
+    /// let compound = [42u8; 64];
+    /// let signing_key = Ed25519SigningKey::from_compound_bytes(&compound);
+    /// ```
+    #[inline]
+    pub fn from_compound_bytes(bytes: &[u8; SECRET_COMPOUND_SIZE]) -> Self {
+        Self(*bytes)
+    }
+
     /// Get the seed bytes (first 32 bytes)
     ///
     /// # Example

@@ -8,7 +8,7 @@
 use cardano_crypto::dsign::secp256k1::{
     Secp256k1Ecdsa, Secp256k1EcdsaSignature, Secp256k1EcdsaSigningKey,
     Secp256k1EcdsaVerificationKey, Secp256k1Schnorr, Secp256k1SchnorrSignature,
-    Secp256k1SchnorrSigningKey, Secp256k1SchnorrVerificationKey,
+    Secp256k1SchnorrVerificationKey,
 };
 
 fn hex_to_bytes(hex: &str) -> Vec<u8> {
@@ -129,7 +129,7 @@ mod ecdsa_cardano_base_vectors {
         let sig_hex = "3dccc57be49991e95b112954217e8b4fe884d4d26843dfec794feb370981407b79151d1e5af85aba21721876896957adb2b35bcbb84986dcf82daa520a87a9f9";
 
         let vk = Secp256k1EcdsaVerificationKey::from_bytes(&hex_to_bytes(vk_hex)).unwrap();
-        let correct_msg: [u8; 32] = hex_to_array(correct_msg_hex);
+        let _correct_msg: [u8; 32] = hex_to_array(correct_msg_hex);
         let wrong_msg: [u8; 32] = hex_to_array(wrong_msg_hex);
         let sig = Secp256k1EcdsaSignature::from_bytes(&hex_to_bytes(sig_hex)).unwrap();
 
@@ -143,12 +143,13 @@ mod ecdsa_cardano_base_vectors {
     /// Test wrong verification key
     #[test]
     fn test_ecdsa_wrong_verkey() {
-        let correct_vk_hex = "02599de3e582e2a3779208a210dfeae8f330b9af00a47a7fb22e9bb8ef596f301b";
+        let _correct_vk_hex = "02599de3e582e2a3779208a210dfeae8f330b9af00a47a7fb22e9bb8ef596f301b";
         let wrong_vk_hex = "02D69C3509BB99E412E68B0FE8544E72837DFA30746D8BE2AA65975F29D22DC7B9";
         let msg_hex = "0000000000000000000000000000000000000000000000000000000000000000";
         let sig_hex = "354b868c757ef0b796003f7c23dd754d2d1726629145be2c7b7794a25fec80a06254f0915935f33b91bceb16d46ff2814f659e9b6791a4a21ff8764b78d7e114";
 
-        let wrong_vk = Secp256k1EcdsaVerificationKey::from_bytes(&hex_to_bytes(wrong_vk_hex)).unwrap();
+        let wrong_vk =
+            Secp256k1EcdsaVerificationKey::from_bytes(&hex_to_bytes(wrong_vk_hex)).unwrap();
         let msg: [u8; 32] = hex_to_array(msg_hex);
         let sig = Secp256k1EcdsaSignature::from_bytes(&hex_to_bytes(sig_hex)).unwrap();
 
@@ -180,7 +181,7 @@ mod ecdsa_plutus_conformance {
         assert_eq!(vk.as_bytes(), derived_vk.as_bytes());
 
         // Sign empty message (sha256(""))
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(b"");
         let msg_hash: [u8; 32] = hasher.finalize().into();
@@ -300,7 +301,10 @@ mod schnorr_bip340_vectors {
 
         // Should fail to parse as the key is not on the curve
         let result = Secp256k1SchnorrVerificationKey::from_bytes(&hex_to_bytes(vk_hex));
-        assert!(result.is_err(), "Public key not on curve should fail to parse");
+        assert!(
+            result.is_err(),
+            "Public key not on curve should fail to parse"
+        );
     }
 
     /// BIP-340 test vector 7 - Negated message (should fail)
@@ -422,7 +426,8 @@ mod schnorr_cardano_base_vectors {
         let msg_hex = "0000000000000000000000000000000000000000000000000000000000000000";
         let sig_hex = "5a56da88e6fd8419181dec4d3dd6997bab953d2fc71ab65e23cfc9e7e3d1a310613454a60f6703819a39fdac2a410a094442afd1fc083354443e8d8bb4461a9b";
 
-        let wrong_vk = Secp256k1SchnorrVerificationKey::from_bytes(&hex_to_bytes(wrong_vk_hex)).unwrap();
+        let wrong_vk =
+            Secp256k1SchnorrVerificationKey::from_bytes(&hex_to_bytes(wrong_vk_hex)).unwrap();
         let msg = hex_to_bytes(msg_hex);
         let sig = Secp256k1SchnorrSignature::from_bytes(&hex_to_bytes(sig_hex)).unwrap();
 
@@ -441,17 +446,41 @@ mod size_constants {
     #[test]
     fn test_ecdsa_sizes() {
         // CIP-0049 specified sizes
-        assert_eq!(Secp256k1Ecdsa::SIGNING_KEY_SIZE, 32, "ECDSA private key should be 32 bytes");
-        assert_eq!(Secp256k1Ecdsa::VERIFICATION_KEY_SIZE, 33, "ECDSA public key (compressed) should be 33 bytes");
-        assert_eq!(Secp256k1Ecdsa::SIGNATURE_SIZE, 64, "ECDSA signature should be 64 bytes");
+        assert_eq!(
+            Secp256k1Ecdsa::SIGNING_KEY_SIZE,
+            32,
+            "ECDSA private key should be 32 bytes"
+        );
+        assert_eq!(
+            Secp256k1Ecdsa::VERIFICATION_KEY_SIZE,
+            33,
+            "ECDSA public key (compressed) should be 33 bytes"
+        );
+        assert_eq!(
+            Secp256k1Ecdsa::SIGNATURE_SIZE,
+            64,
+            "ECDSA signature should be 64 bytes"
+        );
     }
 
     #[test]
     fn test_schnorr_sizes() {
         // BIP-340 specified sizes
-        assert_eq!(Secp256k1Schnorr::SIGNING_KEY_SIZE, 32, "Schnorr private key should be 32 bytes");
-        assert_eq!(Secp256k1Schnorr::VERIFICATION_KEY_SIZE, 32, "Schnorr public key (x-only) should be 32 bytes");
-        assert_eq!(Secp256k1Schnorr::SIGNATURE_SIZE, 64, "Schnorr signature should be 64 bytes");
+        assert_eq!(
+            Secp256k1Schnorr::SIGNING_KEY_SIZE,
+            32,
+            "Schnorr private key should be 32 bytes"
+        );
+        assert_eq!(
+            Secp256k1Schnorr::VERIFICATION_KEY_SIZE,
+            32,
+            "Schnorr public key (x-only) should be 32 bytes"
+        );
+        assert_eq!(
+            Secp256k1Schnorr::SIGNATURE_SIZE,
+            64,
+            "Schnorr signature should be 64 bytes"
+        );
     }
 }
 
@@ -521,7 +550,11 @@ mod determinism {
         let sig1 = Secp256k1Ecdsa::sign_prehashed(&sk, &msg).unwrap();
         let sig2 = Secp256k1Ecdsa::sign_prehashed(&sk, &msg).unwrap();
 
-        assert_eq!(sig1.as_bytes(), sig2.as_bytes(), "ECDSA signatures should be deterministic (RFC 6979)");
+        assert_eq!(
+            sig1.as_bytes(),
+            sig2.as_bytes(),
+            "ECDSA signatures should be deterministic (RFC 6979)"
+        );
     }
 
     #[test]
@@ -534,6 +567,10 @@ mod determinism {
         let sig1 = Secp256k1Schnorr::sign(&sk, msg);
         let sig2 = Secp256k1Schnorr::sign(&sk, msg);
 
-        assert_eq!(sig1.as_bytes(), sig2.as_bytes(), "Schnorr signatures should be deterministic");
+        assert_eq!(
+            sig1.as_bytes(),
+            sig2.as_bytes(),
+            "Schnorr signatures should be deterministic"
+        );
     }
 }
