@@ -1,6 +1,6 @@
 //! Hierarchical Deterministic (HD) Key Derivation - CIP-1852 & BIP32-Ed25519
 
-use crate::common::{CryptoError, Result};
+use crate::common::Result;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[cfg(feature = "alloc")]

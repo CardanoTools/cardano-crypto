@@ -125,6 +125,10 @@ required-features = ["seed", "dsign", "vrf", "kes"]
 name = "plutus_crypto"
 required-features = ["secp256k1", "bls"]
 
+[[example]]
+name = "hd_wallet"
+required-features = ["hd"]
+
 # ============================================================================
 # Build Optimization Profiles
 # ============================================================================
