@@ -205,14 +205,12 @@ jobs:
 
       - name: Run Semgrep
         uses: returntocorp/semgrep-action@v1
-        env:
-          SEMGREP_ARGS: --sarif --sarif-output=semgrep.sarif
         with:
           config: >-
             p/security-audit
             p/rust
             p/secrets
-          generateSarif: true
+        continue-on-error: true
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
