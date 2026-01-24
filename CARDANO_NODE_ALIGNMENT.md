@@ -904,6 +904,38 @@ The `cardano-crypto` crate provides **production-ready** cryptographic primitive
 | Security | Audited libs | Uses ed25519-dalek, blst, etc. |
 | Performance | Optimized | LTO enabled, zero-copy where possible |
 
+### Test Coverage Alignment (Phase 1 Complete)
+
+The following tests have been added to align with cardano-base QuickCheck patterns:
+
+**VRF Property Tests (21 tests)**
+- `prop_vrf03_prove_verify_roundtrip` - Prove/verify roundtrip
+- `prop_vrf03_wrong_key_fails` - Wrong key verification fails
+- `prop_vrf03_wrong_message_fails` - Wrong message verification fails
+- `prop_vrf03_deterministic` - Deterministic proof generation
+- `prop_vrf03_output_size` - 64-byte output invariant
+- `prop_vrf03_proof_size` - 80-byte proof invariant
+- `prop_vrf03_pubkey_size` - 32-byte pubkey invariant
+- `prop_vrf03_corrupted_proof_fails` - Bit flip detection
+- Plus Draft-13 equivalents and edge cases
+
+**KES Property Tests (19 tests)**
+- `prop_sum6_verkey_stable` - Verification key stability
+- `prop_sum6_sign_verify_roundtrip` - Sign/verify at same period
+- `prop_sum6_wrong_period_fails` - Wrong period verification fails
+- `prop_sum6_full_evolution` - Full 64 period evolution
+- `prop_sum6_forward_security` - Forward security guarantee
+- `test_sum6_max_period_boundary` - Period 63 boundary test
+- `test_sum6_sign_at_expired_period` - Expired period handling
+- Plus Sum2KES and SingleKES tests
+
+**Edge Case Tests (34 tests)**
+- VRF: Empty message, single byte, max size, invalid content
+- KES: Expired period, max boundary, corrupted signatures
+- DSIGN: Empty/large messages, wrong key/message, corruption
+- Hash: Empty input, determinism, large input
+- Cross-module: Key derivation determinism
+
 **Overall: PRODUCTION READY** ✅
 
 ---
