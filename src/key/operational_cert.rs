@@ -92,9 +92,14 @@
 use alloc::vec::Vec;
 
 use crate::common::error::{CryptoError, Result};
-use crate::dsign::{DsignAlgorithm, Ed25519, Ed25519Signature, Ed25519SigningKey, Ed25519VerificationKey};
-use crate::kes::VerificationKeyKes;
-use crate::key::kes_period::KesPeriod;
+use crate::dsign::{DsignAlgorithm, Ed25519};
+use crate::{Ed25519Signature, Ed25519SigningKey, Ed25519VerificationKey};
+use crate::kes::{KesVerificationKey, Sum6Kes};
+use crate::key::kes_period::KESPeriod;
+
+// Type aliases for operational certificates (using Sum6Kes which is Cardano mainnet default)
+type VerificationKeyKes = KesVerificationKey<Sum6Kes>;
+type KesPeriod = KESPeriod;
 
 /// Operational Certificate
 ///
@@ -201,7 +206,7 @@ impl core::fmt::Display for OCertError {
                 write!(
                     f,
                     "OCert not yet valid: current period {}, cert starts at {}",
-                    current.0, cert_start.0
+                    current, cert_start
                 )
             }
             OCertError::PeriodExpired {
@@ -211,7 +216,7 @@ impl core::fmt::Display for OCertError {
                 write!(
                     f,
                     "OCert expired: current period {}, cert expired at {}",
-                    current.0, cert_expiry.0
+                    current, cert_expiry
                 )
             }
             OCertError::InvalidSignature => write!(f, "Invalid cold key signature"),
@@ -458,13 +463,13 @@ impl OCertSignable {
         // Element 1: KES verification key (32 bytes)
         bytes.push(0x58); // Byte string (1-byte length follows)
         bytes.push(32); // Length = 32
-        bytes.extend_from_slice(self.kes_verification_key.as_bytes());
+        bytes.extend_from_slice(&self.kes_verification_key);
 
         // Element 2: Counter (u64)
         encode_u64(&mut bytes, self.counter);
 
         // Element 3: KES period (u64)
-        encode_u64(&mut bytes, self.kes_period.0);
+        encode_u64(&mut bytes, self.kes_period as u64);
 
         bytes
     }

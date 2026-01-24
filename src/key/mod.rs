@@ -89,7 +89,7 @@ pub use hash::*;
 pub use kes_period::*;
 
 #[cfg(feature = "alloc")]
-pub use stake_pool::*;
+pub use stake_pool::{PoolMetadata, Rational, RewardAccount, StakePoolParams, StakePoolRelay};
 
 #[cfg(feature = "kes")]
 pub use operational_cert::*;

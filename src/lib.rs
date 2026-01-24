@@ -260,7 +260,7 @@ pub use key::kes_period::{
 
 #[cfg(feature = "alloc")]
 pub use key::stake_pool::{
-    PoolMetadata, Rational, RewardAccount, StakePoolParams, StakePoolRelay, VrfKeyHash,
+    PoolMetadata, Rational, RewardAccount, StakePoolParams, StakePoolRelay,
 };
 
 // ============================================================================
