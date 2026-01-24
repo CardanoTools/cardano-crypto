@@ -134,6 +134,32 @@ proptest! {
 
         prop_assert_eq!(proof.len(), 80, "VRF Draft-03 proof should be 80 bytes");
     }
+
+    /// Property: Public key is always 32 bytes
+    #[test]
+    fn prop_vrf03_pubkey_size(seed in seed_strategy()) {
+        let (_sk, pk) = VrfDraft03::keypair_from_seed(&seed);
+        prop_assert_eq!(pk.len(), 32, "VRF public key must be 32 bytes");
+    }
+
+    /// Property: Corrupted proof byte always fails verification
+    #[test]
+    fn prop_vrf03_corrupted_proof_fails(
+        seed in seed_strategy(),
+        msg in message_strategy(),
+        corrupt_idx in 0..80usize
+    ) {
+        let (sk, pk) = VrfDraft03::keypair_from_seed(&seed);
+        let mut proof = VrfDraft03::prove(&sk, &msg)
+            .expect("Prove should succeed");
+
+        // Corrupt a single byte
+        proof[corrupt_idx] ^= 0xFF;
+
+        // Verification should fail
+        let result = VrfDraft03::verify(&pk, &proof, &msg);
+        prop_assert!(result.is_err(), "Corrupted proof (byte {}) should fail verification", corrupt_idx);
+    }
 }
 
 // ============================================================================
@@ -306,4 +332,44 @@ fn test_vrf_maximum_message_size() -> Result<()> {
 
     assert_eq!(beta.len(), 64);
     Ok(())
+}
+
+#[test]
+fn test_vrf_single_byte_message() -> Result<()> {
+    let seed = [0x11u8; 32];
+    let (sk, pk) = VrfDraft03::keypair_from_seed(&seed);
+
+    // Test with single byte message
+    let msg = &[42u8];
+    let proof = VrfDraft03::prove(&sk, msg)?;
+    let beta = VrfDraft03::verify(&pk, &proof, msg)?;
+
+    assert_eq!(beta.len(), 64);
+    Ok(())
+}
+
+// Note: VRF verify functions require exact array sizes at compile time,
+// so invalid length tests are enforced by the type system.
+// The tests below verify that correctly-sized but invalid content fails.
+
+#[test]
+fn test_vrf03_random_proof_content_fails() {
+    let seed = [0x22u8; 32];
+    let (_sk, pk) = VrfDraft03::keypair_from_seed(&seed);
+
+    // Valid-sized proof but random content
+    let random_proof: [u8; 80] = [0x42u8; 80];
+    let result = VrfDraft03::verify(&pk, &random_proof, b"msg");
+    assert!(result.is_err(), "Random proof content should fail verification");
+}
+
+#[test]
+fn test_vrf13_random_proof_content_fails() {
+    let seed = [0x44u8; 32];
+    let (_sk, pk) = VrfDraft13::keypair_from_seed(&seed);
+
+    // Valid-sized proof for Draft-13 but random content
+    let random_proof: [u8; 128] = [0x42u8; 128];
+    let result = VrfDraft13::verify(&pk, &random_proof, b"msg");
+    assert!(result.is_err(), "Random proof content should fail verification");
 }
