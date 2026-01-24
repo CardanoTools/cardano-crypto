@@ -50,8 +50,8 @@ fn test_blake2b_224_empty() {
 #[test]
 fn test_blake2b_224_abc() {
     let hash = Blake2b224::hash(b"abc");
-    // This is the expected Blake2b-224 hash of "abc"
-    let expected = "8e55a2e43e8aa82a702c5a20d9e80a23f7d38aa6895528e66877ab62";
+    // Blake2b-224 hash of "abc" (verified against blake2 reference implementation)
+    let expected = "9bd237b02a29e43bdd6738afa5b53ff0eee178d6210b618e4511aec8";
     assert_eq!(
         hex_encode(&hash),
         expected,

@@ -433,7 +433,7 @@ mod pairing_tests {
 
         // e(G1, [a]G2)
         let a_g2 = Bls12381::g2_scalar_mul(&a, &g2);
-        let result2 = Bls12381::pairing(&g1, &aG2);
+        let result2 = Bls12381::pairing(&g1, &a_g2);
 
         assert_eq!(result1, result2, "e([a]G1, G2) = e(G1, [a]G2)");
     }

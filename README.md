@@ -408,130 +408,31 @@ cargo run --example dsign_sign_verify
 cargo doc --all-features --open
 ```
 
-## Binary Compatibility
-
-This implementation maintains binary compatibility with Haskell's `cardano-crypto-class`:
-
-- ✅ Verification key serialization matches byte-for-byte
-- ✅ Signature format identical to Haskell implementation
-- ✅ All official Cardano test vectors pass
-- ✅ Hash algorithm (Blake2b-256) matches Haskell exactly## Security Considerations
-
-
-
-# Test specific component### Forward Security
-
-cargo test --features vrf
-
-Once a key evolves past a period, it **cannot** sign for that period:
-
-# Run with test vectors
-
-cargo test --test vrf_vectors```rust
-
-```let mut sk = Sum2Kes::gen_key_kes_from_seed_bytes(&seed)?;
-
-
-
-## Roadmap// Sign for period 0
-
-let sig0 = Sum2Kes::sign_kes(&(), 0, b"msg0", &sk)?;
-
-- [x] Project structure and feature flag design
-
-- [ ] Extract Blake2b implementation (from cardano-base-rust)// Evolve to period 1
-
-- [ ] Extract Ed25519 implementation (from cardano-base-rust)sk = Sum2Kes::update_kes(&(), sk, 0)?.unwrap();
-
-- [ ] Migrate VRF implementation (from FractionEstate/cardano-VRF)
-
-- [ ] Implement KES hierarchy (Single, Sum0-7, CompactSum0-7)// ❌ Cannot sign for period 0 anymore!
-
-- [ ] Add SHA-2 hash family// This will return an error
-
-- [ ] CBOR serialization supportlet result = Sum2Kes::sign_kes(&(), 0, b"msg0", &sk);
-
-- [ ] Comprehensive test vector suiteassert!(result.is_err());
-
-- [ ] Benchmarks and performance optimization```
-
-- [ ] Security audit
-
-- [ ] Publish to crates.io### Key Zeroization
-
-
-
-## ContributingSigning keys are automatically zeroized when dropped:
-
-
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.```rust
-
-{
-
-## License    let sk = Sum2Kes::gen_key_kes_from_seed_bytes(&seed)?;
-
-    // Use sk...
-
-Licensed under either of:} // sk is zeroized here
-
-```
-
-- MIT license ([LICENSE-MIT](LICENSE-MIT))
-
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))### No Unsafe Code
-
-
-
-at your option.This crate uses **zero unsafe code** - all operations are safe Rust.
-
-
-
-## Acknowledgments## Related Crates
-
-
-
-This implementation is based on:Part of the Cardano Rust ecosystem:
-
-- Haskell `cardano-crypto-class` from [cardano-base](https://github.com/IntersectMBO/cardano-base)
-
-- IETF VRF specifications (Draft-03 and Draft-13)- [`cardano-vrf`](https://crates.io/crates/cardano-vrf) - Verifiable Random Functions
-
-- "Composition and Efficiency Tradeoffs for Forward-Secure Digital Signatures" by Malkin, Micciancio, and Miner- `cardano-dsign` - Digital signatures (coming soon)
-
-- `cardano-cbor` - CBOR encoding (coming soon)
-
-## Links
-
-## Contributing
-
-- [Documentation](https://docs.rs/cardano-crypto)
-
-- [Repository](https://github.com/FractionEstate/Cardano-Crypto)We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-- [Issue Tracker](https://github.com/FractionEstate/Cardano-Crypto/issues)
-
-- [Haskell Reference](https://github.com/IntersectMBO/cardano-base/tree/master/cardano-crypto-class)### Development
-
-
-```bash
-# Format code
-cargo fmt
-
-# Lint
-cargo clippy --all-targets --all-features
-
-# Run tests
-cargo test --all-features
-
-# Build docs
-cargo doc --open --all-features
-
-# Run benchmarks
-cargo bench --all-features
-```
-
-For detailed benchmarking information, see [benches/README.md](benches/README.md).
+## Cardano-Base Alignment
+
+This crate aims for full compatibility with [IntersectMBO/cardano-base](https://github.com/IntersectMBO/cardano-base). Our alignment status:
+
+### ✅ Complete
+
+| Area | Status | Details |
+|------|--------|---------|
+| **VRF Implementation** | ✅ | Draft-03 and Draft-13, binary compatible |
+| **KES Implementation** | ✅ | Sum6Kes (Cardano standard), all variants |
+| **DSIGN Implementation** | ✅ | Ed25519 with deterministic key generation |
+| **Hash Functions** | ✅ | Blake2b-224/256/512, SHA family |
+| **Property Tests** | ✅ | Comprehensive proptest coverage for VRF/KES |
+| **Edge Case Tests** | ✅ | 34+ edge case tests covering all modules |
+| **Benchmarks** | ✅ | Full benchmark suite with performance targets |
+| **Documentation** | ✅ | SPO examples, wallet examples, Plutus examples |
+
+### Test Coverage
+
+- **VRF Property Tests**: 21 tests including roundtrip, wrong key/message rejection, determinism, corrupted proof detection
+- **KES Property Tests**: 19 tests including key evolution, period boundaries, forward security guarantees
+- **Edge Case Tests**: 34 tests covering empty inputs, max sizes, boundary conditions, cross-module interactions
+- **Golden Tests**: Comprehensive test vectors from cardano-base
+
+See [CARDANO_NODE_ALIGNMENT.md](CARDANO_NODE_ALIGNMENT.md) for detailed alignment documentation.
 
 ## Performance
 
