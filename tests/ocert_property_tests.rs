@@ -7,7 +7,8 @@
 #![cfg(feature = "kes")]
 
 use cardano_crypto::common::Result;
-use cardano_crypto::dsign::{DsignAlgorithm, Ed25519};
+use cardano_crypto::dsign::Ed25519;
+use cardano_crypto::common::traits::DsignAlgorithm;
 use cardano_crypto::key::{
     operational_cert::{
         compute_operational_cert_hash, create_operational_certificate, verify_operational_certificate,
@@ -57,7 +58,8 @@ proptest! {
             .expect("KES verkey derivation should succeed");
 
         // Generate cold key (using Ed25519 for simplicity)
-        use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
+        use cardano_crypto::dsign::Ed25519;
+        use cardano_crypto::common::traits::DsignAlgorithm;
         let cold_sk = Ed25519::gen_key_from_seed(&cold_seed);
         let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
@@ -92,7 +94,8 @@ proptest! {
     ) {
         prop_assume!(create_counter != verify_counter);
 
-        use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
+        use cardano_crypto::dsign::Ed25519;
+        use cardano_crypto::common::traits::DsignAlgorithm;
 
         let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)
             .expect("KES key generation should succeed");
@@ -133,7 +136,8 @@ proptest! {
     ) {
         prop_assume!(create_period != verify_period);
 
-        use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
+        use cardano_crypto::dsign::Ed25519;
+        use cardano_crypto::common::traits::DsignAlgorithm;
 
         let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)
             .expect("KES key generation should succeed");
@@ -172,7 +176,8 @@ proptest! {
     ) {
         prop_assume!(cold_seed1 != cold_seed2);
 
-        use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
+        use cardano_crypto::dsign::Ed25519;
+        use cardano_crypto::common::traits::DsignAlgorithm;
 
         let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)
             .expect("KES key generation should succeed");
