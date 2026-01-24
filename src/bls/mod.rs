@@ -32,11 +32,11 @@
 use crate::common::error::CryptoError;
 use blst::{
     blst_encode_to_g1, blst_encode_to_g2, blst_final_exp, blst_fp12, blst_fp12_is_one,
-    blst_miller_loop, blst_p1, blst_p1_add, blst_p1_affine, blst_p1_cneg, blst_p1_compress,
-    blst_p1_from_affine, blst_p1_mult, blst_p1_on_curve, blst_p1_to_affine, blst_p1_uncompress,
-    blst_p2, blst_p2_add, blst_p2_affine, blst_p2_cneg, blst_p2_compress, blst_p2_from_affine,
-    blst_p2_mult, blst_p2_on_curve, blst_p2_to_affine, blst_p2_uncompress, blst_scalar,
-    blst_scalar_from_bendian, BLST_ERROR,
+    blst_miller_loop, blst_p1, blst_p1_add_or_double, blst_p1_affine, blst_p1_cneg,
+    blst_p1_compress, blst_p1_from_affine, blst_p1_mult, blst_p1_on_curve, blst_p1_to_affine,
+    blst_p1_uncompress, blst_p2, blst_p2_add_or_double, blst_p2_affine, blst_p2_cneg,
+    blst_p2_compress, blst_p2_from_affine, blst_p2_mult, blst_p2_on_curve, blst_p2_to_affine,
+    blst_p2_uncompress, blst_scalar, blst_scalar_from_bendian, BLST_ERROR,
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -158,11 +158,11 @@ impl G1Point {
     /// - The returned point is always on the curve and in the correct subgroup
     pub fn generator() -> Self {
         unsafe {
-            // SAFETY: blst_p1_generator() returns a pointer to static const data
-            // that represents the standard BLS12-381 G1 generator point.
-            // This data is always valid and properly initialized.
-            let gen_ptr = blst::blst_p1_generator();
-            let point = *gen_ptr;
+            // SAFETY: BLS12_381_G1 is a static constant representing the standard
+            // BLS12-381 G1 generator point in affine form.
+            // We convert it to projective form for use in arithmetic operations.
+            let mut point = blst_p1::default();
+            blst_p1_from_affine(&mut point, &blst::BLS12_381_G1);
             Self { point }
         }
     }
@@ -338,10 +338,11 @@ impl G1Point {
     #[must_use]
     pub fn add(&self, other: &Self) -> Self {
         let mut result = blst_p1::default();
-        // SAFETY: blst_p1_add performs elliptic curve point addition.
+        // SAFETY: blst_p1_add_or_double performs elliptic curve point addition
+        // and handles the special case of point doubling when adding a point to itself.
         // Both input points are valid blst_p1 values.
         unsafe {
-            blst_p1_add(&mut result, &self.point, &other.point);
+            blst_p1_add_or_double(&mut result, &self.point, &other.point);
         }
         Self { point: result }
     }
@@ -497,8 +498,11 @@ impl G2Point {
     /// Returns the generator point of G2.
     pub fn generator() -> Self {
         unsafe {
-            let gen_ptr = blst::blst_p2_generator();
-            let point = *gen_ptr;
+            // SAFETY: BLS12_381_G2 is a static constant representing the standard
+            // BLS12-381 G2 generator point in affine form.
+            // We convert it to projective form for use in arithmetic operations.
+            let mut point = blst_p2::default();
+            blst_p2_from_affine(&mut point, &blst::BLS12_381_G2);
             Self { point }
         }
     }
@@ -552,7 +556,7 @@ impl G2Point {
     pub fn add(&self, other: &Self) -> Self {
         let mut result = blst_p2::default();
         unsafe {
-            blst_p2_add(&mut result, &self.point, &other.point);
+            blst_p2_add_or_double(&mut result, &self.point, &other.point);
         }
         Self { point: result }
     }
@@ -1343,6 +1347,12 @@ mod tests {
         let scalar = Scalar::from_bytes_be(&scalar_bytes).unwrap();
 
         let also_doubled = gen.mul(&scalar);
+        
+        // Debug output
+        eprintln!("Generator compressed: {:?}", hex::encode(&gen.to_compressed()[..16]));
+        eprintln!("Doubled (add) compressed: {:?}", hex::encode(&doubled.to_compressed()[..16]));
+        eprintln!("Doubled (mul) compressed: {:?}", hex::encode(&also_doubled.to_compressed()[..16]));
+        
         assert_eq!(doubled, also_doubled);
     }
 
