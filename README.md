@@ -552,6 +552,20 @@ cargo bench --all-features
 
 View detailed reports in `target/criterion/report/index.html`.
 
+## For AI Coding Agents
+
+This crate provides comprehensive LLM-friendly documentation following the [llmstxt.org](https://llmstxt.org/) standard:
+
+- **[llms.txt](llms.txt)** - Concise overview with quick start, architecture, and common patterns
+- **[llms-full.txt](llms-full.txt)** - Complete reference including:
+  - Detailed cryptographic algorithm specifications
+  - Security guidelines and best practices
+  - Implementation patterns and common pitfalls
+  - Advanced usage examples
+  - Testing strategies
+
+These files help AI coding assistants understand the crate's design, use it correctly, and avoid common mistakes.
+
 ## License
 
 Licensed under either of:

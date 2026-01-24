@@ -99,6 +99,8 @@ Removed internal documentation files from published crate to reduce package size
 ├── SECURITY.md
 ├── ARCHITECTURE.md          ← Kept for publishing
 ├── CHANGELOG.md             ← Kept for publishing
+├── llms.txt                 ← NEW: LLM-friendly docs (concise)
+├── llms-full.txt            ← NEW: LLM-friendly docs (comprehensive)
 ├── CARDANO_NODE_ALIGNMENT.md ← Kept for publishing
 ├── CI_CD_GUIDE.md            ← Kept for publishing
 ├── DEPLOYMENT.md             ← Kept for publishing

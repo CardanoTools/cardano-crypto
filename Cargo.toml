@@ -25,6 +25,13 @@ exclude = [
     "/PHASE4_COMPLETION.md",
     "/TEST_COVERAGE_ANALYSIS.md",
     "/PROPERTY_TEST_IMPLEMENTATION.md",
+    "/PROJECT_REORGANIZATION.md",
+    "/LLM_DOCUMENTATION.md",
+    "/CI_CD_GUIDE.md",
+    "/DEPLOYMENT.md",
+    "/PUBLISHING.md",
+    "/TYPE_SAFETY.md",
+    "/CARDANO_NODE_ALIGNMENT.md",
 ]
 
 [package.metadata.docs.rs]
