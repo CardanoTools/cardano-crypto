@@ -1,0 +1,433 @@
+# cardano-crypto
+
+> Pure Rust implementation of Cardano cryptographic primitives with 100% binary compatibility with IntersectMBO/cardano-node
+
+## Overview
+
+This crate provides production-grade implementations of Cardano cryptographic primitives used in the Cardano blockchain. All implementations are byte-for-byte compatible with the official Haskell cardano-base library.
+
+**Core Primitives:**
+- VRF (Verifiable Random Functions): ECVRF-ED25519-SHA512-Elligator2 Draft-03 and Draft-13
+- KES (Key Evolving Signatures): Sum and Single KES with compact variants
+- DSIGN (Digital Signatures): Ed25519, secp256k1 (ECDSA + Schnorr)
+- Hash Functions: Blake2b (224, 256, 512), SHA-256, SHA-512
+- BLS12-381: Pairing-friendly curve operations (Plutus)
+- HD Wallets: BIP32-Ed25519 derivation (CIP-1852)
+
+**Standards Compliance:**
+- IETF VRF Draft-03, Draft-13
+- RFC 8032 (Ed25519)
+- RFC 7693 (Blake2b)
+- CIP-0049 (secp256k1 in Plutus)
+- CIP-0381 (BLS12-381 in Plutus)
+- CIP-1852 (HD wallet derivation)
+
+## Quick Start
+
+```rust
+use cardano_crypto::{
+    vrf::{VrfDraft03, VrfAlgorithm},
+    kes::{SumKes6, KesAlgorithm},
+    dsign::{Ed25519, DsignAlgorithm},
+    hash::Blake2b256,
+};
+
+// VRF: Verifiable random function for Cardano Praos consensus
+let vrf_seed = [0u8; 32];
+let vrf_sk = VrfDraft03::gen_key(&vrf_seed);
+let vrf_pk = VrfDraft03::derive_verification_key(&vrf_sk);
+let (proof, output) = VrfDraft03::prove(&vrf_sk, b"block_slot_123")?;
+VrfDraft03::verify(&vrf_pk, b"block_slot_123", &proof)?;
+
+// KES: Key evolving signatures for block signing
+let kes_seed = [0u8; 32];
+let kes_sk = SumKes6::gen_key(&kes_seed);
+let kes_vk = SumKes6::derive_verification_key(&kes_sk);
+let sig = SumKes6::sign(0, &kes_sk, b"block_header")?;
+SumKes6::verify(&kes_vk, 0, b"block_header", &sig)?;
+
+// Ed25519: Transaction signatures
+let ed_seed = [0u8; 32];
+let ed_sk = Ed25519::gen_key(&ed_seed);
+let ed_vk = Ed25519::derive_verification_key(&ed_sk);
+let sig = Ed25519::sign(&ed_sk, b"transaction_bytes");
+Ed25519::verify(&ed_vk, b"transaction_bytes", &sig)?;
+
+// Blake2b: Hash functions
+let hash = Blake2b256::hash(b"data_to_hash");
+```
+
+## Architecture
+
+**Module Structure:**
+```
+cardano-crypto/
+├── vrf/          # Verifiable Random Functions
+│   ├── draft03   # VRF Draft-03 (Cardano Praos)
+│   └── draft13   # VRF Draft-13 (batch verification)
+├── kes/          # Key Evolving Signatures
+│   ├── single    # SingleKES (1 period)
+│   └── sum       # SumKES (2^N periods)
+├── dsign/        # Digital Signatures
+│   ├── ed25519   # Ed25519 (Cardano standard)
+│   └── secp256k1 # secp256k1 (Plutus)
+├── hash/         # Hash Functions
+│   ├── blake2b   # Blake2b-224, 256, 512
+│   └── sha       # SHA-256, SHA-512
+├── bls/          # BLS12-381 (Plutus)
+├── hd/           # HD Wallet Derivation
+├── key/          # Key Management
+├── seed/         # Seed Derivation
+└── cbor/         # CBOR Serialization
+```
+
+**Feature Flags:**
+```toml
+[dependencies]
+cardano-crypto = { version = "1.1", features = ["std", "vrf", "kes"] }
+
+# Default features (recommended)
+default = ["std", "vrf", "kes", "dsign", "hash", "seed", "cbor", "key", "hd"]
+
+# Minimal features (no_std + alloc)
+cardano-crypto = { version = "1.1", default-features = false, features = ["alloc", "vrf"] }
+
+# Plutus features
+cardano-crypto = { version = "1.1", features = ["plutus"] }  # Enables secp256k1 + BLS
+```
+
+## Key Concepts
+
+### 1. Cardano Compatibility
+
+**CRITICAL:** All cryptographic outputs must match IntersectMBO/cardano-base byte-for-byte.
+
+- VRF proofs use Elligator2 mapping (Cardano-specific libsodium compatibility)
+- KES uses Sum composition with compact serialization
+- All test vectors verified against cardano-base golden tests
+
+### 2. Security
+
+**Secret Key Management:**
+```rust
+use zeroize::Zeroize;
+
+// Keys are automatically zeroized on drop
+let mut secret_key = Ed25519::gen_key(&seed);
+// ... use key ...
+// Automatically zeroized when dropped
+
+// Manual zeroization if needed
+secret_key.zeroize();
+```
+
+**Constant-Time Operations:**
+```rust
+use subtle::ConstantTimeEq;
+
+// Use constant-time comparisons for secrets
+let is_valid = tag.ct_eq(&expected_tag).into();
+```
+
+### 3. KES Period Management
+
+KES keys evolve over time with periods:
+
+```rust
+use cardano_crypto::kes::{SumKes6, KesAlgorithm};
+
+let mut sk = SumKes6::gen_key(&seed);
+let vk = SumKes6::derive_verification_key(&sk);
+
+// Sign at period 0
+let sig0 = SumKes6::sign(0, &sk, b"block_0")?;
+
+// Update key to period 1 (irreversible!)
+SumKes6::update(&mut sk, 1)?;
+
+// Sign at period 1
+let sig1 = SumKes6::sign(1, &sk, b"block_1")?;
+
+// Cannot sign for period 0 anymore (forward security)
+```
+
+**KES Variants:**
+- `SumKes6` - 64 periods (2^6), standard for Cardano
+- `SumKes7` - 128 periods (2^7)
+- Compact variants reduce key size
+
+### 4. VRF Usage Patterns
+
+**Slot Leader Election:**
+```rust
+use cardano_crypto::vrf::{VrfDraft03, VrfAlgorithm};
+
+fn check_slot_leadership(
+    vrf_sk: &VrfSigningKey,
+    slot: u64,
+    epoch_nonce: &[u8],
+    stake_ratio: f64,
+) -> Option<VrfProof> {
+    let message = format!("slot_{}_nonce_{:?}", slot, epoch_nonce);
+    let (proof, output) = VrfDraft03::prove(vrf_sk, message.as_bytes()).ok()?;
+    
+    // Check if output meets difficulty threshold
+    let hash_value = u64::from_le_bytes(output[..8].try_into().ok()?);
+    let threshold = (u64::MAX as f64 * stake_ratio) as u64;
+    
+    if hash_value < threshold {
+        Some(proof)
+    } else {
+        None
+    }
+}
+```
+
+### 5. HD Wallet Derivation
+
+**CIP-1852 Address Derivation:**
+```rust
+use cardano_crypto::hd::{derive_account_key, derive_address_key};
+
+// m/1852'/1815'/0' (account)
+let root_key = /* ... */;
+let account_key = derive_account_key(&root_key, 0)?;
+
+// m/1852'/1815'/0'/0/0 (external address)
+let address_key = derive_address_key(&account_key, 0, 0)?;
+
+// m/1852'/1815'/0'/1/0 (internal change address)
+let change_key = derive_address_key(&account_key, 1, 0)?;
+```
+
+## Common Patterns
+
+### Transaction Signing
+
+```rust
+use cardano_crypto::{
+    dsign::{Ed25519, DsignAlgorithm},
+    hash::Blake2b256,
+};
+
+fn sign_transaction(sk: &Ed25519SigningKey, tx_body: &[u8]) -> Ed25519Signature {
+    // Hash transaction body first
+    let tx_hash = Blake2b256::hash(tx_body);
+    
+    // Sign the hash
+    Ed25519::sign(sk, &tx_hash)
+}
+
+fn verify_transaction(
+    vk: &Ed25519VerificationKey,
+    tx_body: &[u8],
+    sig: &Ed25519Signature,
+) -> Result<()> {
+    let tx_hash = Blake2b256::hash(tx_body);
+    Ed25519::verify(vk, &tx_hash, sig)
+}
+```
+
+### Block Production
+
+```rust
+use cardano_crypto::{
+    vrf::{VrfDraft03, VrfAlgorithm},
+    kes::{SumKes6, KesAlgorithm},
+};
+
+struct BlockHeader {
+    slot: u64,
+    vrf_proof: VrfProof,
+    kes_signature: KesSignature,
+    // ... other fields
+}
+
+fn produce_block(
+    vrf_sk: &VrfSigningKey,
+    kes_sk: &mut KesSigningKey,
+    kes_period: u64,
+    slot: u64,
+    epoch_nonce: &[u8],
+) -> Result<BlockHeader> {
+    // VRF proof for slot leadership
+    let slot_msg = format!("slot_{}_nonce_{:?}", slot, epoch_nonce);
+    let (vrf_proof, _output) = VrfDraft03::prove(vrf_sk, slot_msg.as_bytes())?;
+    
+    // Build header bytes
+    let header_bytes = /* ... construct header ... */;
+    
+    // KES signature
+    let kes_sig = SumKes6::sign(kes_period, kes_sk, &header_bytes)?;
+    
+    Ok(BlockHeader {
+        slot,
+        vrf_proof,
+        kes_signature: kes_sig,
+    })
+}
+```
+
+### Plutus Script Verification
+
+```rust
+#[cfg(feature = "plutus")]
+use cardano_crypto::{
+    dsign::secp256k1::{Secp256k1, verify_ecdsa},
+    bls::{G1Point, G2Point, pairing},
+};
+
+// ECDSA verification (CIP-0049)
+fn verify_plutus_ecdsa(
+    pubkey: &[u8],
+    message: &[u8],
+    signature: &[u8],
+) -> Result<bool> {
+    verify_ecdsa(pubkey, message, signature)
+}
+
+// BLS signature verification (CIP-0381)
+fn verify_plutus_bls(
+    pubkey: &G2Point,
+    message: &[u8],
+    signature: &G1Point,
+) -> Result<bool> {
+    let hash_point = /* hash message to G1 */;
+    let lhs = pairing(signature, &G2Point::generator());
+    let rhs = pairing(&hash_point, pubkey);
+    Ok(lhs == rhs)
+}
+```
+
+## Error Handling
+
+**Always use `Result` types:**
+
+```rust
+use cardano_crypto::common::{CryptoError, Result};
+
+fn my_function() -> Result<Output> {
+    // Validate inputs
+    if input.len() != EXPECTED_SIZE {
+        return Err(CryptoError::InvalidLength {
+            expected: EXPECTED_SIZE,
+            actual: input.len(),
+        });
+    }
+    
+    // Perform operation
+    let result = some_crypto_operation()?;
+    Ok(result)
+}
+```
+
+**Common Errors:**
+- `InvalidLength` - Wrong key/signature size
+- `InvalidFormat` - Malformed input data
+- `VerificationFailed` - Signature/proof verification failed
+- `PeriodMismatch` - KES period doesn't match
+
+## Best Practices
+
+### 1. Use Traits for Generic Code
+
+```rust
+use cardano_crypto::common::DsignAlgorithm;
+
+fn generic_sign<A: DsignAlgorithm>(
+    sk: &A::SigningKey,
+    message: &[u8],
+) -> A::Signature {
+    A::sign(sk, message)
+}
+
+// Works with any signature algorithm
+let ed_sig = generic_sign::<Ed25519>(&ed_sk, b"msg");
+```
+
+### 2. Zeroize Secrets
+
+```rust
+use zeroize::Zeroize;
+
+let mut seed = [0u8; 32];
+// ... fill seed from secure source ...
+
+// Use seed
+let sk = Ed25519::gen_key(&seed);
+
+// Clear seed from memory
+seed.zeroize();
+```
+
+### 3. Validate All Inputs
+
+```rust
+fn process_signature(sig_bytes: &[u8]) -> Result<()> {
+    // Validate length first
+    if sig_bytes.len() != Ed25519::SIGNATURE_SIZE {
+        return Err(CryptoError::InvalidLength {
+            expected: Ed25519::SIGNATURE_SIZE,
+            actual: sig_bytes.len(),
+        });
+    }
+    
+    // Safe to proceed
+    let sig = Ed25519Signature::from_bytes(sig_bytes)?;
+    Ok(())
+}
+```
+
+### 4. Use Feature Flags Appropriately
+
+```rust
+// Only compile BLS code when plutus feature is enabled
+#[cfg(feature = "plutus")]
+pub fn verify_bls_aggregate(/* ... */) -> Result<()> {
+    // BLS verification
+}
+
+// Provide alternative or error when feature is disabled
+#[cfg(not(feature = "plutus"))]
+pub fn verify_bls_aggregate(/* ... */) -> Result<()> {
+    Err(CryptoError::FeatureNotEnabled("plutus"))
+}
+```
+
+## Testing
+
+**Run all tests:**
+```bash
+cargo test --all-features
+```
+
+**Test specific module:**
+```bash
+cargo test --features vrf vrf::tests
+```
+
+**Test no_std compatibility:**
+```bash
+cargo test --no-default-features --features alloc,vrf
+```
+
+**Property-based tests** are included for all primitives to verify invariants.
+
+## Documentation
+
+- **API Docs:** https://docs.rs/cardano-crypto
+- **Architecture:** See ARCHITECTURE.md
+- **Contributing:** See CONTRIBUTING.md
+- **Security:** See SECURITY.md
+- **Full LLM Context:** See llms-full.txt
+
+## Links
+
+- **Repository:** https://github.com/FractionEstate/cardano-crypto
+- **Cardano Base:** https://github.com/IntersectMBO/cardano-base
+- **CIPs:** https://cips.cardano.org/
+- **Standards:** IETF VRF, RFC 8032, RFC 7693
+
+---
+
+For comprehensive details, see llms-full.txt

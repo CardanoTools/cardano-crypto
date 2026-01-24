@@ -15,7 +15,7 @@
 
 **Test Matrix:**
 - Operating Systems: Ubuntu, Windows, macOS
-- Rust Versions: stable, beta, nightly, 1.91.0 (MSRV)
+- Rust Versions: stable, beta, nightly, 1.81.0 (MSRV)
 - Features tested: all-features, no-default, individual features
 
 **Quality Checks:**
@@ -71,8 +71,8 @@
 git push origin main
 
 # Publish runs when you create a version tag
-git tag -a v0.1.0 -m "Release v0.1.0"
-git push origin v0.1.0
+git tag -a v1.2.0 -m "Release v1.2.0"
+git push origin v1.2.0
 
 # Nightly runs daily at 2 AM UTC (automatic)
 
@@ -93,10 +93,10 @@ You can also trigger workflows manually from GitHub:
 
 ```bash
 # View all workflow runs
-https://github.com/FractionEstate/Cardano-KES/actions
+https://github.com/FractionEstate/cardano-crypto/actions
 
 # Check specific workflow
-https://github.com/FractionEstate/Cardano-KES/actions/workflows/ci.yml
+https://github.com/FractionEstate/cardano-crypto/actions/workflows/ci.yml
 ```
 
 ### Status Badges

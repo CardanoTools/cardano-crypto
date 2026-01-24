@@ -63,6 +63,16 @@ pub mod hash;
 #[cfg(feature = "kes")]
 pub mod kes_period;
 
+/// Stake pool parameters
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+pub mod stake_pool;
+
+/// Operational Certificates for stake pool block production
+#[cfg(feature = "kes")]
+#[cfg_attr(docsrs, doc(cfg(feature = "kes")))]
+pub mod operational_cert;
+
 /// Bech32 encoding and decoding functions
 #[cfg(feature = "bech32-encoding")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bech32-encoding")))]
@@ -77,6 +87,12 @@ pub use hash::*;
 
 #[cfg(feature = "kes")]
 pub use kes_period::*;
+
+#[cfg(feature = "alloc")]
+pub use stake_pool::*;
+
+#[cfg(feature = "kes")]
+pub use operational_cert::*;
 
 #[cfg(feature = "bech32-encoding")]
 pub use encoding::*;

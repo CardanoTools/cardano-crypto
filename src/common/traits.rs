@@ -202,6 +202,233 @@ pub trait DsignAlgorithm {
     fn forget_signing_key(signing_key: Self::SigningKey);
 }
 
+/// Trait for digital signature schemes supporting aggregation
+///
+/// This trait extends `DsignAlgorithm` with operations for aggregating multiple
+/// signatures and verification keys into compact representations. This enables
+/// efficient multi-signature schemes where multiple parties sign the same or
+/// different messages.
+///
+/// # Cardano Usage
+///
+/// In Cardano, this trait is used for:
+/// - **BLS Multi-Signatures**: Governance voting where multiple committee members sign
+/// - **Aggregate Verification**: Batch verification of multiple signatures
+/// - **Threshold Signatures**: N-of-M signature schemes for key management
+///
+/// # Security Considerations
+///
+/// ## Rogue Key Attacks
+///
+/// Naive signature aggregation is vulnerable to rogue key attacks where an adversary
+/// can forge an aggregate signature by carefully choosing their public key. To prevent
+/// this, implementations must use **Proof of Possession (PoP)**.
+///
+/// Each participant must prove knowledge of their secret key by:
+/// 1. Generating a PoP when creating a verification key
+/// 2. Verifying all PoPs before aggregating keys
+/// 3. Storing PoPs alongside verification keys in certificates
+///
+/// ## Message Binding
+///
+/// When aggregating signatures on different messages, ensure proper message binding
+/// to prevent cross-protocol attacks. Use domain separation tags or include
+/// the public key in the signed message.
+///
+/// # Examples
+///
+/// ```ignore
+/// use cardano_crypto::common::traits::{DsignAlgorithm, DsignAggregatable};
+/// use cardano_crypto::bls::Bls12381;
+///
+/// // Generate keys for multiple signers
+/// let seed1 = [1u8; 32];
+/// let seed2 = [2u8; 32];
+/// let sk1 = Bls12381::gen_key_from_seed(&seed1)?;
+/// let sk2 = Bls12381::gen_key_from_seed(&seed2)?;
+/// let vk1 = Bls12381::derive_verification_key(&sk1)?;
+/// let vk2 = Bls12381::derive_verification_key(&sk2)?;
+///
+/// // Generate Proofs of Possession
+/// let pop1 = Bls12381::generate_possession_proof(&sk1);
+/// let pop2 = Bls12381::generate_possession_proof(&sk2);
+///
+/// // Verify PoPs before aggregation
+/// assert!(Bls12381::verify_possession_proof(&vk1, &pop1));
+/// assert!(Bls12381::verify_possession_proof(&vk2, &pop2));
+///
+/// // Sign the same message
+/// let message = b"committee vote";
+/// let sig1 = Bls12381::sign(message, &sk1)?;
+/// let sig2 = Bls12381::sign(message, &sk2)?;
+///
+/// // Aggregate signatures and keys
+/// let agg_sig = Bls12381::aggregate_signatures(&[sig1, sig2])?;
+/// let agg_vk = Bls12381::aggregate_verification_keys(&[vk1, vk2])?;
+///
+/// // Verify aggregate signature
+/// Bls12381::verify(message, &agg_sig, &agg_vk)?;
+/// ```
+///
+/// # References
+///
+/// - [BLS Signatures](https://www.iacr.org/archive/asiacrypt2001/22480516.pdf) - Boneh, Lynn, Shacham
+/// - [Proof of Possession](https://eprint.iacr.org/2018/483.pdf) - Ristenpart, Yilek
+/// - [CIP-0381](https://cips.cardano.org/cip/CIP-0381) - BLS12-381 in Plutus
+/// - [Cardano DSIGN.Class](https://github.com/IntersectMBO/cardano-base/blob/master/cardano-crypto-class/src/Cardano/Crypto/DSIGN/Class.hs)
+#[cfg(feature = "alloc")]
+pub trait DsignAggregatable: DsignAlgorithm {
+    /// Proof of possession type
+    ///
+    /// A cryptographic proof that the party possesses the secret key
+    /// corresponding to their verification key. This prevents rogue key attacks
+    /// in aggregate signature schemes.
+    ///
+    /// Typically, this is a signature over the verification key itself.
+    type PossessionProof: Clone + PartialEq + Eq;
+
+    /// Aggregate multiple verification keys
+    ///
+    /// Combines multiple verification keys into a single aggregate key that can
+    /// verify an aggregate signature from all the corresponding signing keys.
+    ///
+    /// # Parameters
+    ///
+    /// * `keys` - Slice of verification keys to aggregate
+    ///
+    /// # Returns
+    ///
+    /// - `Some(aggregate_key)` if aggregation succeeds
+    /// - `None` if the key list is empty or aggregation fails
+    ///
+    /// # Security
+    ///
+    /// Callers MUST verify Proofs of Possession for all keys before calling this
+    /// function to prevent rogue key attacks.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let keys = vec![vk1, vk2, vk3];
+    /// let agg_key = Bls12381::aggregate_verification_keys(&keys)?;
+    /// ```
+    fn aggregate_verification_keys(keys: &[Self::VerificationKey]) -> Option<Self::VerificationKey>;
+
+    /// Aggregate multiple signatures
+    ///
+    /// Combines multiple signatures into a single compact signature. The aggregate
+    /// signature can be verified against an aggregate verification key (if all
+    /// signatures are on the same message) or individual keys (for different messages).
+    ///
+    /// # Parameters
+    ///
+    /// * `signatures` - Slice of signatures to aggregate
+    ///
+    /// # Returns
+    ///
+    /// - `Some(aggregate_signature)` if aggregation succeeds
+    /// - `None` if the signature list is empty or aggregation fails
+    ///
+    /// # Use Cases
+    ///
+    /// ## Same Message (Simple Aggregation)
+    /// ```ignore
+    /// // Multiple parties sign the same message
+    /// let sig1 = Bls12381::sign(message, &sk1)?;
+    /// let sig2 = Bls12381::sign(message, &sk2)?;
+    /// let agg_sig = Bls12381::aggregate_signatures(&[sig1, sig2])?;
+    /// let agg_vk = Bls12381::aggregate_verification_keys(&[vk1, vk2])?;
+    /// Bls12381::verify(message, &agg_sig, &agg_vk)?;  // ✓ Valid
+    /// ```
+    ///
+    /// ## Different Messages (Aggregate Verification)
+    /// ```ignore
+    /// // Each party signs a different message
+    /// let sig1 = Bls12381::sign(message1, &sk1)?;
+    /// let sig2 = Bls12381::sign(message2, &sk2)?;
+    /// let agg_sig = Bls12381::aggregate_signatures(&[sig1, sig2])?;
+    /// // Verify individually (pairing-based batch verification)
+    /// verify_aggregate(&[(message1, vk1), (message2, vk2)], &agg_sig)?;
+    /// ```
+    fn aggregate_signatures(signatures: &[Self::Signature]) -> Option<Self::Signature>;
+
+    /// Generate a Proof of Possession for a signing key
+    ///
+    /// Creates a cryptographic proof that the party possesses the secret key
+    /// corresponding to their verification key. This is typically a signature
+    /// over the verification key itself.
+    ///
+    /// # Parameters
+    ///
+    /// * `signing_key` - The secret key to prove possession of
+    ///
+    /// # Returns
+    ///
+    /// A proof of possession that can be verified with `verify_possession_proof`
+    ///
+    /// # Security
+    ///
+    /// This proof must be generated and verified before participating in any
+    /// aggregate signature scheme. Without PoP verification, an attacker can
+    /// perform a rogue key attack.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// // Generate key
+    /// let sk = Bls12381::gen_key_from_seed(&seed)?;
+    /// let vk = Bls12381::derive_verification_key(&sk)?;
+    ///
+    /// // Generate and store PoP
+    /// let pop = Bls12381::generate_possession_proof(&sk);
+    ///
+    /// // Later: verify before aggregation
+    /// assert!(Bls12381::verify_possession_proof(&vk, &pop));
+    /// ```
+    fn generate_possession_proof(signing_key: &Self::SigningKey) -> Self::PossessionProof;
+
+    /// Verify a Proof of Possession
+    ///
+    /// Verifies that the party who presented the verification key actually
+    /// possesses the corresponding secret key.
+    ///
+    /// # Parameters
+    ///
+    /// * `verification_key` - The verification key to check
+    /// * `proof` - The proof of possession to verify
+    ///
+    /// # Returns
+    ///
+    /// - `true` if the proof is valid (party possesses the secret key)
+    /// - `false` if the proof is invalid or malformed
+    ///
+    /// # Security
+    ///
+    /// ALWAYS verify PoPs before:
+    /// - Aggregating verification keys
+    /// - Including keys in multi-signature ceremonies
+    /// - Adding keys to threshold signature groups
+    ///
+    /// Skipping PoP verification enables rogue key attacks where an adversary
+    /// can forge aggregate signatures.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// // Verify PoP before aggregation
+    /// if !Bls12381::verify_possession_proof(&vk, &pop) {
+    ///     return Err(CryptoError::InvalidProof);
+    /// }
+    ///
+    /// // Safe to aggregate now
+    /// let agg_vk = Bls12381::aggregate_verification_keys(&[vk1, vk2])?;
+    /// ```
+    fn verify_possession_proof(
+        verification_key: &Self::VerificationKey,
+        proof: &Self::PossessionProof,
+    ) -> bool;
+}
+
 /// Trait for types that can be signed or proven over
 ///
 /// Provides a consistent interface for obtaining the canonical byte representation

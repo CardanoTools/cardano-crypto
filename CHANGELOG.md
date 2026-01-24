@@ -5,7 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2025-01-XX
+## [Unreleased]
+
+### Added
+- **Operational Certificates** - New `OperationalCertificate` type for stake pool block production:
+  - Binds cold verification keys to hot KES verification keys
+  - Counter-based replay attack prevention
+  - KES period validation
+  - Full CBOR serialization compatibility with cardano-cli
+  - Matches `Cardano.Protocol.TPraos.OCert` from cardano-ledger
+
+- **PraosBatchCompatVRF Type Alias** - Documentation improvement for VRF naming:
+  - `PraosBatchCompatVRF = VrfDraft13` - Matches cardano-base naming
+  - Clarifies batch verification support in newer protocol versions
+
+- **DSIGNAggregatable Trait** - BLS multi-signature support:
+  - New trait for signature aggregation schemes
+  - `aggregate_verification_keys()` - Combine multiple public keys
+  - `aggregate_signatures()` - Combine multiple signatures into one
+  - `generate_possession_proof()` / `verify_possession_proof()` - Rogue key attack prevention
+  - Full implementation for BLS12-381
+  - `DsignAlgorithm` trait implementation for BLS12-381
+  - New example: `bls_multisig.rs` demonstrating multi-party signatures
+  - 10+ comprehensive tests including threshold signatures and security checks
+
+- Comprehensive benchmark suite using Criterion.rs
+  - VRF benchmarks (Draft-03 and Draft-13)
+  - KES benchmarks (Sum2 and Sum6)
+  - Hash benchmarks (Blake2b-224/256/512)
+  - DSIGN benchmarks (Ed25519, secp256k1)
+- Benchmark documentation in `benches/README.md`
+- Performance targets based on Cardano mainnet requirements
+- IntersectMBO parity research audit complete (see `PARITY_IMPLEMENTATION_PLAN.md`)
+
+### Changed
+- Added `#[inline]` attributes to hot-path functions for micro-optimizations
+- Updated Cargo.toml with benchmark harness configuration
+- Updated error types to include `OCertError` variant
+
+---
+
+## [1.1.0] - 2026-01-24
 
 ### Added
 - **secp256k1 Support** (CIP-0049) - New `secp256k1` feature for Plutus interoperability:
@@ -181,12 +221,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security audit ready
 
 ### Compatibility
-- Rust 1.91.0 or later (MSRV)
+- Rust 1.81.0 or later (MSRV)
 - 100% compatible with cardano-node cryptographic primitives
 - Binary-compatible with Haskell cardano-crypto-class
 - Sum6KES matches Cardano stake pool requirements (64 periods, ~90 days)
 - VRF algorithms match IntersectMBO/cardano-base
 
-[Unreleased]: https://github.com/FractionEstate/Cardano-KES/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/FractionEstate/Cardano-KES/releases/tag/v0.1.0
+[Unreleased]: https://github.com/FractionEstate/cardano-crypto/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/FractionEstate/cardano-crypto/releases/tag/v1.1.0
+[1.0.8]: https://github.com/FractionEstate/cardano-crypto/releases/tag/v1.0.8
+[1.0.7]: https://github.com/FractionEstate/cardano-crypto/releases/tag/v1.0.7
+[1.0.6]: https://github.com/FractionEstate/cardano-crypto/releases/tag/v1.0.6
+[1.0.5]: https://github.com/FractionEstate/cardano-crypto/releases/tag/v1.0.5
+[0.1.0]: https://github.com/FractionEstate/cardano-crypto/releases/tag/v0.1.0
 

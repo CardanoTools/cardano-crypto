@@ -146,8 +146,8 @@ pub use dsign::{
 
 #[cfg(feature = "vrf")]
 pub use vrf::{
-    CertifiedVrf, OutputVrf, VrfAlgorithm, VrfDraft03, VrfDraft13, VrfKeyPair, VrfProof,
-    VrfSigningKey, VrfVerificationKey,
+    CertifiedVrf, OutputVrf, PraosBatchCompatVRF, VrfAlgorithm, VrfDraft03, VrfDraft13,
+    VrfKeyPair, VrfProof, VrfSigningKey, VrfVerificationKey,
 };
 
 #[cfg(feature = "kes")]
@@ -256,6 +256,11 @@ pub use key::kes_period::{
     is_kes_expired, is_valid_period, kes_expiry_slot, kes_period_info, period_from_slot,
     slot_from_period, KESPeriod, KESPeriodInfo, KES_MAX_PERIOD_SUM6, KES_SLOTS_PER_PERIOD_MAINNET,
     KES_SLOTS_PER_PERIOD_TESTNET,
+};
+
+#[cfg(feature = "alloc")]
+pub use key::stake_pool::{
+    PoolMetadata, Rational, RewardAccount, StakePoolParams, StakePoolRelay, VrfKeyHash,
 };
 
 // ============================================================================

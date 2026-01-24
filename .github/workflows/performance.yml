@@ -1,0 +1,139 @@
+name: Performance Tracking
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  deployments: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  benchmark:
+    name: Run Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-bench-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run VRF benchmarks
+        run: cargo bench --bench vrf_benchmarks -- --save-baseline vrf
+
+      - name: Run KES benchmarks
+        run: cargo bench --bench kes_benchmarks -- --save-baseline kes
+
+      - name: Run DSIGN benchmarks
+        run: cargo bench --bench dsign_benchmarks -- --save-baseline dsign
+
+      - name: Run Hash benchmarks
+        run: cargo bench --bench hash_benchmarks -- --save-baseline hash
+
+      - name: Store benchmark result (main branch only)
+        if: github.ref == 'refs/heads/main'
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'cargo'
+          output-file-path: target/criterion/output.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          alert-threshold: '150%'
+          comment-on-alert: true
+          fail-on-alert: false
+          benchmark-data-dir-path: 'dev/bench'
+
+      - name: Compare with baseline (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "## 📊 Benchmark Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Benchmarks compared against main branch baseline." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### VRF Performance" >> $GITHUB_STEP_SUMMARY
+          cargo bench --bench vrf_benchmarks -- --baseline vrf 2>&1 | tail -n 20 >> $GITHUB_STEP_SUMMARY || true
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### KES Performance" >> $GITHUB_STEP_SUMMARY
+          cargo bench --bench kes_benchmarks -- --baseline kes 2>&1 | tail -n 20 >> $GITHUB_STEP_SUMMARY || true
+
+      - name: Upload benchmark artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: target/criterion
+          retention-days: 30
+
+  memory-profiling:
+    name: Memory Profiling
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install valgrind
+        run: sudo apt-get update && sudo apt-get install -y valgrind
+
+      - name: Run memory tests
+        run: |
+          cargo test --release --all-features 2>&1 | tee memory-test.log
+          echo "## 🧠 Memory Usage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Tests completed successfully" >> $GITHUB_STEP_SUMMARY
+
+  flamegraph:
+    name: Generate Flamegraph
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install flamegraph
+        run: cargo install flamegraph
+
+      - name: Install perf
+        run: sudo apt-get update && sudo apt-get install -y linux-tools-generic
+
+      - name: Generate flamegraph
+        run: |
+          cargo flamegraph --bench vrf_benchmarks -- --bench
+        continue-on-error: true
+
+      - name: Upload flamegraph
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flamegraph
+          path: flamegraph.svg
+          retention-days: 30

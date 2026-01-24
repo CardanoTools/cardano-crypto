@@ -1,6 +1,6 @@
 [package]
 name = "cardano-crypto"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2021"
 rust-version = "1.81"
 authors = ["FractionEstate <contact@fraction.estate>"]
@@ -12,12 +12,35 @@ description = "Pure Rust implementation of Cardano cryptographic primitives (VRF
 keywords = ["cardano", "cryptography", "vrf", "kes", "blockchain"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
+publish = true
 exclude = [
     "/.github",
     "/target",
     "*.profraw",
     "*.profdata",
+    "/.vscode",
+    "/.pre-commit-config.yaml",
+    "/WORKFLOW_IMPROVEMENT_PLAN.md",
+    "/WORKFLOW_IMPLEMENTATION_SUMMARY.md",
+    "/PHASE4_COMPLETION.md",
+    "/TEST_COVERAGE_ANALYSIS.md",
+    "/PROPERTY_TEST_IMPLEMENTATION.md",
+    "/PROJECT_REORGANIZATION.md",
+    "/LLM_DOCUMENTATION.md",
+    "/CI_CD_GUIDE.md",
+    "/DEPLOYMENT.md",
+    "/PUBLISHING.md",
+    "/TYPE_SAFETY.md",
+    "/CARDANO_NODE_ALIGNMENT.md",
 ]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[badges]
+maintenance = { status = "actively-developed" }
 
 [features]
 default = ["std", "thiserror", "vrf", "kes", "dsign", "hash", "seed", "cbor", "key", "hd"]
@@ -98,6 +121,8 @@ blst = { version = "0.3", optional = true }
 [dev-dependencies]
 hex = "0.4"
 serde_json = "1.0"
+proptest = "1.5"
+criterion = { version = "0.5", features = ["html_reports"] }
 
 [package.metadata.docs.rs]
 all-features = true
@@ -172,3 +197,20 @@ lto = "fat"
 # Test profile - balance between speed and compilation time
 inherits = "dev"
 opt-level = 1          # Some optimization for faster tests
+
+# Benchmark harnesses
+[[bench]]
+name = "vrf_benchmarks"
+harness = false
+
+[[bench]]
+name = "kes_benchmarks"
+harness = false
+
+[[bench]]
+name = "hash_benchmarks"
+harness = false
+
+[[bench]]
+name = "dsign_benchmarks"
+harness = false

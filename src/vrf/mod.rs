@@ -55,6 +55,42 @@ pub use draft03::{
 
 pub use draft13::{VrfDraft13, PROOF_SIZE as DRAFT13_PROOF_SIZE};
 
+/// VRF algorithm compatible with Cardano's batch verification (IETF Draft-13)
+///
+/// This type alias matches Cardano's `PraosBatchCompatVRF` from the cardano-crypto-praos
+/// package in cardano-base. It refers to the ECVRF-ED25519-SHA512-TAI algorithm from
+/// IETF draft-irtf-cfrg-vrf-13, which supports batch verification of multiple VRF proofs.
+///
+/// # Cardano Compatibility
+///
+/// In cardano-base, this is defined as:
+/// ```haskell
+/// type PraosBatchCompatVRF = VRF_DRAFT13
+/// ```
+///
+/// This VRF variant is used in newer protocol versions that support batch verification,
+/// improving consensus performance when validating multiple VRF proofs simultaneously.
+///
+/// # Differences from PraosVRF (Draft-03)
+///
+/// - **Proof Size**: 128 bytes (vs 80 bytes for Draft-03)
+/// - **Batch Verification**: Supports efficient batch proof validation
+/// - **Hash-to-Curve**: Uses Try-And-Increment (TAI) instead of Elligator2
+///
+/// # Example
+///
+/// ```
+/// use cardano_crypto::vrf::PraosBatchCompatVRF;
+///
+/// let seed = [42u8; 32];
+/// let (secret_key, public_key) = PraosBatchCompatVRF::keypair_from_seed(&seed);
+///
+/// let message = b"Cardano block slot 67890";
+/// let proof = PraosBatchCompatVRF::prove(&secret_key, message).unwrap();
+/// let output = PraosBatchCompatVRF::verify(&public_key, &proof, message).unwrap();
+/// ```
+pub type PraosBatchCompatVRF = VrfDraft13;
+
 // Re-export Cardano compatibility functions for advanced usage
 pub use cardano_compat::{
     cardano_clear_cofactor, cardano_hash_to_curve, cardano_vrf_prove, cardano_vrf_verify,

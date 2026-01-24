@@ -77,11 +77,13 @@ impl ExtendedPrivateKey {
     }
 
     /// Get key bytes
+    #[inline]
     pub fn key_bytes(&self) -> &[u8; KEY_SIZE] {
         &self.key
     }
 
     /// Get chain code
+    #[inline]
     pub fn chain_code(&self) -> &ChainCode {
         &self.chain_code
     }
@@ -239,4 +241,7 @@ impl Default for DerivationPath {
 }
 
 pub mod address;
-pub use address::{Address, Network, PaymentKeyHash, StakeKeyHash, hash_verification_key};
+pub use address::{Address, Network, hash_verification_key};
+
+// Re-export typed key hashes from key::hash module
+pub use crate::key::hash::{PaymentKeyHash, StakeKeyHash};

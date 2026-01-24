@@ -105,6 +105,7 @@ impl HashAlgorithm for Blake2b512 {
 ///
 /// Convenience function matching the trait implementation.
 #[must_use]
+#[inline]
 #[allow(dead_code)]
 pub(crate) fn blake2b224(data: &[u8]) -> [u8; 28] {
     let mut hasher = Blake2b::<U28>::new();
@@ -116,6 +117,7 @@ pub(crate) fn blake2b224(data: &[u8]) -> [u8; 28] {
 ///
 /// Convenience function matching the trait implementation.
 #[must_use]
+#[inline]
 #[allow(dead_code)]
 pub(crate) fn blake2b256(data: &[u8]) -> [u8; 32] {
     let mut hasher = Blake2b::<U32>::new();
@@ -127,6 +129,7 @@ pub(crate) fn blake2b256(data: &[u8]) -> [u8; 32] {
 ///
 /// Convenience function matching the trait implementation.
 #[must_use]
+#[inline]
 #[allow(dead_code)]
 pub(crate) fn blake2b512(data: &[u8]) -> [u8; 64] {
     use blake2::Blake2b512 as Blake2b512Hasher;

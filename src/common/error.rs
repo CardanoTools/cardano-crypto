@@ -129,6 +129,10 @@ pub enum CryptoError {
     #[cfg_attr(feature = "thiserror", error("KES error: {0}"))]
     KesError(crate::kes::KesError),
 
+    /// Operational Certificate error
+    #[cfg_attr(feature = "thiserror", error("Operational Certificate error: {0}"))]
+    OCert(crate::key::operational_cert::OCertError),
+
     /// Other error with description
     #[cfg_attr(feature = "thiserror", error("{0}"))]
     Other(&'static str),
@@ -177,7 +181,10 @@ impl fmt::Display for CryptoError {
             CryptoError::CryptoFailure => write!(f, "Cryptographic operation failed"),
             #[cfg(feature = "kes")]
             CryptoError::KesError(e) => write!(f, "KES error: {}", e),
+            CryptoError::OCert(e) => write!(f, "Operational Certificate error: {}", e),
             CryptoError::Other(msg) => write!(f, "{}", msg),
+            CryptoError::EncodingError => write!(f, "Encoding/decoding error"),
+            CryptoError::InvalidParameter(msg) => write!(f, "Invalid parameter: {}", msg),
         }
     }
 }
