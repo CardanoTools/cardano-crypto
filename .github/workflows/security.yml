@@ -93,12 +93,19 @@ jobs:
       - name: Install cargo-vet
         run: cargo install cargo-vet --locked
 
-      - name: Initialize cargo-vet (if needed)
-        run: cargo vet init || true
+      - name: Check if cargo-vet is configured
+        id: vet-check
+        run: |
+          if [ -d ".cargo/vet" ] || [ -f "supply-chain/config.toml" ]; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "::warning::cargo-vet not configured - skipping verification"
+          fi
 
       - name: Run cargo vet
+        if: steps.vet-check.outputs.configured == 'true'
         run: cargo vet --locked
-        continue-on-error: true
 
   sbom:
     name: Generate Software Bill of Materials
@@ -158,6 +165,9 @@ jobs:
       - name: Scan for unsafe code
         run: cargo geiger --all-features --output-format GitHubMarkdown >> $GITHUB_STEP_SUMMARY
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Check unsafe threshold
         run: |
           UNSAFE_COUNT=$(cargo geiger --all-features --output-format Json | jq '[.packages[].unsafety.used.functions] | add')
@@ -177,22 +187,11 @@ jobs:
         with:
           fetch-depth: 0  # Full history for secret scanning
 
-      - name: Install gitleaks
-        run: |
-          wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz
-          tar -xzf gitleaks_8.18.0_linux_x64.tar.gz
-          sudo mv gitleaks /usr/local/bin/
-          rm gitleaks_8.18.0_linux_x64.tar.gz
-
       - name: Run gitleaks
-        run: gitleaks detect --source . --verbose --report-format sarif --report-path gitleaks.sarif
-
-      - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: gitleaks.sarif
-          category: secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_SUMMARY: true
 
   semgrep:
     name: Semgrep SAST

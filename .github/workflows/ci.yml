@@ -167,6 +167,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
@@ -253,7 +254,7 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
 
       - name: Install cargo-hack
-        run: cargo install cargo-hack
+        run: cargo install cargo-hack --locked
 
       - name: Check minimal versions
         run: cargo hack check --feature-powerset --depth 2

@@ -50,7 +50,7 @@ jobs:
 
       - name: Check documentation coverage
         run: |
-          cargo +nightly rustdoc --all-features -- -Z unstable-options --show-coverage | tee doc-coverage.txt
+          cargo rustdoc --all-features -- -Z unstable-options --show-coverage | tee doc-coverage.txt
           # Extract coverage percentage
           COVERAGE=$(grep "^[[:space:]]*[0-9]\+\.[0-9]\+% " doc-coverage.txt | tail -1 | awk '{print $1}')
           echo "Documentation coverage: $COVERAGE"
@@ -59,22 +59,22 @@ jobs:
 
       - name: Build documentation
         run: |
-          cargo +nightly doc --all-features --no-deps --document-private-items
+          cargo doc --all-features --no-deps --document-private-items
         env:
           RUSTDOCFLAGS: "-D warnings --cfg docsrs"
 
       - name: Check for broken links
-        run: |
-          cargo install lychee --locked || true
-          if command -v lychee &> /dev/null; then
-            lychee --verbose --no-progress './target/doc/**/*.html' --exclude-path 'target/doc/src' || true
-          fi
+        uses: lycheeverse/lychee-action@v1
+        with:
+          args: '--verbose --no-progress ./target/doc/**/*.html --exclude-path target/doc/src'
+          fail: false
         continue-on-error: true
 
       - name: Generate documentation metrics
         run: |
           mkdir -p target/doc/metrics
-          cat > target/doc/metrics/index.html << 'EOF'
+          GENERATED_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          cat > target/doc/metrics/index.html << EOF
           <!DOCTYPE html>
           <html>
           <head>
@@ -94,7 +94,7 @@ jobs:
             </div>
             <div class="metric">
               <h2>Generated</h2>
-              <p>$(date -u +"%Y-%m-%d %H:%M:%S UTC")</p>
+              <p>${GENERATED_DATE}</p>
             </div>
             <p><a href="../index.html">← Back to Documentation</a></p>
           </body>

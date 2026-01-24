@@ -22,13 +22,13 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
 
       - name: Build with nightly
-        run: cargo +nightly build --all-features --verbose
+        run: cargo build --all-features --verbose
 
       - name: Test with nightly
-        run: cargo +nightly test --all-features --verbose
+        run: cargo test --all-features --verbose
 
       - name: Check no_std compatibility
-        run: cargo +nightly build --no-default-features --features alloc --verbose
+        run: cargo build --no-default-features --features alloc --verbose
 
   miri:
     name: Miri (Undefined Behavior Detection)
