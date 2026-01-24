@@ -17,8 +17,8 @@
 //! - cardano-crypto-class DSIGN implementation
 
 use cardano_crypto::common::Result;
-use cardano_crypto::dsign::{DsignAlgorithm, Ed25519};
 use cardano_crypto::dsign::ed25519::Ed25519Signature;
+use cardano_crypto::dsign::{DsignAlgorithm, Ed25519};
 
 // ============================================================================
 // Helper Functions
@@ -31,6 +31,7 @@ fn hex_decode(s: &str) -> Vec<u8> {
         .collect()
 }
 
+#[allow(dead_code)]
 fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
@@ -43,11 +44,12 @@ fn hex_encode(bytes: &[u8]) -> String {
 #[test]
 fn test_ed25519_rfc8032_vector1() -> Result<()> {
     let seed = hex_decode("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60");
-    let expected_pk = hex_decode("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
+    let expected_pk =
+        hex_decode("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
     let message: &[u8] = &[];
     let expected_sig = hex_decode(
         "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155\
-         5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b"
+         5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b",
     );
 
     let seed_arr: [u8; 32] = seed.try_into().unwrap();
@@ -79,11 +81,12 @@ fn test_ed25519_rfc8032_vector1() -> Result<()> {
 #[test]
 fn test_ed25519_rfc8032_vector2() -> Result<()> {
     let seed = hex_decode("4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb");
-    let expected_pk = hex_decode("3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c");
+    let expected_pk =
+        hex_decode("3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c");
     let message = hex_decode("72");
     let expected_sig = hex_decode(
         "92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da\
-         085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00"
+         085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00",
     );
 
     let seed_arr: [u8; 32] = seed.try_into().unwrap();
@@ -104,11 +107,12 @@ fn test_ed25519_rfc8032_vector2() -> Result<()> {
 #[test]
 fn test_ed25519_rfc8032_vector3() -> Result<()> {
     let seed = hex_decode("c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7");
-    let expected_pk = hex_decode("fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025");
+    let expected_pk =
+        hex_decode("fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025");
     let message = hex_decode("af82");
     let expected_sig = hex_decode(
         "6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac\
-         18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a"
+         18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a",
     );
 
     let seed_arr: [u8; 32] = seed.try_into().unwrap();
@@ -132,12 +136,13 @@ fn test_ed25519_rfc8032_vector3() -> Result<()> {
 #[ignore]
 fn test_ed25519_rfc8032_vector_1023() -> Result<()> {
     let seed = hex_decode("f5e5767cf153319517630f226876b86c8160cc583bc013744c6bf255f5cc0ee5");
-    let expected_pk = hex_decode("278117fc144c72340f67d0f2316e8386ceffbf2b2428c9c51fef7c597f1d426e");
+    let expected_pk =
+        hex_decode("278117fc144c72340f67d0f2316e8386ceffbf2b2428c9c51fef7c597f1d426e");
     // 1023 bytes of 'q' (0x71)
     let message = vec![0x71u8; 1023];
     let expected_sig = hex_decode(
         "0aab4c900501b3e24d7cdf4663326a3a87df5e4843b2cbdb67cbf6e460fec350\
-         aa5371b1508f9f4528ecea23c436d94b5e8fcd4f681e30a6ac00a9704a188a03"
+         aa5371b1508f9f4528ecea23c436d94b5e8fcd4f681e30a6ac00a9704a188a03",
     );
 
     let seed_arr: [u8; 32] = seed.try_into().unwrap();
@@ -189,7 +194,11 @@ fn test_ed25519_key_sizes() {
     let sk = Ed25519::gen_key(&seed);
     let pk = Ed25519::derive_verification_key(&sk);
 
-    assert_eq!(sk.compound_bytes().len(), 64, "Secret key should be 64 bytes (seed + public key)");
+    assert_eq!(
+        sk.compound_bytes().len(),
+        64,
+        "Secret key should be 64 bytes (seed + public key)"
+    );
     assert_eq!(pk.as_bytes().len(), 32, "Public key should be 32 bytes");
 }
 
@@ -200,7 +209,11 @@ fn test_ed25519_signature_size() {
     let sk = Ed25519::gen_key(&seed);
 
     let sig = Ed25519::sign(&sk, b"test");
-    assert_eq!(sig.as_bytes().len(), 64, "Ed25519 signature should be 64 bytes");
+    assert_eq!(
+        sig.as_bytes().len(),
+        64,
+        "Ed25519 signature should be 64 bytes"
+    );
 }
 
 // ============================================================================
@@ -302,7 +315,10 @@ fn test_ed25519_different_messages() {
     let sig1 = Ed25519::sign(&sk, b"message 1");
     let sig2 = Ed25519::sign(&sk, b"message 2");
 
-    assert_ne!(sig1, sig2, "Different messages should have different signatures");
+    assert_ne!(
+        sig1, sig2,
+        "Different messages should have different signatures"
+    );
 }
 
 /// Test that different keys produce different signatures
@@ -319,7 +335,10 @@ fn test_ed25519_different_keys() {
     let sig1 = Ed25519::sign(&sk1, message);
     let sig2 = Ed25519::sign(&sk2, message);
 
-    assert_ne!(sig1, sig2, "Different keys should produce different signatures");
+    assert_ne!(
+        sig1, sig2,
+        "Different keys should produce different signatures"
+    );
 }
 
 // ============================================================================

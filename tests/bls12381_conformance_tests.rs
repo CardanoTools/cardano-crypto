@@ -6,8 +6,8 @@
 #![cfg(feature = "bls")]
 
 use cardano_crypto::bls::{
-    bls_verify, bls_verify_with_dst, Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature,
-    G1Point, G2Point, PairingResult, Scalar, G1_COMPRESSED_SIZE, G2_COMPRESSED_SIZE, SCALAR_SIZE,
+    bls_verify, bls_verify_with_dst, Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature, G1Point,
+    G2Point, Scalar, G1_COMPRESSED_SIZE, G2_COMPRESSED_SIZE, SCALAR_SIZE,
 };
 
 fn hex_to_bytes(hex: &str) -> Vec<u8> {
@@ -67,8 +67,11 @@ mod g1_identity_tests {
         let compressed = Bls12381::g1_compress(&id);
         let expected = hex_to_bytes(G1_COMPRESSED_ZERO);
 
-        assert_eq!(compressed.as_slice(), expected.as_slice(),
-            "G1 identity should encode to c0...00");
+        assert_eq!(
+            compressed.as_slice(),
+            expected.as_slice(),
+            "G1 identity should encode to c0...00"
+        );
     }
 
     #[test]
@@ -76,7 +79,10 @@ mod g1_identity_tests {
         let bytes = hex_to_bytes(G1_COMPRESSED_ZERO);
         let point = Bls12381::g1_uncompress(&bytes).unwrap();
 
-        assert!(Bls12381::g1_is_identity(&point), "Decoded zero should be identity");
+        assert!(
+            Bls12381::g1_is_identity(&point),
+            "Decoded zero should be identity"
+        );
     }
 
     #[test]
@@ -131,8 +137,11 @@ mod g2_identity_tests {
         let compressed = Bls12381::g2_compress(&id);
         let expected = hex_to_bytes(G2_COMPRESSED_ZERO);
 
-        assert_eq!(compressed.as_slice(), expected.as_slice(),
-            "G2 identity should encode to c0...00");
+        assert_eq!(
+            compressed.as_slice(),
+            expected.as_slice(),
+            "G2 identity should encode to c0...00"
+        );
     }
 
     #[test]
@@ -140,7 +149,10 @@ mod g2_identity_tests {
         let bytes = hex_to_bytes(G2_COMPRESSED_ZERO);
         let point = Bls12381::g2_uncompress(&bytes).unwrap();
 
-        assert!(Bls12381::g2_is_identity(&point), "Decoded zero should be identity");
+        assert!(
+            Bls12381::g2_is_identity(&point),
+            "Decoded zero should be identity"
+        );
     }
 
     #[test]
@@ -189,7 +201,10 @@ mod g1_operations_tests {
     #[test]
     fn test_g1_generator_not_identity() {
         let gen = G1Point::generator();
-        assert!(!Bls12381::g1_is_identity(&gen), "Generator should not be identity");
+        assert!(
+            !Bls12381::g1_is_identity(&gen),
+            "Generator should not be identity"
+        );
     }
 
     #[test]
@@ -198,7 +213,10 @@ mod g1_operations_tests {
         let compressed = Bls12381::g1_compress(&gen);
         let restored = Bls12381::g1_uncompress(&compressed).unwrap();
 
-        assert_eq!(gen, restored, "Generator should roundtrip through compression");
+        assert_eq!(
+            gen, restored,
+            "Generator should roundtrip through compression"
+        );
     }
 
     #[test]
@@ -272,8 +290,8 @@ mod g1_operations_tests {
         let result1 = Bls12381::g1_scalar_mul(&ab, &gen);
 
         // a*(b*G)
-        let bG = Bls12381::g1_scalar_mul(&b, &gen);
-        let result2 = Bls12381::g1_scalar_mul(&a, &bG);
+        let b_g = Bls12381::g1_scalar_mul(&b, &gen);
+        let result2 = Bls12381::g1_scalar_mul(&a, &b_g);
 
         assert_eq!(result1, result2, "(a*b)*G = a*(b*G)");
     }
@@ -310,7 +328,10 @@ mod g2_operations_tests {
     #[test]
     fn test_g2_generator_not_identity() {
         let gen = G2Point::generator();
-        assert!(!Bls12381::g2_is_identity(&gen), "Generator should not be identity");
+        assert!(
+            !Bls12381::g2_is_identity(&gen),
+            "Generator should not be identity"
+        );
     }
 
     #[test]
@@ -319,7 +340,10 @@ mod g2_operations_tests {
         let compressed = Bls12381::g2_compress(&gen);
         let restored = Bls12381::g2_uncompress(&compressed).unwrap();
 
-        assert_eq!(gen, restored, "Generator should roundtrip through compression");
+        assert_eq!(
+            gen, restored,
+            "Generator should roundtrip through compression"
+        );
     }
 
     #[test]
@@ -404,11 +428,11 @@ mod pairing_tests {
         let a = Scalar::from_bytes_be(&a_bytes).unwrap();
 
         // e([a]G1, G2)
-        let aG1 = Bls12381::g1_scalar_mul(&a, &g1);
-        let result1 = Bls12381::pairing(&aG1, &g2);
+        let a_g1 = Bls12381::g1_scalar_mul(&a, &g1);
+        let result1 = Bls12381::pairing(&a_g1, &g2);
 
         // e(G1, [a]G2)
-        let aG2 = Bls12381::g2_scalar_mul(&a, &g2);
+        let a_g2 = Bls12381::g2_scalar_mul(&a, &g2);
         let result2 = Bls12381::pairing(&g1, &aG2);
 
         assert_eq!(result1, result2, "e([a]G1, G2) = e(G1, [a]G2)");
@@ -433,17 +457,17 @@ mod pairing_tests {
         let ab = Scalar::from_bytes_be(&ab_bytes).unwrap();
 
         // e([a]G1, [b]G2)
-        let aG1 = Bls12381::g1_scalar_mul(&a, &g1);
-        let bG2 = Bls12381::g2_scalar_mul(&b, &g2);
-        let result1 = Bls12381::pairing(&aG1, &bG2);
+        let a_g1 = Bls12381::g1_scalar_mul(&a, &g1);
+        let b_g2 = Bls12381::g2_scalar_mul(&b, &g2);
+        let result1 = Bls12381::pairing(&a_g1, &b_g2);
 
         // e([ab]G1, G2)
-        let abG1 = Bls12381::g1_scalar_mul(&ab, &g1);
-        let result2 = Bls12381::pairing(&abG1, &g2);
+        let ab_g1 = Bls12381::g1_scalar_mul(&ab, &g1);
+        let result2 = Bls12381::pairing(&ab_g1, &g2);
 
         // e(G1, [ab]G2)
-        let abG2 = Bls12381::g2_scalar_mul(&ab, &g2);
-        let result3 = Bls12381::pairing(&g1, &abG2);
+        let ab_g2 = Bls12381::g2_scalar_mul(&ab, &g2);
+        let result3 = Bls12381::pairing(&g1, &ab_g2);
 
         assert_eq!(result1, result2, "e([a]G1, [b]G2) = e([ab]G1, G2)");
         assert_eq!(result2, result3, "e([ab]G1, G2) = e(G1, [ab]G2)");
@@ -459,7 +483,10 @@ mod pairing_tests {
         let result1 = Bls12381::final_exponentiate(&ml);
         let result2 = Bls12381::pairing(&g1, &g2);
 
-        assert_eq!(result1, result2, "finalExp(millerLoop(G1, G2)) = pairing(G1, G2)");
+        assert_eq!(
+            result1, result2,
+            "finalExp(millerLoop(G1, G2)) = pairing(G1, G2)"
+        );
     }
 
     #[test]
@@ -469,10 +496,7 @@ mod pairing_tests {
         let g2 = G2Point::generator();
         let neg_g1 = Bls12381::g1_neg(&g1);
 
-        let valid = Bls12381::verify_pairing_equation(&[
-            (g1, g2.clone()),
-            (neg_g1, g2),
-        ]);
+        let valid = Bls12381::verify_pairing_equation(&[(g1, g2.clone()), (neg_g1, g2)]);
 
         assert!(valid, "e(G1, G2) * e(-G1, G2) = 1");
     }
@@ -487,13 +511,10 @@ mod pairing_tests {
         a_bytes[31] = 42;
         let a = Scalar::from_bytes_be(&a_bytes).unwrap();
 
-        let aG1 = Bls12381::g1_scalar_mul(&a, &g1);
-        let neg_aG1 = Bls12381::g1_neg(&aG1);
+        let a_g1 = Bls12381::g1_scalar_mul(&a, &g1);
+        let neg_a_g1 = Bls12381::g1_neg(&a_g1);
 
-        let valid = Bls12381::verify_pairing_equation(&[
-            (aG1, g2.clone()),
-            (neg_aG1, g2),
-        ]);
+        let valid = Bls12381::verify_pairing_equation(&[(a_g1, g2.clone()), (neg_a_g1, g2)]);
 
         assert!(valid, "e([a]G1, G2) * e([-a]G1, G2) = 1");
     }
@@ -543,7 +564,10 @@ mod hash_to_curve_tests {
         let msg: &[u8] = b"";
         let point = Bls12381::g1_hash_to_curve(msg, TEST_DST);
 
-        assert!(!Bls12381::g1_is_identity(&point), "Hash of empty message should not be identity");
+        assert!(
+            !Bls12381::g1_is_identity(&point),
+            "Hash of empty message should not be identity"
+        );
     }
 
     #[test]
@@ -564,7 +588,10 @@ mod hash_to_curve_tests {
         let p1 = Bls12381::g2_hash_to_curve(msg1, dst);
         let p2 = Bls12381::g2_hash_to_curve(msg2, dst);
 
-        assert_ne!(p1, p2, "Different messages should hash to different G2 points");
+        assert_ne!(
+            p1, p2,
+            "Different messages should hash to different G2 points"
+        );
     }
 }
 
@@ -626,8 +653,11 @@ mod bls_signature_tests {
         let sig1 = sk.sign(msg);
         let sig2 = sk.sign(msg);
 
-        assert_eq!(sig1.to_compressed(), sig2.to_compressed(),
-            "BLS signatures should be deterministic");
+        assert_eq!(
+            sig1.to_compressed(),
+            sig2.to_compressed(),
+            "BLS signatures should be deterministic"
+        );
     }
 
     #[test]
@@ -846,10 +876,7 @@ mod pairing_signature_tests {
         let pk_point = G1Point::from_compressed(&pk.to_compressed()).unwrap();
         let sig_point = G2Point::from_compressed(&sig.to_compressed()).unwrap();
 
-        let valid = Bls12381::verify_pairing_equation(&[
-            (pk_point, h_msg),
-            (neg_g1, sig_point),
-        ]);
+        let valid = Bls12381::verify_pairing_equation(&[(pk_point, h_msg), (neg_g1, sig_point)]);
 
         assert!(valid, "BLS verification should work as pairing equation");
     }

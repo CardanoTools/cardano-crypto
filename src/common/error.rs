@@ -152,7 +152,11 @@ impl fmt::Display for CryptoError {
                 write!(f, "Invalid key length: expected {}, got {}", expected, got)
             }
             CryptoError::InvalidSignatureLength { expected, got } => {
-                write!(f, "Invalid signature length: expected {}, got {}", expected, got)
+                write!(
+                    f,
+                    "Invalid signature length: expected {}, got {}",
+                    expected, got
+                )
             }
             CryptoError::InvalidSignature => write!(f, "Invalid signature"),
             CryptoError::SignatureVerificationFailed => write!(f, "Signature verification failed"),

@@ -155,8 +155,8 @@ pub use kes::{
 
 #[cfg(feature = "bls")]
 pub use bls::{
-    bls_verify, bls_verify_with_dst, Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature,
-    G1Point, G2Point, PairingResult, Scalar, G1_COMPRESSED_SIZE, G2_COMPRESSED_SIZE, SCALAR_SIZE,
+    bls_verify, bls_verify_with_dst, Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature, G1Point,
+    G2Point, PairingResult, Scalar, G1_COMPRESSED_SIZE, G2_COMPRESSED_SIZE, SCALAR_SIZE,
 };
 
 // Re-export secp256k1 types when feature is enabled

@@ -17,7 +17,7 @@
 //! - FIPS 180-4: Secure Hash Standard (SHS)
 //! - cardano-crypto-class hash implementations
 
-use cardano_crypto::hash::{Blake2b224, Blake2b256, Blake2b512, HashAlgorithm, sha256, sha512};
+use cardano_crypto::hash::{sha256, sha512, Blake2b224, Blake2b256, Blake2b512, HashAlgorithm};
 
 // ============================================================================
 // Helper Functions
@@ -102,7 +102,7 @@ fn test_blake2b_256_tx_body() {
         "a400818258203b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b700\
          018182583900cb9358529df4729c3246a2a033cb9821abbfd16de4888005904abc410d6a577e93\
          14f1dc698d3c7c4e6c4e7f7a3e2f7a0f3e8d9c6b5a4c3d2e1f001a001e84800282a1028201d818\
-         41a002182a031903e8"
+         41a002182a031903e8",
     );
     let hash = Blake2b256::hash(&tx_body_cbor);
 
@@ -151,7 +151,7 @@ fn test_blake2b_512_vrf_output() {
     let vrf_proof = hex_decode(
         "b6b4699f87d56126c9117a7da55bd0085246f4c56dbc95d20172612e9d38e8d7\
          ca65e573a126ed88d4e30a46f80a666854d675cf3ba81de0de043c3774f06156\
-         0f55edc256a787afe701677c0f602900"
+         0f55edc256a787afe701677c0f602900",
     );
     let hash = Blake2b512::hash(&vrf_proof);
 
@@ -231,7 +231,10 @@ fn test_hash_collision_resistance() {
     let hash2 = Blake2b256::hash(b"input2");
     let hash3 = Blake2b256::hash(b"input1"); // Same as hash1
 
-    assert_ne!(hash1, hash2, "Different inputs should have different hashes");
+    assert_ne!(
+        hash1, hash2,
+        "Different inputs should have different hashes"
+    );
     assert_eq!(hash1, hash3, "Same input should have same hash");
 }
 
@@ -278,7 +281,9 @@ fn test_datum_hash() {
 #[test]
 fn test_auxiliary_data_hash() {
     // Auxiliary data hash is Blake2b-256 of the CBOR-encoded metadata
-    let metadata_cbor = hex_decode("a11902d1a178386d73672e736f6d652e6d657461646174612e6b6579636d657461646174615f76616c7565");
+    let metadata_cbor = hex_decode(
+        "a11902d1a178386d73672e736f6d652e6d657461646174612e6b6579636d657461646174615f76616c7565",
+    );
     let aux_hash = Blake2b256::hash(&metadata_cbor);
 
     assert_eq!(aux_hash.len(), 32, "Auxiliary data hash should be 32 bytes");

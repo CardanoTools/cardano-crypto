@@ -5,8 +5,8 @@
 #![cfg(all(feature = "secp256k1", feature = "bls"))]
 
 use cardano_crypto::bls::{
-    bls_verify, bls_verify_with_dst, Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature,
-    G1Point, G2Point, PairingResult, Scalar, G1_COMPRESSED_SIZE, G2_COMPRESSED_SIZE, SCALAR_SIZE,
+    bls_verify, bls_verify_with_dst, Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature, G1Point,
+    G2Point, Scalar, G1_COMPRESSED_SIZE, G2_COMPRESSED_SIZE, SCALAR_SIZE,
 };
 use cardano_crypto::dsign::secp256k1::{
     Secp256k1Ecdsa, Secp256k1EcdsaSignature, Secp256k1EcdsaSigningKey,
@@ -465,10 +465,7 @@ mod bls_pairing_tests {
         let g2 = G2Point::generator();
         let neg_g1 = Bls12381::g1_neg(&g1);
 
-        let valid = Bls12381::verify_pairing_equation(&[
-            (g1, g2.clone()),
-            (neg_g1, g2),
-        ]);
+        let valid = Bls12381::verify_pairing_equation(&[(g1, g2.clone()), (neg_g1, g2)]);
 
         assert!(valid);
     }
@@ -580,10 +577,9 @@ mod scalar_tests {
     #[test]
     fn test_scalar_roundtrip() {
         let bytes = [
-            0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
-            0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
-            0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
-            0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
+            0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc,
+            0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78,
+            0x9a, 0xbc, 0xde, 0xf0,
         ];
         let scalar = Scalar::from_bytes_be(&bytes).unwrap();
         assert_eq!(scalar.as_bytes(), &bytes);
@@ -663,8 +659,10 @@ mod integration_tests {
         assert_ne!(ecdsa_vk1, ecdsa_vk2);
 
         // Schnorr
-        let schnorr_vk1 = Secp256k1Schnorr::derive_verification_key(&Secp256k1Schnorr::gen_key(&seed1));
-        let schnorr_vk2 = Secp256k1Schnorr::derive_verification_key(&Secp256k1Schnorr::gen_key(&seed2));
+        let schnorr_vk1 =
+            Secp256k1Schnorr::derive_verification_key(&Secp256k1Schnorr::gen_key(&seed1));
+        let schnorr_vk2 =
+            Secp256k1Schnorr::derive_verification_key(&Secp256k1Schnorr::gen_key(&seed2));
         assert_ne!(schnorr_vk1, schnorr_vk2);
 
         // BLS

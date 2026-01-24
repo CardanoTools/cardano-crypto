@@ -36,12 +36,9 @@ use blst::{
     blst_p1_from_affine, blst_p1_mult, blst_p1_on_curve, blst_p1_to_affine, blst_p1_uncompress,
     blst_p2, blst_p2_add, blst_p2_affine, blst_p2_cneg, blst_p2_compress, blst_p2_from_affine,
     blst_p2_mult, blst_p2_on_curve, blst_p2_to_affine, blst_p2_uncompress, blst_scalar,
-    blst_scalar_from_bendian, min_pk, BLST_ERROR,
+    blst_scalar_from_bendian, BLST_ERROR,
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
-
-#[cfg(feature = "alloc")]
-use alloc::vec::Vec;
 
 // ============================================================================
 // Constants
@@ -731,6 +728,7 @@ impl Scalar {
     }
 
     /// Converts to blst scalar type.
+    #[allow(dead_code)]
     fn to_blst_scalar(&self) -> blst_scalar {
         let mut scalar = blst_scalar::default();
         unsafe {
