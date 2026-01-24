@@ -146,8 +146,8 @@ pub use dsign::{
 
 #[cfg(feature = "vrf")]
 pub use vrf::{
-    CertifiedVrf, OutputVrf, VrfAlgorithm, VrfDraft03, VrfDraft13, VrfKeyPair, VrfProof,
-    VrfSigningKey, VrfVerificationKey,
+    CertifiedVrf, OutputVrf, PraosBatchCompatVRF, VrfAlgorithm, VrfDraft03, VrfDraft13,
+    VrfKeyPair, VrfProof, VrfSigningKey, VrfVerificationKey,
 };
 
 #[cfg(feature = "kes")]

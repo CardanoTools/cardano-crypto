@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Operational Certificates** - New `OperationalCertificate` type for stake pool block production:
+  - Binds cold verification keys to hot KES verification keys
+  - Counter-based replay attack prevention
+  - KES period validation
+  - Full CBOR serialization compatibility with cardano-cli
+  - Matches `Cardano.Protocol.TPraos.OCert` from cardano-ledger
+
+- **PraosBatchCompatVRF Type Alias** - Documentation improvement for VRF naming:
+  - `PraosBatchCompatVRF = VrfDraft13` - Matches cardano-base naming
+  - Clarifies batch verification support in newer protocol versions
+
 - Comprehensive benchmark suite using Criterion.rs
   - VRF benchmarks (Draft-03 and Draft-13)
   - KES benchmarks (Sum2 and Sum6)
@@ -15,10 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - DSIGN benchmarks (Ed25519, secp256k1)
 - Benchmark documentation in `benches/README.md`
 - Performance targets based on Cardano mainnet requirements
+- IntersectMBO parity research audit complete (see `PARITY_IMPLEMENTATION_PLAN.md`)
 
 ### Changed
 - Added `#[inline]` attributes to hot-path functions for micro-optimizations
 - Updated Cargo.toml with benchmark harness configuration
+- Updated error types to include `OCertError` variant
 
 ---
 
