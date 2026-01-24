@@ -271,7 +271,6 @@ pub type GenesisDelegateKeyHash = KeyHash<role::GenesisDelegate>;
 ///
 /// Hash of a delegated representative verification key for governance.
 pub type DRepKeyHash = KeyHash<role::DRep>;
-pub type DRepKeyHash = KeyHash<role::DRep>;
 
 /// Committee cold key hash
 ///

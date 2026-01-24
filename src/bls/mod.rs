@@ -1448,7 +1448,6 @@ impl DsignAlgorithm for Bls12381 {
     fn sign(
         message: &[u8],
         signing_key: &Self::SigningKey,
-        _context: &Self::Context,
     ) -> Result<Self::Signature, CryptoError> {
         Ok(signing_key.sign(message))
     }
@@ -1457,7 +1456,6 @@ impl DsignAlgorithm for Bls12381 {
         message: &[u8],
         signature: &Self::Signature,
         verification_key: &Self::VerificationKey,
-        _context: &Self::Context,
     ) -> Result<(), CryptoError> {
         bls_verify(verification_key, message, signature)
     }
@@ -1468,14 +1466,6 @@ impl DsignAlgorithm for Bls12381 {
 
     fn deserialize_verification_key(bytes: &[u8]) -> Result<Self::VerificationKey, CryptoError> {
         BlsPublicKey::from_compressed(bytes)
-    }
-
-    fn serialize_signing_key(signing_key: &Self::SigningKey) -> alloc::vec::Vec<u8> {
-        signing_key.scalar.as_bytes().to_vec()
-    }
-
-    fn deserialize_signing_key(bytes: &[u8]) -> Result<Self::SigningKey, CryptoError> {
-        BlsSecretKey::from_bytes(bytes)
     }
 
     fn serialize_signature(signature: &Self::Signature) -> alloc::vec::Vec<u8> {
