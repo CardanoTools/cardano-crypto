@@ -125,6 +125,11 @@ pub mod bls;
 /// Key types, serialization, and utilities matching cardano-api
 pub mod key;
 
+/// Hierarchical Deterministic key derivation (CIP-1852) and address construction
+#[cfg(feature = "hd")]
+#[cfg_attr(docsrs, doc(cfg(feature = "hd")))]
+pub mod hd;
+
 // ============================================================================
 // Re-exports for convenience
 // ============================================================================

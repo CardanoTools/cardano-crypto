@@ -132,6 +132,14 @@ pub enum CryptoError {
     /// Other error with description
     #[cfg_attr(feature = "thiserror", error("{0}"))]
     Other(&'static str),
+
+    /// Encoding/decoding error (Bech32, etc.)
+    #[cfg_attr(feature = "thiserror", error("Encoding/decoding error"))]
+    EncodingError,
+
+    /// Invalid parameter
+    #[cfg_attr(feature = "thiserror", error("Invalid parameter: {0}"))]
+    InvalidParameter(alloc::string::String),
 }
 
 #[cfg(not(feature = "thiserror"))]
