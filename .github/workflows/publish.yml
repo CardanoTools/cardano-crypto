@@ -62,6 +62,14 @@ jobs:
 
       - name: Check semantic versioning
         run: |
+          # Check if there's a previous version to compare against
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            echo "ℹ️ No previous version found - skipping semver check (first release)"
+            exit 0
+          fi
+
+          echo "Comparing against previous version: $PREV_TAG"
           # Check for breaking changes
           cargo semver-checks check-release || {
             echo "⚠️ Breaking API changes detected!"
