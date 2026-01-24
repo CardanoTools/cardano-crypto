@@ -2,7 +2,8 @@
 //!
 //! Demonstrates CIP-1852 HD derivation and Cardano address generation
 
-use cardano_crypto::hd::{ExtendedPrivateKey, DerivationPath, Address, Network, hash_verification_key};
+use cardano_crypto::hd::{ExtendedPrivateKey, DerivationPath, Address, Network};
+use cardano_crypto::key::hash::{hash_payment_verification_key, hash_stake_verification_key};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Cardano HD Wallet Example ===\n");
@@ -27,20 +28,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Path: m/1852'/1815'/0'/2/0");
     println!("✓ Stake key derived");
 
-    // Step 4: Generate public keys and hashes
+    // Step 4: Generate public keys and hashes (type-safe!)
     println!("\n--- Key Hashing ---");
     let payment_pub = payment_key.to_public();
-    let payment_hash = hash_verification_key(payment_pub.key_bytes());
-    println!("Payment key hash: {}", hex::encode(payment_hash));
+    let payment_hash = hash_payment_verification_key(payment_pub.key_bytes());
+    println!("Payment key hash: {}", payment_hash);
 
     let stake_pub = stake_key.to_public();
-    let stake_hash = hash_verification_key(stake_pub.key_bytes());
-    println!("Stake key hash: {}", hex::encode(stake_hash));
+    let stake_hash = hash_stake_verification_key(stake_pub.key_bytes());
+    println!("Stake key hash: {}", stake_hash);
 
     // Step 5: Create different address types
     println!("\n--- Address Generation ---");
 
-    // Base address (payment + stake)
+    // Base address (payment + stake) - Type-safe! Can't mix payment and stake hashes
     let base_addr = Address::base(Network::Mainnet, payment_hash, stake_hash);
     let base_bytes = base_addr.to_bytes();
     println!("Base address (57 bytes): {}", hex::encode(&base_bytes));
@@ -79,8 +80,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let path = DerivationPath::cardano_payment(0, i);
         let key = root.derive_path(&path)?;
         let pub_key = key.to_public();
-        let hash = hash_verification_key(pub_key.key_bytes());
-        println!("Address {} key hash: {}", i, hex::encode(hash));
+        let hash = hash_payment_verification_key(pub_key.key_bytes());
+        println!("Address {} key hash: {}", i, hash);
     }
 
     println!("\n✓ All operations successful!");

@@ -5,6 +5,7 @@
 
 use crate::common::{CryptoError, Result};
 use crate::hash::{Blake2b224, HashAlgorithm};
+use crate::key::hash::{PaymentKeyHash, StakeKeyHash};
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
@@ -26,12 +27,6 @@ impl Network {
         }
     }
 }
-
-/// Payment key hash (28 bytes, Blake2b-224)
-pub type PaymentKeyHash = [u8; 28];
-
-/// Stake key hash (28 bytes, Blake2b-224)
-pub type StakeKeyHash = [u8; 28];
 
 /// Cardano address types
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -82,6 +77,7 @@ impl Address {
     }
 
     /// Encode address to bytes
+    #[cfg(feature = "alloc")]
     pub fn to_bytes(&self) -> Vec<u8> {
         match self {
             Address::Base {
@@ -92,22 +88,22 @@ impl Address {
                 let mut bytes = Vec::with_capacity(57);
                 // Header: 0000_nnnn for base address
                 bytes.push(network.discriminant());
-                bytes.extend_from_slice(payment);
-                bytes.extend_from_slice(stake);
+                bytes.extend_from_slice(payment.as_bytes());
+                bytes.extend_from_slice(stake.as_bytes());
                 bytes
             }
             Address::Enterprise { network, payment } => {
                 let mut bytes = Vec::with_capacity(29);
                 // Header: 0110_nnnn for enterprise address
                 bytes.push(0b01100000 | network.discriminant());
-                bytes.extend_from_slice(payment);
+                bytes.extend_from_slice(payment.as_bytes());
                 bytes
             }
             Address::Reward { network, stake } => {
                 let mut bytes = Vec::with_capacity(29);
                 // Header: 1110_nnnn for reward address
                 bytes.push(0b11100000 | network.discriminant());
-                bytes.extend_from_slice(stake);
+                bytes.extend_from_slice(stake.as_bytes());
                 bytes
             }
         }
@@ -157,14 +153,14 @@ impl Address {
                 if bytes.len() != 57 {
                     return Err(CryptoError::InvalidParameter("Invalid base address length".into()));
                 }
-                let mut payment = [0u8; 28];
-                let mut stake = [0u8; 28];
-                payment.copy_from_slice(&bytes[1..29]);
-                stake.copy_from_slice(&bytes[29..57]);
+                let mut payment_bytes = [0u8; 28];
+                let mut stake_bytes = [0u8; 28];
+                payment_bytes.copy_from_slice(&bytes[1..29]);
+                stake_bytes.copy_from_slice(&bytes[29..57]);
                 Ok(Address::Base {
                     network,
-                    payment,
-                    stake,
+                    payment: PaymentKeyHash::from_bytes(payment_bytes),
+                    stake: StakeKeyHash::from_bytes(stake_bytes),
                 })
             }
             0b0110 => {
@@ -174,9 +170,12 @@ impl Address {
                         "Invalid enterprise address length".into(),
                     ));
                 }
-                let mut payment = [0u8; 28];
-                payment.copy_from_slice(&bytes[1..29]);
-                Ok(Address::Enterprise { network, payment })
+                let mut payment_bytes = [0u8; 28];
+                payment_bytes.copy_from_slice(&bytes[1..29]);
+                Ok(Address::Enterprise {
+                    network,
+                    payment: PaymentKeyHash::from_bytes(payment_bytes),
+                })
             }
             0b1110 => {
                 // Reward address
@@ -185,9 +184,12 @@ impl Address {
                         "Invalid reward address length".into(),
                     ));
                 }
-                let mut stake = [0u8; 28];
-                stake.copy_from_slice(&bytes[1..29]);
-                Ok(Address::Reward { network, stake })
+                let mut stake_bytes = [0u8; 28];
+                stake_bytes.copy_from_slice(&bytes[1..29]);
+                Ok(Address::Reward {
+                    network,
+                    stake: StakeKeyHash::from_bytes(stake_bytes),
+                })
             }
             _ => Err(CryptoError::InvalidParameter("Unknown address type".into())),
         }
