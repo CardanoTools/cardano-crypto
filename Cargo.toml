@@ -98,6 +98,7 @@ blst = { version = "0.3", optional = true }
 [dev-dependencies]
 hex = "0.4"
 serde_json = "1.0"
+proptest = "1.5"
 criterion = { version = "0.5", features = ["html_reports"] }
 
 [package.metadata.docs.rs]

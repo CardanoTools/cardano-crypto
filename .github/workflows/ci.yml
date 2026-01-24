@@ -5,10 +5,19 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  merge_group:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
 
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  CARGO_INCREMENTAL: 0  # Disable incremental compilation for CI
+  CARGO_NET_RETRY: 10
+  RUST_LOG: info
 
 jobs:
   test:
@@ -144,6 +153,53 @@ jobs:
         with:
           files: ./cobertura.xml
           fail_ci_if_error: false
+
+  msrv:
+    name: Minimum Supported Rust Version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust MSRV (1.81.0)
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.81.0
+
+      - name: Check with MSRV
+        run: cargo check --all-features --verbose
+
+  feature-matrix:
+    name: Feature Combinations
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        features:
+          - ''  # no features
+          - 'alloc'
+          - 'vrf'
+          - 'kes'
+          - 'dsign'
+          - 'hash'
+          - 'plutus'
+          - 'secp256k1,bls'
+          - 'vrf,kes,dsign,hash'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Test feature combination
+        run: |
+          if [ -z "${{ matrix.features }}" ]; then
+            cargo build --no-default-features --verbose
+            cargo test --no-default-features --verbose
+          else
+            cargo build --no-default-features --features "${{ matrix.features }}" --verbose
+            cargo test --no-default-features --features "${{ matrix.features }}" --verbose
+          fi
 
   audit:
     name: Security Audit
