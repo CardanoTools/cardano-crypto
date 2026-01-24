@@ -15,9 +15,7 @@
 //! - RFC 8949: Concise Binary Object Representation (CBOR)
 //! - Cardano.Binary from cardano-base
 
-use cardano_crypto::cbor::{
-    decode_bytes, encode_bytes, Cbor, CborBuilder, FromCbor, ToCbor,
-};
+use cardano_crypto::cbor::{decode_bytes, encode_bytes, Cbor, CborBuilder, FromCbor, ToCbor};
 use cardano_crypto::common::Result;
 
 // ============================================================================
@@ -117,9 +115,15 @@ fn test_cbor_bytes_encoding() {
         // Multiple bytes
         (&[0x01, 0x02, 0x03, 0x04], "4401020304"),
         // 23 bytes (max single-byte length)
-        (&[0xAA; 23], "57aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+        (
+            &[0xAA; 23],
+            "57aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        ),
         // 24 bytes (requires 1-byte length)
-        (&[0xBB; 24], "5818bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
+        (
+            &[0xBB; 24],
+            "5818bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        ),
     ];
 
     for (bytes, expected_hex) in test_cases {
@@ -312,7 +316,11 @@ fn test_cbor_special_values() {
 fn test_cardano_encode_bytes() {
     // Empty bytes
     let encoded = encode_bytes(&[]);
-    assert_eq!(hex_encode(&encoded), "40", "Empty bytes should encode as 40");
+    assert_eq!(
+        hex_encode(&encoded),
+        "40",
+        "Empty bytes should encode as 40"
+    );
 
     // Small bytes (< 24)
     let encoded = encode_bytes(&[0x01, 0x02, 0x03]);
@@ -347,16 +355,8 @@ fn test_cardano_encode_decode_roundtrip() -> Result<()> {
     for original in test_cases {
         let encoded = encode_bytes(original);
         let (decoded, consumed) = decode_bytes(&encoded)?;
-        assert_eq!(
-            decoded, *original,
-            "Roundtrip failed for {:?}",
-            original
-        );
-        assert_eq!(
-            consumed,
-            encoded.len(),
-            "Should consume all bytes"
-        );
+        assert_eq!(decoded, *original, "Roundtrip failed for {:?}", original);
+        assert_eq!(consumed, encoded.len(), "Should consume all bytes");
     }
 
     Ok(())

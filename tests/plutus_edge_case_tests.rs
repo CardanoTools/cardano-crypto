@@ -190,7 +190,10 @@ mod bls_edge_cases {
         let compressed = Bls12381::g1_compress(&g1);
 
         // First byte should have compression flag (0x80) set
-        assert!((compressed[0] & 0x80) != 0, "Compression flag should be set");
+        assert!(
+            (compressed[0] & 0x80) != 0,
+            "Compression flag should be set"
+        );
     }
 
     #[test]
@@ -199,7 +202,10 @@ mod bls_edge_cases {
         let compressed = Bls12381::g2_compress(&g2);
 
         // First byte should have compression flag (0x80) set
-        assert!((compressed[0] & 0x80) != 0, "Compression flag should be set");
+        assert!(
+            (compressed[0] & 0x80) != 0,
+            "Compression flag should be set"
+        );
     }
 
     /// Test identity point compression flags
@@ -238,10 +244,10 @@ mod bls_edge_cases {
 
         // Test with various byte patterns
         let patterns: [[u8; 32]; 4] = [
-            [0xFF; 32],                              // Max bytes
-            [0x7F; 32],                              // High bit clear
-            [0x01; 32],                              // Many ones
-            [0xAA; 32],                              // Alternating
+            [0xFF; 32], // Max bytes
+            [0x7F; 32], // High bit clear
+            [0x01; 32], // Many ones
+            [0xAA; 32], // Alternating
         ];
 
         for pattern in &patterns {
@@ -350,22 +356,10 @@ mod integration_tests {
         );
 
         // CIP-0381 BLS12-381
-        assert_eq!(
-            G1_COMPRESSED_SIZE,
-            48,
-            "G1 compressed should be 48 bytes"
-        );
-        assert_eq!(
-            G2_COMPRESSED_SIZE,
-            96,
-            "G2 compressed should be 96 bytes"
-        );
+        assert_eq!(G1_COMPRESSED_SIZE, 48, "G1 compressed should be 48 bytes");
+        assert_eq!(G2_COMPRESSED_SIZE, 96, "G2 compressed should be 96 bytes");
         assert_eq!(SCALAR_SIZE, 32, "Scalar should be 32 bytes");
-        assert_eq!(
-            BlsSecretKey::SIZE,
-            32,
-            "BLS secret key should be 32 bytes"
-        );
+        assert_eq!(BlsSecretKey::SIZE, 32, "BLS secret key should be 32 bytes");
         assert_eq!(
             BlsPublicKey::COMPRESSED_SIZE,
             48,
@@ -548,11 +542,11 @@ mod plutus_builtin_equivalence {
         let a = Scalar::from_bytes_be(&a_bytes).unwrap();
 
         // e([a]G1, G2) should equal e(G1, [a]G2)
-        let aG1 = Bls12381::g1_scalar_mul(&a, &g1);
-        let aG2 = Bls12381::g2_scalar_mul(&a, &g2);
+        let a_g1 = Bls12381::g1_scalar_mul(&a, &g1);
+        let a_g2 = Bls12381::g2_scalar_mul(&a, &g2);
 
-        let ml1 = Bls12381::miller_loop(&aG1, &g2);
-        let ml2 = Bls12381::miller_loop(&g1, &aG2);
+        let ml1 = Bls12381::miller_loop(&a_g1, &g2);
+        let ml2 = Bls12381::miller_loop(&g1, &a_g2);
 
         let final1 = Bls12381::final_exponentiate(&ml1);
         let final2 = Bls12381::final_exponentiate(&ml2);

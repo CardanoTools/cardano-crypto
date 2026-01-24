@@ -20,7 +20,7 @@ exclude = [
 ]
 
 [features]
-default = ["std", "thiserror", "vrf", "kes", "dsign", "hash", "seed", "cbor", "key"]
+default = ["std", "thiserror", "vrf", "kes", "dsign", "hash", "seed", "cbor", "key", "hd"]
 
 # Standard library support
 # Note: blst doesn't have std/alloc features - it uses std by default
@@ -35,6 +35,7 @@ hash = ["alloc"]
 cbor = ["alloc"]
 seed = ["hash", "alloc"]
 key = ["hash"]
+hd = ["dsign", "hash", "alloc", "seed"]
 bech32-encoding = ["dep:bech32", "alloc", "key"]
 
 # secp256k1 support for Plutus (CIP-0049)
@@ -123,6 +124,10 @@ required-features = ["seed", "dsign", "vrf", "kes"]
 [[example]]
 name = "plutus_crypto"
 required-features = ["secp256k1", "bls"]
+
+[[example]]
+name = "hd_wallet"
+required-features = ["hd"]
 
 # ============================================================================
 # Build Optimization Profiles
