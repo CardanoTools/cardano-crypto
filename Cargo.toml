@@ -98,6 +98,7 @@ blst = { version = "0.3", optional = true }
 [dev-dependencies]
 hex = "0.4"
 serde_json = "1.0"
+criterion = { version = "0.5", features = ["html_reports"] }
 
 [package.metadata.docs.rs]
 all-features = true
@@ -172,3 +173,20 @@ lto = "fat"
 # Test profile - balance between speed and compilation time
 inherits = "dev"
 opt-level = 1          # Some optimization for faster tests
+
+# Benchmark harnesses
+[[bench]]
+name = "vrf_benchmarks"
+harness = false
+
+[[bench]]
+name = "kes_benchmarks"
+harness = false
+
+[[bench]]
+name = "hash_benchmarks"
+harness = false
+
+[[bench]]
+name = "dsign_benchmarks"
+harness = false

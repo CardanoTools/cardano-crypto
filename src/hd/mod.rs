@@ -77,11 +77,13 @@ impl ExtendedPrivateKey {
     }
 
     /// Get key bytes
+    #[inline]
     pub fn key_bytes(&self) -> &[u8; KEY_SIZE] {
         &self.key
     }
 
     /// Get chain code
+    #[inline]
     pub fn chain_code(&self) -> &ChainCode {
         &self.chain_code
     }

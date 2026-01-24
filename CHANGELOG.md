@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Comprehensive benchmark suite using Criterion.rs
+  - VRF benchmarks (Draft-03 and Draft-13)
+  - KES benchmarks (Sum2 and Sum6)
+  - Hash benchmarks (Blake2b-224/256/512)
+  - DSIGN benchmarks (Ed25519, secp256k1)
+- Benchmark documentation in `benches/README.md`
+- Performance targets based on Cardano mainnet requirements
+
+### Changed
+- Added `#[inline]` attributes to hot-path functions for micro-optimizations
+- Updated Cargo.toml with benchmark harness configuration
+
+---
+
 ## [1.1.0] - 2026-01-24
 
 ### Added

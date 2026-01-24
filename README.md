@@ -508,14 +508,38 @@ This implementation is based on:Part of the Cardano Rust ecosystem:
 cargo fmt
 
 # Lint
-cargo clippy
+cargo clippy --all-targets --all-features
+
+# Run tests
+cargo test --all-features
 
 # Build docs
-cargo doc --open
+cargo doc --open --all-features
 
-# Run benches
-cargo bench
+# Run benchmarks
+cargo bench --all-features
 ```
+
+For detailed benchmarking information, see [benches/README.md](benches/README.md).
+
+## Performance
+
+This crate includes comprehensive benchmarks for all cryptographic operations. Performance targets are based on Cardano mainnet requirements:
+
+| Operation | Target | Use Case |
+|-----------|--------|----------|
+| VRF Prove | <1ms | Block production (slot leader election) |
+| VRF Verify | <500μs | Block validation |
+| KES Sign | <2ms | Block signing |
+| Ed25519 Sign | <100μs | Transaction signing |
+| Blake2b-256 | >100 MB/s | UTXO hashing |
+
+Run benchmarks:
+```bash
+cargo bench --all-features
+```
+
+View detailed reports in `target/criterion/report/index.html`.
 
 ## License
 
