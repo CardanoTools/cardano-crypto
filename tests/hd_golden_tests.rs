@@ -8,6 +8,7 @@
 use cardano_crypto::hd::{
     Address, DerivationPath, ExtendedPrivateKey, Network, hash_verification_key,
 };
+use cardano_crypto::key::hash::{KeyHash, role::{Payment, Staking}};
 
 fn hex_decode(s: &str) -> Vec<u8> {
     (0..s.len())
@@ -88,8 +89,10 @@ fn test_hd_public_key_derivation() {
 #[test]
 fn test_address_base_mainnet() {
     // Test Base address construction
-    let payment_hash = [1u8; 28];
-    let stake_hash = [2u8; 28];
+    let payment_bytes = [1u8; 28];
+    let stake_bytes = [2u8; 28];
+    let payment_hash = KeyHash::<Payment>::from_bytes(payment_bytes);
+    let stake_hash = KeyHash::<Staking>::from_bytes(stake_bytes);
 
     let addr = Address::base(Network::Mainnet, payment_hash, stake_hash);
     let bytes = addr.to_bytes();
@@ -102,8 +105,8 @@ fn test_address_base_mainnet() {
     assert_eq!(bytes[0] & 0b00001111, 0b0001); // Network = mainnet
 
     // Verify payment and stake hashes
-    assert_eq!(&bytes[1..29], &payment_hash);
-    assert_eq!(&bytes[29..57], &stake_hash);
+    assert_eq!(&bytes[1..29], &payment_bytes);
+    assert_eq!(&bytes[29..57], &stake_bytes);
 
     // Round-trip test
     let decoded = Address::from_bytes(&bytes).unwrap();
@@ -113,7 +116,8 @@ fn test_address_base_mainnet() {
 #[test]
 fn test_address_enterprise_testnet() {
     // Test Enterprise address on testnet
-    let payment_hash = [3u8; 28];
+    let payment_bytes = [3u8; 28];
+    let payment_hash = KeyHash::<Payment>::from_bytes(payment_bytes);
 
     let addr = Address::enterprise(Network::Testnet, payment_hash);
     let bytes = addr.to_bytes();
@@ -126,7 +130,7 @@ fn test_address_enterprise_testnet() {
     assert_eq!(bytes[0] & 0b00001111, 0b0000); // Network = testnet
 
     // Verify payment hash
-    assert_eq!(&bytes[1..29], &payment_hash);
+    assert_eq!(&bytes[1..29], &payment_bytes);
 
     // Round-trip test
     let decoded = Address::from_bytes(&bytes).unwrap();
@@ -136,7 +140,8 @@ fn test_address_enterprise_testnet() {
 #[test]
 fn test_address_reward_mainnet() {
     // Test Reward (stake) address on mainnet
-    let stake_hash = [4u8; 28];
+    let stake_bytes = [4u8; 28];
+    let stake_hash = KeyHash::<Staking>::from_bytes(stake_bytes);
 
     let addr = Address::reward(Network::Mainnet, stake_hash);
     let bytes = addr.to_bytes();
@@ -149,7 +154,7 @@ fn test_address_reward_mainnet() {
     assert_eq!(bytes[0] & 0b00001111, 0b0001); // Network = mainnet
 
     // Verify stake hash
-    assert_eq!(&bytes[1..29], &stake_hash);
+    assert_eq!(&bytes[1..29], &stake_bytes);
 
     // Round-trip test
     let decoded = Address::from_bytes(&bytes).unwrap();
@@ -179,8 +184,10 @@ fn test_key_hash_generation() {
 #[cfg(feature = "bech32-encoding")]
 fn test_address_bech32_encoding() {
     // Test Bech32 encoding matches Cardano format
-    let payment_hash = [5u8; 28];
-    let stake_hash = [6u8; 28];
+    let payment_bytes = [5u8; 28];
+    let stake_bytes = [6u8; 28];
+    let payment_hash = KeyHash::<Payment>::from_bytes(payment_bytes);
+    let stake_hash = KeyHash::<Staking>::from_bytes(stake_bytes);
 
     let addr = Address::base(Network::Mainnet, payment_hash, stake_hash);
     let bech32 = addr.to_bech32().unwrap();
@@ -209,20 +216,22 @@ fn test_full_wallet_address_generation() {
     let payment_path = DerivationPath::cardano_payment(0, 0);
     let payment_key = root.derive_path(&payment_path).unwrap();
     let payment_pub = payment_key.to_public();
-    let payment_hash = hash_verification_key(payment_pub.key_bytes());
+    let payment_hash_bytes = hash_verification_key(payment_pub.key_bytes());
+    let payment_hash = KeyHash::<Payment>::from_bytes(payment_hash_bytes);
 
     // Derive stake key (m/1852'/1815'/0'/2/0)
     let stake_path = DerivationPath::cardano_stake(0, 0);
     let stake_key = root.derive_path(&stake_path).unwrap();
     let stake_pub = stake_key.to_public();
-    let stake_hash = hash_verification_key(stake_pub.key_bytes());
+    let stake_hash_bytes = hash_verification_key(stake_pub.key_bytes());
+    let stake_hash = KeyHash::<Staking>::from_bytes(stake_hash_bytes);
 
     // Create base address
     let addr = Address::base(Network::Mainnet, payment_hash, stake_hash);
     let bytes = addr.to_bytes();
 
     assert_eq!(bytes.len(), 57);
-    
+
     // Verify it round-trips correctly
     let decoded = Address::from_bytes(&bytes).unwrap();
     assert_eq!(addr, decoded);

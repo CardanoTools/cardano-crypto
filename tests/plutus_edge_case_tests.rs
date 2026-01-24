@@ -93,8 +93,11 @@ mod secp256k1_edge_cases {
     fn test_key_uniqueness() {
         let mut keys = Vec::new();
         for i in 0..100u8 {
-            let mut seed = [0u8; 32];
-            seed[0] = i;
+            // Use non-zero seeds that are valid secp256k1 private keys
+            // Start with a valid base seed and modify it
+            let mut seed = [0x42u8; 32];
+            seed[0] = i.wrapping_add(1); // Avoid all-zeros which is invalid
+            seed[31] = i.wrapping_add(1);
             let sk = Secp256k1Ecdsa::gen_key(&seed);
             let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
             keys.push(vk.as_bytes().to_vec());
@@ -599,12 +602,14 @@ mod stress_tests {
     #[test]
     fn test_many_ecdsa_operations() {
         for i in 0..50u8 {
-            let mut seed = [0u8; 32];
-            seed[0] = i;
+            // Use non-zero seeds that are valid secp256k1 private keys
+            let mut seed = [0x42u8; 32];
+            seed[0] = i.wrapping_add(1);
+            seed[31] = i.wrapping_add(1);
             let sk = Secp256k1Ecdsa::gen_key(&seed);
             let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
 
-            let msg = [i; 32];
+            let msg = [i.wrapping_add(1); 32];
             let sig = Secp256k1Ecdsa::sign_prehashed(&sk, &msg).unwrap();
             assert!(Secp256k1Ecdsa::verify_prehashed(&vk, &msg, &sig).is_ok());
         }
@@ -613,12 +618,14 @@ mod stress_tests {
     #[test]
     fn test_many_schnorr_operations() {
         for i in 0..50u8 {
-            let mut seed = [0u8; 32];
-            seed[0] = i;
+            // Use non-zero seeds that are valid secp256k1 private keys
+            let mut seed = [0x42u8; 32];
+            seed[0] = i.wrapping_add(1);
+            seed[31] = i.wrapping_add(1);
             let sk = Secp256k1Schnorr::gen_key(&seed);
             let vk = Secp256k1Schnorr::derive_verification_key(&sk);
 
-            let msg = vec![i; i as usize + 1];
+            let msg = vec![i.wrapping_add(1); i as usize + 1];
             let sig = Secp256k1Schnorr::sign(&sk, &msg);
             assert!(Secp256k1Schnorr::verify(&vk, &msg, &sig).is_ok());
         }
