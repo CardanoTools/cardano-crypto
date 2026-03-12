@@ -36,7 +36,7 @@
 //!
 //! // Generate cold key (pool operator)
 //! let cold_seed = [1u8; 32];
-//! let cold_sk = Ed25519::gen_key(&cold_seed);
+//! let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 //! let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 //!
 //! // Generate hot KES key
@@ -64,7 +64,7 @@
 //! # use cardano_crypto::key::kes_period::KesPeriod;
 //! #
 //! # let cold_seed = [1u8; 32];
-//! # let cold_sk = Ed25519::gen_key(&cold_seed);
+//! # let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 //! # let kes_seed = [2u8; 32];
 //! # let (kes_sk, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
 //! # let ocert = OperationalCertificate::new(kes_vk, 0, KesPeriod(100), &cold_sk);
@@ -265,7 +265,7 @@ impl OperationalCertificate {
     /// use cardano_crypto::key::kes_period::KesPeriod;
     ///
     /// let cold_seed = [1u8; 32];
-    /// let cold_sk = Ed25519::gen_key(&cold_seed);
+    /// let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
     ///
     /// let kes_seed = [2u8; 32];
     /// let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
@@ -323,7 +323,7 @@ impl OperationalCertificate {
     /// # use cardano_crypto::key::kes_period::KesPeriod;
     /// #
     /// # let cold_seed = [1u8; 32];
-    /// # let cold_sk = Ed25519::gen_key(&cold_seed);
+    /// # let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
     /// # let cold_vk = Ed25519::derive_verification_key(&cold_sk);
     /// # let kes_seed = [2u8; 32];
     /// # let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
@@ -334,7 +334,7 @@ impl OperationalCertificate {
     ///
     /// // Verify with wrong cold key (fails)
     /// let wrong_seed = [99u8; 32];
-    /// let wrong_sk = Ed25519::gen_key(&wrong_seed);
+    /// let wrong_sk = Ed25519::gen_key(&wrong_seed).unwrap();
     /// let wrong_vk = Ed25519::derive_verification_key(&wrong_sk);
     /// assert!(ocert.verify(&wrong_vk).is_err());
     /// ```
@@ -379,7 +379,7 @@ impl OperationalCertificate {
     /// # use cardano_crypto::key::kes_period::KesPeriod;
     /// #
     /// # let cold_seed = [1u8; 32];
-    /// # let cold_sk = Ed25519::gen_key(&cold_seed);
+    /// # let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
     /// # let kes_seed = [2u8; 32];
     /// # let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
     /// # let ocert = OperationalCertificate::new(kes_vk, 0, KesPeriod(100), &cold_sk);
@@ -515,7 +515,7 @@ mod tests {
     fn test_ocert_new_and_verify() {
         // Generate cold key (pool operator)
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
         let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
         // Generate hot KES key
@@ -537,7 +537,7 @@ mod tests {
     #[test]
     fn test_ocert_verify_wrong_key() {
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 
         let kes_seed = [2u8; 32];
         let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
@@ -546,7 +546,7 @@ mod tests {
 
         // Try to verify with wrong cold key
         let wrong_seed = [99u8; 32];
-        let wrong_sk = Ed25519::gen_key(&wrong_seed);
+        let wrong_sk = Ed25519::gen_key(&wrong_seed).unwrap();
         let wrong_vk = Ed25519::derive_verification_key(&wrong_sk);
 
         assert!(ocert.verify(&wrong_vk).is_err());
@@ -555,7 +555,7 @@ mod tests {
     #[test]
     fn test_ocert_period_validation() {
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 
         let kes_seed = [2u8; 32];
         let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
@@ -573,7 +573,7 @@ mod tests {
     #[test]
     fn test_ocert_counter_validation() {
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 
         let kes_seed = [2u8; 32];
         let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
@@ -612,7 +612,7 @@ mod tests {
     #[test]
     fn test_ocert_multiple_counters() {
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
         let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
         let kes_seed1 = [2u8; 32];
@@ -648,7 +648,7 @@ mod tests {
         // kp_ < c0_ + maxKESiterations
         // where maxKESiterations = 62 (KES_MAX_EVOLUTION)
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 
         let kes_seed = [2u8; 32];
         let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();

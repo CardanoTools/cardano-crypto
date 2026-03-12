@@ -91,7 +91,7 @@ fn main() -> Result<()> {
     section("1. Pool Cold Key (Offline)");
 
     let cold_seed = [0x01u8; 32]; // In production: Use secure random seed!
-    let cold_sk = Ed25519::gen_key(&cold_seed);
+    let cold_sk = Ed25519::gen_key(&cold_seed)?;
     let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
     println!(

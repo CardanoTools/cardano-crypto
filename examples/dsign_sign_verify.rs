@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Generate a keypair from a seed
     let seed = [42u8; 32];
-    let signing_key = Ed25519::gen_key(&seed);
+    let signing_key = Ed25519::gen_key(&seed)?;
     let verification_key = Ed25519::derive_verification_key(&signing_key);
 
     println!("Generated keypair from seed:");

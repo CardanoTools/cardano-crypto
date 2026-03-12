@@ -347,7 +347,7 @@ mod dsign_edge_cases {
     #[test]
     fn test_ed25519_empty_message() -> Result<()> {
         let seed = [0x20u8; 32];
-        let sk = Ed25519::gen_key(&seed);
+        let sk = Ed25519::gen_key(&seed).unwrap();
         let vk = Ed25519::derive_verification_key(&sk);
 
         let sig = Ed25519::sign(&sk, &[]);
@@ -362,7 +362,7 @@ mod dsign_edge_cases {
     #[test]
     fn test_ed25519_large_message() -> Result<()> {
         let seed = [0x21u8; 32];
-        let sk = Ed25519::gen_key(&seed);
+        let sk = Ed25519::gen_key(&seed).unwrap();
         let vk = Ed25519::derive_verification_key(&sk);
 
         let large_msg = vec![0xAB; 100_000];
@@ -380,8 +380,8 @@ mod dsign_edge_cases {
         let seed1 = [0x22u8; 32];
         let seed2 = [0x23u8; 32];
 
-        let sk1 = Ed25519::gen_key(&seed1);
-        let sk2 = Ed25519::gen_key(&seed2);
+        let sk1 = Ed25519::gen_key(&seed1).unwrap();
+        let sk2 = Ed25519::gen_key(&seed2).unwrap();
         let vk2 = Ed25519::derive_verification_key(&sk2);
 
         // Sign with key1, verify with key2's vk
@@ -395,7 +395,7 @@ mod dsign_edge_cases {
     #[test]
     fn test_ed25519_wrong_message() -> Result<()> {
         let seed = [0x24u8; 32];
-        let sk = Ed25519::gen_key(&seed);
+        let sk = Ed25519::gen_key(&seed).unwrap();
         let vk = Ed25519::derive_verification_key(&sk);
 
         let sig = Ed25519::sign(&sk, b"message1");
@@ -410,7 +410,7 @@ mod dsign_edge_cases {
         use cardano_crypto::dsign::ed25519::Ed25519Signature;
 
         let seed = [0x25u8; 32];
-        let sk = Ed25519::gen_key(&seed);
+        let sk = Ed25519::gen_key(&seed).unwrap();
         let vk = Ed25519::derive_verification_key(&sk);
 
         let sig = Ed25519::sign(&sk, b"test");
@@ -433,7 +433,7 @@ mod dsign_edge_cases {
     #[test]
     fn test_ed25519_single_byte_message() -> Result<()> {
         let seed = [0x26u8; 32];
-        let sk = Ed25519::gen_key(&seed);
+        let sk = Ed25519::gen_key(&seed).unwrap();
         let vk = Ed25519::derive_verification_key(&sk);
 
         let sig = Ed25519::sign(&sk, &[0x42]);
@@ -541,8 +541,8 @@ mod cross_module_edge_cases {
         );
 
         // Ed25519
-        let ed_sk1 = Ed25519::gen_key(&seed);
-        let ed_sk2 = Ed25519::gen_key(&seed);
+        let ed_sk1 = Ed25519::gen_key(&seed).unwrap();
+        let ed_sk2 = Ed25519::gen_key(&seed).unwrap();
         let ed_vk1 = Ed25519::derive_verification_key(&ed_sk1);
         let ed_vk2 = Ed25519::derive_verification_key(&ed_sk2);
         assert_eq!(
@@ -568,8 +568,8 @@ mod cross_module_edge_cases {
         assert_ne!(vrf_pk1, vrf_pk2);
 
         // Ed25519
-        let ed_sk1 = Ed25519::gen_key(&seed1);
-        let ed_sk2 = Ed25519::gen_key(&seed2);
+        let ed_sk1 = Ed25519::gen_key(&seed1).unwrap();
+        let ed_sk2 = Ed25519::gen_key(&seed2).unwrap();
         let ed_vk1 = Ed25519::derive_verification_key(&ed_sk1);
         let ed_vk2 = Ed25519::derive_verification_key(&ed_sk2);
         assert_ne!(ed_vk1.as_bytes(), ed_vk2.as_bytes());

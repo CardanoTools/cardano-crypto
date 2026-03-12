@@ -18,9 +18,9 @@
 //! use cardano_crypto::dsign::{Secp256k1Ecdsa, DsignAlgorithm};
 //!
 //! let seed = [0u8; 32];
-//! let signing_key = Secp256k1Ecdsa::gen_key(&seed);
-//! let verification_key = Secp256k1Ecdsa::derive_verification_key(&signing_key);
-//! let signature = Secp256k1Ecdsa::sign(&signing_key, b"message");
+//! let signing_key = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+//! let verification_key = Secp256k1Ecdsa::derive_verification_key(&signing_key).unwrap();
+//! let signature = Secp256k1Ecdsa::sign(&signing_key, b"message").unwrap();
 //! assert!(Secp256k1Ecdsa::verify(&verification_key, b"message", &signature).is_ok());
 //! ```
 
@@ -74,8 +74,8 @@ impl Secp256k1EcdsaSigningKey {
     }
 
     /// Converts to the k256 signing key.
-    fn to_k256_signing_key(&self) -> K256SigningKey {
-        K256SigningKey::from_bytes((&self.bytes).into()).expect("validated in constructor")
+    fn to_k256_signing_key(&self) -> Result<K256SigningKey, CryptoError> {
+        K256SigningKey::from_bytes((&self.bytes).into()).map_err(|_| CryptoError::InvalidPrivateKey)
     }
 }
 
@@ -118,8 +118,8 @@ impl Secp256k1EcdsaVerificationKey {
     }
 
     /// Converts to the k256 verifying key.
-    fn to_k256_verifying_key(&self) -> K256VerifyingKey {
-        K256VerifyingKey::from_sec1_bytes(&self.bytes).expect("validated in constructor")
+    fn to_k256_verifying_key(&self) -> Result<K256VerifyingKey, CryptoError> {
+        K256VerifyingKey::from_sec1_bytes(&self.bytes).map_err(|_| CryptoError::InvalidPublicKey)
     }
 }
 
@@ -162,8 +162,8 @@ impl Secp256k1EcdsaSignature {
     }
 
     /// Converts to the k256 signature.
-    fn to_k256_signature(&self) -> K256EcdsaSignature {
-        K256EcdsaSignature::from_slice(&self.bytes).expect("validated in constructor")
+    fn to_k256_signature(&self) -> Result<K256EcdsaSignature, CryptoError> {
+        K256EcdsaSignature::from_slice(&self.bytes).map_err(|_| CryptoError::InvalidSignature)
     }
 }
 
@@ -211,8 +211,8 @@ impl Secp256k1SchnorrSigningKey {
     }
 
     /// Converts to the k256 schnorr signing key.
-    fn to_k256_signing_key(&self) -> K256SchnorrSigningKey {
-        K256SchnorrSigningKey::from_bytes(&self.bytes).expect("validated in constructor")
+    fn to_k256_signing_key(&self) -> Result<K256SchnorrSigningKey, CryptoError> {
+        K256SchnorrSigningKey::from_bytes(&self.bytes).map_err(|_| CryptoError::InvalidPrivateKey)
     }
 }
 
@@ -256,8 +256,8 @@ impl Secp256k1SchnorrVerificationKey {
     }
 
     /// Converts to the k256 schnorr verifying key.
-    fn to_k256_verifying_key(&self) -> K256SchnorrVerifyingKey {
-        K256SchnorrVerifyingKey::from_bytes(&self.bytes).expect("validated in constructor")
+    fn to_k256_verifying_key(&self) -> Result<K256SchnorrVerifyingKey, CryptoError> {
+        K256SchnorrVerifyingKey::from_bytes(&self.bytes).map_err(|_| CryptoError::InvalidPublicKey)
     }
 }
 
@@ -301,8 +301,8 @@ impl Secp256k1SchnorrSignature {
     }
 
     /// Converts to the k256 schnorr signature.
-    fn to_k256_signature(&self) -> K256SchnorrSignature {
-        K256SchnorrSignature::try_from(&self.bytes[..]).expect("validated in constructor")
+    fn to_k256_signature(&self) -> Result<K256SchnorrSignature, CryptoError> {
+        K256SchnorrSignature::try_from(&self.bytes[..]).map_err(|_| CryptoError::InvalidSignature)
     }
 }
 
@@ -339,31 +339,34 @@ impl Secp256k1Ecdsa {
     pub const SIGNATURE_SIZE: usize = 64;
 
     /// Generates a signing key from a 32-byte seed.
-    pub fn gen_key(seed: &[u8; 32]) -> Secp256k1EcdsaSigningKey {
-        Secp256k1EcdsaSigningKey::from_bytes(seed).expect("32-byte seed is valid")
+    pub fn gen_key(seed: &[u8; 32]) -> Result<Secp256k1EcdsaSigningKey, CryptoError> {
+        Secp256k1EcdsaSigningKey::from_bytes(seed)
     }
 
     /// Derives the verification key from a signing key.
     pub fn derive_verification_key(
         signing_key: &Secp256k1EcdsaSigningKey,
-    ) -> Secp256k1EcdsaVerificationKey {
-        let k256_sk = signing_key.to_k256_signing_key();
+    ) -> Result<Secp256k1EcdsaVerificationKey, CryptoError> {
+        let k256_sk = signing_key.to_k256_signing_key()?;
         let k256_vk = k256_sk.verifying_key();
         let bytes = k256_vk.to_sec1_bytes();
         let mut vk_bytes = [0u8; 33];
         vk_bytes.copy_from_slice(&bytes);
-        Secp256k1EcdsaVerificationKey { bytes: vk_bytes }
+        Ok(Secp256k1EcdsaVerificationKey { bytes: vk_bytes })
     }
 
     /// Signs a message using the signing key.
     ///
     /// The message is hashed with SHA-256 before signing (standard ECDSA).
-    pub fn sign(signing_key: &Secp256k1EcdsaSigningKey, message: &[u8]) -> Secp256k1EcdsaSignature {
-        let k256_sk = signing_key.to_k256_signing_key();
+    pub fn sign(
+        signing_key: &Secp256k1EcdsaSigningKey,
+        message: &[u8],
+    ) -> Result<Secp256k1EcdsaSignature, CryptoError> {
+        let k256_sk = signing_key.to_k256_signing_key()?;
         let signature: K256EcdsaSignature = k256_sk.sign(message);
         let mut bytes = [0u8; 64];
         bytes.copy_from_slice(&signature.to_bytes());
-        Secp256k1EcdsaSignature { bytes }
+        Ok(Secp256k1EcdsaSignature { bytes })
     }
 
     /// Verifies a signature against a message and verification key.
@@ -372,8 +375,8 @@ impl Secp256k1Ecdsa {
         message: &[u8],
         signature: &Secp256k1EcdsaSignature,
     ) -> Result<(), CryptoError> {
-        let k256_vk = verification_key.to_k256_verifying_key();
-        let k256_sig = signature.to_k256_signature();
+        let k256_vk = verification_key.to_k256_verifying_key()?;
+        let k256_sig = signature.to_k256_signature()?;
         k256_vk
             .verify(message, &k256_sig)
             .map_err(|_| CryptoError::SignatureVerificationFailed)
@@ -387,7 +390,7 @@ impl Secp256k1Ecdsa {
         message_hash: &[u8; 32],
     ) -> Result<Secp256k1EcdsaSignature, CryptoError> {
         use k256::ecdsa::signature::hazmat::PrehashSigner;
-        let k256_sk = signing_key.to_k256_signing_key();
+        let k256_sk = signing_key.to_k256_signing_key()?;
         let signature: K256EcdsaSignature = k256_sk
             .sign_prehash(message_hash)
             .map_err(|_| CryptoError::SigningFailed)?;
@@ -403,8 +406,8 @@ impl Secp256k1Ecdsa {
         signature: &Secp256k1EcdsaSignature,
     ) -> Result<(), CryptoError> {
         use k256::ecdsa::signature::hazmat::PrehashVerifier;
-        let k256_vk = verification_key.to_k256_verifying_key();
-        let k256_sig = signature.to_k256_signature();
+        let k256_vk = verification_key.to_k256_verifying_key()?;
+        let k256_sig = signature.to_k256_signature()?;
         k256_vk
             .verify_prehash(message_hash, &k256_sig)
             .map_err(|_| CryptoError::SignatureVerificationFailed)
@@ -431,20 +434,20 @@ impl Secp256k1Schnorr {
     pub const SIGNATURE_SIZE: usize = 64;
 
     /// Generates a signing key from a 32-byte seed.
-    pub fn gen_key(seed: &[u8; 32]) -> Secp256k1SchnorrSigningKey {
-        Secp256k1SchnorrSigningKey::from_bytes(seed).expect("32-byte seed is valid")
+    pub fn gen_key(seed: &[u8; 32]) -> Result<Secp256k1SchnorrSigningKey, CryptoError> {
+        Secp256k1SchnorrSigningKey::from_bytes(seed)
     }
 
     /// Derives the verification key from a signing key.
     pub fn derive_verification_key(
         signing_key: &Secp256k1SchnorrSigningKey,
-    ) -> Secp256k1SchnorrVerificationKey {
-        let k256_sk = signing_key.to_k256_signing_key();
+    ) -> Result<Secp256k1SchnorrVerificationKey, CryptoError> {
+        let k256_sk = signing_key.to_k256_signing_key()?;
         let k256_vk = k256_sk.verifying_key();
         let bytes = k256_vk.to_bytes();
-        Secp256k1SchnorrVerificationKey {
+        Ok(Secp256k1SchnorrVerificationKey {
             bytes: bytes.into(),
-        }
+        })
     }
 
     /// Signs a message using the signing key.
@@ -460,7 +463,7 @@ impl Secp256k1Schnorr {
         signing_key: &Secp256k1SchnorrSigningKey,
         message: &[u8],
     ) -> Result<Secp256k1SchnorrSignature, CryptoError> {
-        let k256_sk = signing_key.to_k256_signing_key();
+        let k256_sk = signing_key.to_k256_signing_key()?;
         let signature: K256SchnorrSignature = k256_sk
             .sign_raw(message, &[0u8; 32])
             .map_err(|_| CryptoError::SigningFailed)?;
@@ -477,8 +480,8 @@ impl Secp256k1Schnorr {
         message: &[u8],
         signature: &Secp256k1SchnorrSignature,
     ) -> Result<(), CryptoError> {
-        let k256_vk = verification_key.to_k256_verifying_key();
-        let k256_sig = signature.to_k256_signature();
+        let k256_vk = verification_key.to_k256_verifying_key()?;
+        let k256_sig = signature.to_k256_signature()?;
         k256_vk
             .verify_raw(message, &k256_sig)
             .map_err(|_| CryptoError::SignatureVerificationFailed)
@@ -494,7 +497,7 @@ impl Secp256k1Schnorr {
         message_hash: &[u8; 32],
     ) -> Result<Secp256k1SchnorrSignature, CryptoError> {
         use k256::schnorr::signature::hazmat::PrehashSigner;
-        let k256_sk = signing_key.to_k256_signing_key();
+        let k256_sk = signing_key.to_k256_signing_key()?;
         let signature: K256SchnorrSignature = k256_sk
             .sign_prehash(message_hash)
             .map_err(|_| CryptoError::SigningFailed)?;
@@ -509,8 +512,8 @@ impl Secp256k1Schnorr {
         signature: &Secp256k1SchnorrSignature,
     ) -> Result<(), CryptoError> {
         use k256::schnorr::signature::hazmat::PrehashVerifier;
-        let k256_vk = verification_key.to_k256_verifying_key();
-        let k256_sig = signature.to_k256_signature();
+        let k256_vk = verification_key.to_k256_verifying_key()?;
+        let k256_sig = signature.to_k256_signature()?;
         k256_vk
             .verify_prehash(message_hash, &k256_sig)
             .map_err(|_| CryptoError::SignatureVerificationFailed)
@@ -557,11 +560,11 @@ mod tests {
     #[test]
     fn test_ecdsa_sign_verify() {
         let seed = [1u8; 32];
-        let signing_key = Secp256k1Ecdsa::gen_key(&seed);
-        let verification_key = Secp256k1Ecdsa::derive_verification_key(&signing_key);
+        let signing_key = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let verification_key = Secp256k1Ecdsa::derive_verification_key(&signing_key).unwrap();
 
         let message = b"Hello, Cardano!";
-        let signature = Secp256k1Ecdsa::sign(&signing_key, message);
+        let signature = Secp256k1Ecdsa::sign(&signing_key, message).unwrap();
 
         assert!(Secp256k1Ecdsa::verify(&verification_key, message, &signature).is_ok());
     }
@@ -569,11 +572,11 @@ mod tests {
     #[test]
     fn test_ecdsa_invalid_signature() {
         let seed = [1u8; 32];
-        let signing_key = Secp256k1Ecdsa::gen_key(&seed);
-        let verification_key = Secp256k1Ecdsa::derive_verification_key(&signing_key);
+        let signing_key = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let verification_key = Secp256k1Ecdsa::derive_verification_key(&signing_key).unwrap();
 
         let message = b"Hello, Cardano!";
-        let signature = Secp256k1Ecdsa::sign(&signing_key, message);
+        let signature = Secp256k1Ecdsa::sign(&signing_key, message).unwrap();
 
         // Wrong message
         assert!(Secp256k1Ecdsa::verify(&verification_key, b"Wrong message", &signature).is_err());
@@ -584,8 +587,8 @@ mod tests {
         use sha2::{Digest, Sha256};
 
         let seed = [2u8; 32];
-        let signing_key = Secp256k1Ecdsa::gen_key(&seed);
-        let verification_key = Secp256k1Ecdsa::derive_verification_key(&signing_key);
+        let signing_key = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let verification_key = Secp256k1Ecdsa::derive_verification_key(&signing_key).unwrap();
 
         let message = b"Pre-hashed message";
         let mut hasher = Sha256::new();
@@ -599,8 +602,8 @@ mod tests {
     #[test]
     fn test_schnorr_sign_verify() {
         let seed = [3u8; 32];
-        let signing_key = Secp256k1Schnorr::gen_key(&seed);
-        let verification_key = Secp256k1Schnorr::derive_verification_key(&signing_key);
+        let signing_key = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let verification_key = Secp256k1Schnorr::derive_verification_key(&signing_key).unwrap();
 
         let message = b"Hello, Plutus!";
         let signature = Secp256k1Schnorr::sign(&signing_key, message).unwrap();
@@ -611,8 +614,8 @@ mod tests {
     #[test]
     fn test_schnorr_invalid_signature() {
         let seed = [3u8; 32];
-        let signing_key = Secp256k1Schnorr::gen_key(&seed);
-        let verification_key = Secp256k1Schnorr::derive_verification_key(&signing_key);
+        let signing_key = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let verification_key = Secp256k1Schnorr::derive_verification_key(&signing_key).unwrap();
 
         let message = b"Hello, Plutus!";
         let signature = Secp256k1Schnorr::sign(&signing_key, message).unwrap();
@@ -640,8 +643,8 @@ mod tests {
         let seed = [4u8; 32];
 
         // ECDSA
-        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed);
-        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk);
+        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk).unwrap();
 
         let ecdsa_sk_bytes = ecdsa_sk.as_bytes();
         let ecdsa_vk_bytes = ecdsa_vk.as_bytes();
@@ -653,8 +656,8 @@ mod tests {
         assert_eq!(ecdsa_vk, ecdsa_vk2);
 
         // Schnorr
-        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
-        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
+        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk).unwrap();
 
         let schnorr_sk_bytes = schnorr_sk.as_bytes();
         let schnorr_vk_bytes = schnorr_vk.as_bytes();
@@ -671,12 +674,12 @@ mod tests {
         let seed1 = [5u8; 32];
         let seed2 = [6u8; 32];
 
-        let sk1 = Secp256k1Ecdsa::gen_key(&seed1);
-        let sk2 = Secp256k1Ecdsa::gen_key(&seed2);
+        let sk1 = Secp256k1Ecdsa::gen_key(&seed1).unwrap();
+        let sk2 = Secp256k1Ecdsa::gen_key(&seed2).unwrap();
 
         let message = b"Same message";
-        let sig1 = Secp256k1Ecdsa::sign(&sk1, message);
-        let sig2 = Secp256k1Ecdsa::sign(&sk2, message);
+        let sig1 = Secp256k1Ecdsa::sign(&sk1, message).unwrap();
+        let sig2 = Secp256k1Ecdsa::sign(&sk2, message).unwrap();
 
         // Different keys should produce different signatures
         assert_ne!(sig1.as_bytes(), sig2.as_bytes());

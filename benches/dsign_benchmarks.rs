@@ -23,7 +23,7 @@ fn ed25519_derive_vk(c: &mut Criterion) {
     let mut group = c.benchmark_group("Ed25519");
 
     let seed = [42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
 
     group.bench_function("derive_verification_key", |b| {
         b.iter(|| black_box(Ed25519::derive_verification_key(black_box(&sk))));
@@ -36,7 +36,7 @@ fn ed25519_sign(c: &mut Criterion) {
     let mut group = c.benchmark_group("Ed25519");
 
     let seed = [42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
 
     // Benchmark different message sizes
     for size in [32, 64, 256, 1024, 4096].iter() {
@@ -55,7 +55,7 @@ fn ed25519_verify(c: &mut Criterion) {
     let mut group = c.benchmark_group("Ed25519");
 
     let seed = [42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
     let vk = Ed25519::derive_verification_key(&sk);
 
     // Benchmark different message sizes
@@ -88,15 +88,15 @@ fn secp256k1_benchmarks(c: &mut Criterion) {
         let mut group = c.benchmark_group("secp256k1 ECDSA");
 
         let seed = [42u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
-        let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
         let message = b"Cardano transaction";
 
         group.bench_function("sign", |b| {
-            b.iter(|| black_box(Secp256k1Ecdsa::sign(black_box(&sk), black_box(message))));
+            b.iter(|| black_box(Secp256k1Ecdsa::sign(black_box(&sk), black_box(message)).unwrap()));
         });
 
-        let signature = Secp256k1Ecdsa::sign(&sk, message);
+        let signature = Secp256k1Ecdsa::sign(&sk, message).unwrap();
         group.bench_function("verify", |b| {
             b.iter(|| {
                 black_box(Secp256k1Ecdsa::verify(
@@ -116,8 +116,8 @@ fn secp256k1_benchmarks(c: &mut Criterion) {
         let mut group = c.benchmark_group("secp256k1 Schnorr");
 
         let seed = [42u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
-        let vk = Secp256k1Schnorr::derive_verification_key(&sk);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let vk = Secp256k1Schnorr::derive_verification_key(&sk).unwrap();
         let message = b"Cardano transaction";
 
         group.bench_function("sign", |b| {

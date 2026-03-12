@@ -46,8 +46,8 @@ mod secp256k1_edge_cases {
     fn test_ecdsa_boundary_values() {
         // Use a known valid key
         let seed = [1u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
-        let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
         // Test with all-zero message hash
         let zero_msg = [0u8; 32];
@@ -64,8 +64,8 @@ mod secp256k1_edge_cases {
     #[test]
     fn test_schnorr_empty_message() {
         let seed = [1u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
-        let vk = Secp256k1Schnorr::derive_verification_key(&sk);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let vk = Secp256k1Schnorr::derive_verification_key(&sk).unwrap();
 
         let empty_msg: &[u8] = b"";
         let sig = Secp256k1Schnorr::sign(&sk, empty_msg).unwrap();
@@ -79,8 +79,8 @@ mod secp256k1_edge_cases {
     #[test]
     fn test_schnorr_long_message() {
         let seed = [2u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
-        let vk = Secp256k1Schnorr::derive_verification_key(&sk);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let vk = Secp256k1Schnorr::derive_verification_key(&sk).unwrap();
 
         // 10KB message
         let long_msg = vec![0xABu8; 10240];
@@ -98,8 +98,8 @@ mod secp256k1_edge_cases {
             let mut seed = [0x42u8; 32];
             seed[0] = i.wrapping_add(1); // Avoid all-zeros which is invalid
             seed[31] = i.wrapping_add(1);
-            let sk = Secp256k1Ecdsa::gen_key(&seed);
-            let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+            let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+            let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
             keys.push(vk.as_bytes().to_vec());
         }
 
@@ -115,8 +115,8 @@ mod secp256k1_edge_cases {
     #[test]
     fn test_ecdsa_signature_format() {
         let seed = [42u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
-        let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
         let msg = [0u8; 32];
         let sig = Secp256k1Ecdsa::sign_prehashed(&sk, &msg).unwrap();
@@ -303,14 +303,14 @@ mod integration_tests {
         let message = b"Universal test message";
 
         // ECDSA
-        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed);
-        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk);
-        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, message);
+        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk).unwrap();
+        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, message).unwrap();
         assert!(Secp256k1Ecdsa::verify(&ecdsa_vk, message, &ecdsa_sig).is_ok());
 
         // Schnorr
-        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
-        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
+        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk).unwrap();
         let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message).unwrap();
         assert!(Secp256k1Schnorr::verify(&schnorr_vk, message, &schnorr_sig).is_ok());
 
@@ -381,17 +381,17 @@ mod integration_tests {
         let seed = [99u8; 32];
 
         // Create keys for all algorithms
-        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed);
-        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
+        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
         let bls_sk = BlsSecretKey::from_bytes(&seed).unwrap();
 
-        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk);
-        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
+        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk).unwrap();
+        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk).unwrap();
         let bls_pk = bls_sk.public_key();
 
         // Sign with each
         let msg = b"isolation test";
-        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, msg);
+        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, msg).unwrap();
         let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, msg).unwrap();
         let bls_sig = bls_sk.sign(msg);
 
@@ -407,9 +407,9 @@ mod integration_tests {
         let seed = [77u8; 32];
 
         // ECDSA
-        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed);
-        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk);
-        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, b"test");
+        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk).unwrap();
+        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, b"test").unwrap();
 
         let ecdsa_sk2 = Secp256k1EcdsaSigningKey::from_bytes(ecdsa_sk.as_bytes()).unwrap();
         let ecdsa_vk2 = Secp256k1EcdsaVerificationKey::from_bytes(ecdsa_vk.as_bytes()).unwrap();
@@ -420,8 +420,8 @@ mod integration_tests {
         assert_eq!(ecdsa_sig, ecdsa_sig2);
 
         // Schnorr
-        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
-        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
+        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk).unwrap();
         let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, b"test").unwrap();
 
         let schnorr_sk2 = Secp256k1SchnorrSigningKey::from_bytes(schnorr_sk.as_bytes()).unwrap();
@@ -562,8 +562,8 @@ mod plutus_builtin_equivalence {
     fn test_ecdsa_prehash_requirement() {
         // In Plutus, ECDSA verifyEcdsaSecp256k1Signature takes a 32-byte hash
         let seed = [1u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
-        let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
         // The message MUST be exactly 32 bytes (a hash)
         let msg_hash = [0u8; 32];
@@ -576,8 +576,8 @@ mod plutus_builtin_equivalence {
     fn test_schnorr_arbitrary_message_length() {
         // In Plutus, Schnorr verifySchnorrSecp256k1Signature takes arbitrary bytes
         let seed = [2u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
-        let vk = Secp256k1Schnorr::derive_verification_key(&sk);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let vk = Secp256k1Schnorr::derive_verification_key(&sk).unwrap();
 
         // Test various message lengths
         for len in &[0, 1, 32, 64, 100, 1000] {
@@ -606,8 +606,8 @@ mod stress_tests {
             let mut seed = [0x42u8; 32];
             seed[0] = i.wrapping_add(1);
             seed[31] = i.wrapping_add(1);
-            let sk = Secp256k1Ecdsa::gen_key(&seed);
-            let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+            let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+            let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
             let msg = [i.wrapping_add(1); 32];
             let sig = Secp256k1Ecdsa::sign_prehashed(&sk, &msg).unwrap();
@@ -622,8 +622,8 @@ mod stress_tests {
             let mut seed = [0x42u8; 32];
             seed[0] = i.wrapping_add(1);
             seed[31] = i.wrapping_add(1);
-            let sk = Secp256k1Schnorr::gen_key(&seed);
-            let vk = Secp256k1Schnorr::derive_verification_key(&sk);
+            let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+            let vk = Secp256k1Schnorr::derive_verification_key(&sk).unwrap();
 
             let msg = vec![i.wrapping_add(1); i as usize + 1];
             let sig = Secp256k1Schnorr::sign(&sk, &msg).unwrap();

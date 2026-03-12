@@ -18,15 +18,16 @@ fn main() {
 
     // Generate an ECDSA key pair
     let seed = [42u8; 32];
-    let ecdsa_signing_key = Secp256k1Ecdsa::gen_key(&seed);
-    let ecdsa_verification_key = Secp256k1Ecdsa::derive_verification_key(&ecdsa_signing_key);
+    let ecdsa_signing_key = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+    let ecdsa_verification_key =
+        Secp256k1Ecdsa::derive_verification_key(&ecdsa_signing_key).unwrap();
 
     println!("ECDSA Public Key (33 bytes, compressed):");
     println!("  {:?}", hex::encode(ecdsa_verification_key.as_bytes()));
 
     // Sign a message
     let message = b"Hello, Plutus smart contract!";
-    let ecdsa_signature = Secp256k1Ecdsa::sign(&ecdsa_signing_key, message);
+    let ecdsa_signature = Secp256k1Ecdsa::sign(&ecdsa_signing_key, message).unwrap();
 
     println!("ECDSA Signature (64 bytes, r||s):");
     println!("  {:?}", hex::encode(ecdsa_signature.as_bytes()));
@@ -43,8 +44,9 @@ fn main() {
     println!("--- Part 2: secp256k1 Schnorr (BIP-340) ---");
 
     // Generate a Schnorr key pair
-    let schnorr_signing_key = Secp256k1Schnorr::gen_key(&seed);
-    let schnorr_verification_key = Secp256k1Schnorr::derive_verification_key(&schnorr_signing_key);
+    let schnorr_signing_key = Secp256k1Schnorr::gen_key(&seed).unwrap();
+    let schnorr_verification_key =
+        Secp256k1Schnorr::derive_verification_key(&schnorr_signing_key).unwrap();
 
     println!("Schnorr Public Key (32 bytes, x-only):");
     println!("  {:?}", hex::encode(schnorr_verification_key.as_bytes()));

@@ -49,7 +49,7 @@ proptest! {
             .expect("KES verkey derivation should succeed");
 
         // Generate cold key
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
         let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
         // Create operational certificate
@@ -84,8 +84,8 @@ proptest! {
             .expect("KES verkey derivation should succeed");
 
         // Generate two different cold keys
-        let cold_sk1 = Ed25519::gen_key(&cold_seed1);
-        let cold_sk2 = Ed25519::gen_key(&cold_seed2);
+        let cold_sk1 = Ed25519::gen_key(&cold_seed1).unwrap();
+        let cold_sk2 = Ed25519::gen_key(&cold_seed2).unwrap();
         let cold_vk2 = Ed25519::derive_verification_key(&cold_sk2);
 
         // Create OCert with cold_sk1
@@ -115,7 +115,7 @@ proptest! {
             .expect("KES key generation should succeed");
         let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)
             .expect("KES verkey derivation should succeed");
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 
         // Create OCert at start_period
         let ocert = OperationalCertificate::new(
@@ -152,7 +152,7 @@ proptest! {
             .expect("KES key generation should succeed");
         let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)
             .expect("KES verkey derivation should succeed");
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 
         // Create OCert
         let ocert = OperationalCertificate::new(
@@ -186,14 +186,14 @@ proptest! {
             .expect("KES key generation should succeed");
         let kes_vk1 = Sum6Kes::derive_verification_key(&kes_sk1)
             .expect("KES verkey derivation should succeed");
-        let cold_sk1 = Ed25519::gen_key(&cold_seed);
+        let cold_sk1 = Ed25519::gen_key(&cold_seed).unwrap();
         let cold_vk1 = Ed25519::derive_verification_key(&cold_sk1);
 
         let kes_sk2 = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)
             .expect("KES key generation should succeed");
         let kes_vk2 = Sum6Kes::derive_verification_key(&kes_sk2)
             .expect("KES verkey derivation should succeed");
-        let cold_sk2 = Ed25519::gen_key(&cold_seed);
+        let cold_sk2 = Ed25519::gen_key(&cold_seed).unwrap();
 
         // Create two OCerts with same parameters
         let ocert1 = OperationalCertificate::new(
@@ -232,7 +232,7 @@ fn test_ocert_basic_creation() -> Result<()> {
     let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)?;
     let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)?;
 
-    let cold_sk = Ed25519::gen_key(&cold_seed);
+    let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
     let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
     let ocert = OperationalCertificate::new(kes_vk, 0, KesPeriod(100), &cold_sk);
@@ -255,7 +255,7 @@ fn test_ocert_counter_increment() -> Result<()> {
     let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)?;
     let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)?;
 
-    let cold_sk = Ed25519::gen_key(&cold_seed);
+    let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
     let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
     // Create OCerts with increasing counters
@@ -276,7 +276,7 @@ fn test_ocert_period_boundary() -> Result<()> {
     let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)?;
     let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)?;
 
-    let cold_sk = Ed25519::gen_key(&cold_seed);
+    let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 
     // Create OCert at period 50
     let ocert = OperationalCertificate::new(kes_vk, 0, KesPeriod(50), &cold_sk);
@@ -303,7 +303,7 @@ fn test_ocert_zero_values() -> Result<()> {
     let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)?;
     let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)?;
 
-    let cold_sk = Ed25519::gen_key(&cold_seed);
+    let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
     let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
     // All zero values should work
@@ -325,7 +325,7 @@ fn test_ocert_max_counter() -> Result<()> {
     let kes_sk = Sum6Kes::gen_key_kes_from_seed_bytes(&kes_seed)?;
     let kes_vk = Sum6Kes::derive_verification_key(&kes_sk)?;
 
-    let cold_sk = Ed25519::gen_key(&cold_seed);
+    let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
     let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
     // Maximum counter value should work

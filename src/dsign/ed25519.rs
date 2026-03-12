@@ -38,7 +38,7 @@
 //!
 //! // Generate keypair from seed
 //! let seed = [42u8; 32];
-//! let signing_key = Ed25519::gen_key(&seed);
+//! let signing_key = Ed25519::gen_key(&seed).unwrap();
 //! let verification_key = Ed25519::derive_verification_key(&signing_key);
 //!
 //! // Sign a message
@@ -130,7 +130,7 @@ impl Ed25519VerificationKey {
     /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
     ///
     /// let seed = [1u8; 32];
-    /// let signing_key = Ed25519::gen_key(&seed);
+    /// let signing_key = Ed25519::gen_key(&seed).unwrap();
     /// let verification_key = Ed25519::derive_verification_key(&signing_key);
     ///
     /// let bytes = verification_key.as_bytes();
@@ -164,7 +164,7 @@ impl Ed25519VerificationKey {
     /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
     ///
     /// let seed = [2u8; 32];
-    /// let signing_key = Ed25519::gen_key(&seed);
+    /// let signing_key = Ed25519::gen_key(&seed).unwrap();
     /// let verification_key = Ed25519::derive_verification_key(&signing_key);
     ///
     /// let bytes = verification_key.as_bytes();
@@ -213,7 +213,7 @@ impl Ed25519VerificationKey {
 /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
 ///
 /// let seed = [42u8; 32];
-/// let signing_key = Ed25519::gen_key(&seed);
+/// let signing_key = Ed25519::gen_key(&seed).unwrap();
 ///
 /// // The key contains both seed and verification key
 /// assert_eq!(signing_key.compound_bytes().len(), 64);
@@ -399,7 +399,7 @@ impl Ed25519SigningKey {
 /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
 ///
 /// let seed = [1u8; 32];
-/// let signing_key = Ed25519::gen_key(&seed);
+/// let signing_key = Ed25519::gen_key(&seed).unwrap();
 /// let message = b"sign this message";
 /// let signature = Ed25519::sign(&signing_key, message);
 ///
@@ -465,7 +465,7 @@ impl Ed25519Signature {
     /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
     ///
     /// let seed = [1u8; 32];
-    /// let sk = Ed25519::gen_key(&seed);
+    /// let sk = Ed25519::gen_key(&seed).unwrap();
     /// let message = b"test";
     /// let sig = Ed25519::sign(&sk, message);
     /// let bytes = sig.as_bytes();
@@ -503,7 +503,7 @@ impl super::DsignAlgorithm for Ed25519 {
     /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
     ///
     /// let seed = [3u8; 32];
-    /// let sk = Ed25519::gen_key(&seed);
+    /// let sk = Ed25519::gen_key(&seed).unwrap();
     /// let vk = Ed25519::derive_verification_key(&sk);
     /// assert_eq!(vk.as_bytes().len(), 32);
     /// ```
@@ -521,7 +521,7 @@ impl super::DsignAlgorithm for Ed25519 {
     /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
     ///
     /// let seed = [4u8; 32];
-    /// let sk = Ed25519::gen_key(&seed);
+    /// let sk = Ed25519::gen_key(&seed).unwrap();
     /// let message = b"important data";
     /// let sig = Ed25519::sign(&sk, message);
     /// assert_eq!(sig.as_bytes().len(), 64);
@@ -540,7 +540,7 @@ impl super::DsignAlgorithm for Ed25519 {
     /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
     ///
     /// let seed = [5u8; 32];
-    /// let sk = Ed25519::gen_key(&seed);
+    /// let sk = Ed25519::gen_key(&seed).unwrap();
     /// let vk = Ed25519::derive_verification_key(&sk);
     /// let message = b"verify this";
     /// let sig = Ed25519::sign(&sk, message);
@@ -570,16 +570,17 @@ impl super::DsignAlgorithm for Ed25519 {
     /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
     ///
     /// let seed = [6u8; 32];
-    /// let sk = Ed25519::gen_key(&seed);
+    /// let sk = Ed25519::gen_key(&seed).unwrap();
     /// assert_eq!(sk.compound_bytes().len(), 64);
     /// ```
-    fn gen_key(seed: &[u8]) -> Self::SigningKey {
-        assert_eq!(
-            seed.len(),
-            SEED_SIZE,
-            "Ed25519 seed must be exactly 32 bytes"
-        );
-        Ed25519SigningKey::from_seed_bytes(seed).expect("seed length already validated")
+    fn gen_key(seed: &[u8]) -> Result<Self::SigningKey> {
+        if seed.len() != SEED_SIZE {
+            return Err(CryptoError::InvalidKeyLength {
+                expected: SEED_SIZE,
+                got: seed.len(),
+            });
+        }
+        Ed25519SigningKey::from_seed_bytes(seed)
     }
 
     fn raw_serialize_verification_key(key: &Self::VerificationKey) -> &[u8] {
@@ -802,15 +803,15 @@ mod tests {
     #[test]
     fn test_key_generation_deterministic() {
         let seed = [7u8; 32];
-        let signing1 = Ed25519::gen_key(&seed);
-        let signing2 = Ed25519::gen_key(&seed);
+        let signing1 = Ed25519::gen_key(&seed).unwrap();
+        let signing2 = Ed25519::gen_key(&seed).unwrap();
         assert_eq!(signing1.compound_bytes(), signing2.compound_bytes());
     }
 
     #[test]
     fn test_sign_and_verify_roundtrip() {
         let seed = [42u8; 32];
-        let signing_key = Ed25519::gen_key(&seed);
+        let signing_key = Ed25519::gen_key(&seed).unwrap();
         let verification_key =
             <Ed25519 as crate::dsign::DsignAlgorithm>::derive_verification_key(&signing_key);
 
@@ -828,7 +829,7 @@ mod tests {
     #[test]
     fn test_verify_fails_wrong_message() {
         let seed = [9u8; 32];
-        let signing_key = Ed25519::gen_key(&seed);
+        let signing_key = Ed25519::gen_key(&seed).unwrap();
         let verification_key =
             <Ed25519 as crate::dsign::DsignAlgorithm>::derive_verification_key(&signing_key);
 
@@ -848,8 +849,8 @@ mod tests {
         let seed1 = [1u8; 32];
         let seed2 = [2u8; 32];
 
-        let signing_key1 = Ed25519::gen_key(&seed1);
-        let signing_key2 = Ed25519::gen_key(&seed2);
+        let signing_key1 = Ed25519::gen_key(&seed1).unwrap();
+        let signing_key2 = Ed25519::gen_key(&seed2).unwrap();
         let verification_key2 =
             <Ed25519 as crate::dsign::DsignAlgorithm>::derive_verification_key(&signing_key2);
 
@@ -867,7 +868,7 @@ mod tests {
     #[test]
     fn test_empty_message() {
         let seed = [42u8; 32];
-        let signing_key = Ed25519::gen_key(&seed);
+        let signing_key = Ed25519::gen_key(&seed).unwrap();
         let verification_key =
             <Ed25519 as crate::dsign::DsignAlgorithm>::derive_verification_key(&signing_key);
 
@@ -880,7 +881,7 @@ mod tests {
     #[test]
     fn test_large_message() {
         let seed = [99u8; 32];
-        let signing_key = Ed25519::gen_key(&seed);
+        let signing_key = Ed25519::gen_key(&seed).unwrap();
         let verification_key =
             <Ed25519 as crate::dsign::DsignAlgorithm>::derive_verification_key(&signing_key);
 
@@ -901,7 +902,7 @@ mod tests {
         use crate::hash::{Blake2b224, Blake2b256};
 
         let seed = [42u8; 32];
-        let signing_key = Ed25519::gen_key(&seed);
+        let signing_key = Ed25519::gen_key(&seed).unwrap();
         let vk = <Ed25519 as DsignAlgorithm>::derive_verification_key(&signing_key);
 
         // Hash with Blake2b-256
@@ -914,7 +915,7 @@ mod tests {
 
         // Different keys should produce different hashes
         let seed2 = [43u8; 32];
-        let signing_key2 = Ed25519::gen_key(&seed2);
+        let signing_key2 = Ed25519::gen_key(&seed2).unwrap();
         let vk2 = <Ed25519 as DsignAlgorithm>::derive_verification_key(&signing_key2);
         let hash2_256 = Ed25519::hash_verification_key::<Blake2b256>(&vk2);
         assert_ne!(hash_256, hash2_256);

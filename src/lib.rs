@@ -54,7 +54,7 @@
 //! use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
 //!
 //! let seed = [0u8; 32];
-//! let signing_key = Ed25519::gen_key(&seed);
+//! let signing_key = Ed25519::gen_key(&seed).unwrap();
 //! let signature = Ed25519::sign(&signing_key, b"message");
 //! ```
 

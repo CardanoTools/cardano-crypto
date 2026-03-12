@@ -27,11 +27,13 @@ pub struct ChainCode([u8; CHAIN_CODE_SIZE]);
 
 impl ChainCode {
     /// Create from bytes
+    #[inline]
     pub fn from_bytes(bytes: &[u8; CHAIN_CODE_SIZE]) -> Self {
         Self(*bytes)
     }
 
     /// Get bytes
+    #[inline]
     pub fn as_bytes(&self) -> &[u8; CHAIN_CODE_SIZE] {
         &self.0
     }
@@ -180,11 +182,13 @@ pub struct ExtendedPublicKey {
 
 impl ExtendedPublicKey {
     /// Get key bytes
+    #[inline]
     pub fn key_bytes(&self) -> &[u8; KEY_SIZE] {
         &self.key
     }
 
     /// Get chain code
+    #[inline]
     pub fn chain_code(&self) -> &ChainCode {
         &self.chain_code
     }
@@ -216,6 +220,7 @@ impl DerivationPath {
     }
 
     /// Get indices
+    #[inline]
     pub fn as_slice(&self) -> &[u32] {
         &self.indices
     }

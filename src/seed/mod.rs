@@ -151,6 +151,7 @@ impl SecureSeed {
     /// let seed = [1u8; 32];
     /// let secure = SecureSeed::new(seed);
     /// ```
+    #[inline]
     #[must_use]
     pub fn new(seed: Seed) -> Self {
         Self(seed)
@@ -211,6 +212,7 @@ impl SecureSeed {
     /// let secure = SecureSeed::new(seed);
     /// assert_eq!(secure.as_bytes(), &seed);
     /// ```
+    #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> &[u8; SEED_SIZE] {
         &self.0

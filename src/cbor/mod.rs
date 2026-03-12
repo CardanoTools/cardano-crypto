@@ -1259,7 +1259,7 @@ mod tests {
     fn test_signed_dsign_cbor_roundtrip() {
         use crate::dsign::{DsignAlgorithm, Ed25519, SignedDsign};
 
-        let signing_key = Ed25519::gen_key(&[42u8; 32]);
+        let signing_key = Ed25519::gen_key(&[42u8; 32]).unwrap();
         let signed = SignedDsign::<Ed25519>::sign(&signing_key, b"test message");
 
         let encoded = signed.to_cbor();
@@ -1276,7 +1276,7 @@ mod tests {
         use crate::dsign::ed25519::Ed25519VerificationKey;
         use crate::dsign::{DsignAlgorithm, Ed25519};
 
-        let signing_key = Ed25519::gen_key(&[42u8; 32]);
+        let signing_key = Ed25519::gen_key(&[42u8; 32]).unwrap();
         let vk = Ed25519::derive_verification_key(&signing_key);
 
         let encoded = vk.to_cbor();
@@ -1290,7 +1290,7 @@ mod tests {
         use crate::dsign::ed25519::Ed25519Signature;
         use crate::dsign::{DsignAlgorithm, Ed25519};
 
-        let signing_key = Ed25519::gen_key(&[42u8; 32]);
+        let signing_key = Ed25519::gen_key(&[42u8; 32]).unwrap();
         let sig = Ed25519::sign(&signing_key, b"test message");
 
         let encoded = sig.to_cbor();
@@ -1440,7 +1440,7 @@ mod tests {
         use crate::dsign::{DsignAlgorithm, Ed25519};
 
         // Generate a real verification key
-        let signing_key = Ed25519::gen_key(&[0xABu8; 32]);
+        let signing_key = Ed25519::gen_key(&[0xABu8; 32]).unwrap();
         let vk = Ed25519::derive_verification_key(&signing_key);
 
         // Raw serialization roundtrip
@@ -1458,7 +1458,7 @@ mod tests {
     fn test_dsign_signature_serialization_roundtrip() {
         use crate::dsign::{DsignAlgorithm, Ed25519};
 
-        let signing_key = Ed25519::gen_key(&[0xCDu8; 32]);
+        let signing_key = Ed25519::gen_key(&[0xCDu8; 32]).unwrap();
         let sig = Ed25519::sign(&signing_key, b"test message");
 
         // Raw serialization roundtrip

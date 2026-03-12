@@ -19,7 +19,7 @@
 //!
 //! // Generate a key pair
 //! let seed = [42u8; 32];
-//! let signing_key = Ed25519::gen_key(&seed);
+//! let signing_key = Ed25519::gen_key(&seed).unwrap();
 //! let verification_key = Ed25519::derive_verification_key(&signing_key);
 //!
 //! // Sign a message
@@ -38,9 +38,9 @@
 //!
 //! // ECDSA signatures
 //! let seed = [42u8; 32];
-//! let signing_key = Secp256k1Ecdsa::gen_key(&seed);
-//! let verification_key = Secp256k1Ecdsa::derive_verification_key(&signing_key);
-//! let signature = Secp256k1Ecdsa::sign(&signing_key, b"message");
+//! let signing_key = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+//! let verification_key = Secp256k1Ecdsa::derive_verification_key(&signing_key).unwrap();
+//! let signature = Secp256k1Ecdsa::sign(&signing_key, b"message").unwrap();
 //! assert!(Secp256k1Ecdsa::verify(&verification_key, b"message", &signature).is_ok());
 //! ```
 
@@ -98,7 +98,7 @@ pub trait DsignAlgorithm: Clone + Send + Sync + 'static {
     ) -> crate::common::Result<()>;
 
     /// Generate a key from a seed
-    fn gen_key(seed: &[u8]) -> Self::SigningKey;
+    fn gen_key(seed: &[u8]) -> crate::common::Result<Self::SigningKey>;
 
     /// Serialize verification key to raw bytes
     fn raw_serialize_verification_key(key: &Self::VerificationKey) -> &[u8];
@@ -127,7 +127,7 @@ pub trait DsignAlgorithm: Clone + Send + Sync + 'static {
     /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm};
     /// use cardano_crypto::hash::{Blake2b256, HashAlgorithm};
     ///
-    /// let signing_key = Ed25519::gen_key(&[1u8; 32]);
+    /// let signing_key = Ed25519::gen_key(&[1u8; 32]).unwrap();
     /// let vk = Ed25519::derive_verification_key(&signing_key);
     /// let hash = Ed25519::hash_verification_key::<Blake2b256>(&vk);
     /// assert_eq!(hash.len(), 32);
@@ -160,7 +160,7 @@ pub trait DsignAlgorithm: Clone + Send + Sync + 'static {
 /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm, SignedDsign};
 ///
 /// let seed = [42u8; 32];
-/// let signing_key = Ed25519::gen_key(&seed);
+/// let signing_key = Ed25519::gen_key(&seed).unwrap();
 /// let verification_key = Ed25519::derive_verification_key(&signing_key);
 ///
 /// let message = b"important data";
@@ -203,7 +203,7 @@ impl<D: DsignAlgorithm> SignedDsign<D> {
     /// ```
     /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm, SignedDsign};
     ///
-    /// let signing_key = Ed25519::gen_key(&[1u8; 32]);
+    /// let signing_key = Ed25519::gen_key(&[1u8; 32]).unwrap();
     /// let signed = SignedDsign::<Ed25519>::sign(&signing_key, b"message");
     /// ```
     pub fn sign(signing_key: &D::SigningKey, message: &[u8]) -> Self {
@@ -272,7 +272,7 @@ pub type DsignSignature = ed25519::Ed25519Signature;
 /// use cardano_crypto::dsign::{Ed25519, DsignAlgorithm, DsignKeyPair};
 ///
 /// let seed = [42u8; 32];
-/// let keypair = DsignKeyPair::generate(&seed);
+/// let keypair = DsignKeyPair::generate(&seed).unwrap();
 ///
 /// let message = b"test";
 /// let signature = Ed25519::sign(&keypair.signing_key, message);
@@ -297,13 +297,13 @@ impl core::fmt::Debug for DsignKeyPair {
 
 impl DsignKeyPair {
     /// Generate a DSIGN key pair from a seed
-    pub fn generate(seed: &[u8; 32]) -> Self {
-        let signing_key = Ed25519::gen_key(seed);
+    pub fn generate(seed: &[u8; 32]) -> crate::common::Result<Self> {
+        let signing_key = Ed25519::gen_key(seed)?;
         let verification_key = Ed25519::derive_verification_key(&signing_key);
-        Self {
+        Ok(Self {
             signing_key,
             verification_key,
-        }
+        })
     }
 
     /// Create from existing keys

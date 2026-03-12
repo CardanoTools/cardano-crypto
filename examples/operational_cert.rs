@@ -19,7 +19,7 @@ fn main() {
     println!("1. Generating pool operator cold key...");
 
     let cold_seed = [42u8; 32]; // In production: Use secure random seed
-    let cold_signing_key = Ed25519::gen_key(&cold_seed);
+    let cold_signing_key = Ed25519::gen_key(&cold_seed).unwrap();
     let cold_verification_key = Ed25519::derive_verification_key(&cold_signing_key);
 
     println!(

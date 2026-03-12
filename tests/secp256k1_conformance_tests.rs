@@ -66,7 +66,7 @@ mod ecdsa_cardano_base_vectors {
             let msg_bytes: [u8; 32] = hex_to_array(msg_hex);
 
             let sk = Secp256k1EcdsaSigningKey::from_bytes(&sk_bytes).unwrap();
-            let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+            let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
             // Sign the message hash (prehashed)
             let sig = Secp256k1Ecdsa::sign_prehashed(&sk, &msg_bytes).unwrap();
@@ -186,7 +186,7 @@ mod ecdsa_plutus_conformance {
         let vk = Secp256k1EcdsaVerificationKey::from_bytes(&hex_to_bytes(vk_hex)).unwrap();
 
         // Verify key derivation matches expected
-        let derived_vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let derived_vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
         assert_eq!(vk.as_bytes(), derived_vk.as_bytes());
 
         // Sign empty message (sha256(""))
@@ -215,8 +215,8 @@ mod ecdsa_plutus_conformance {
     #[test]
     fn test_ecdsa_message_hash_validation() {
         let seed = [42u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
-        let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
         // Valid 32-byte message hash
         let valid_msg = [0u8; 32];
@@ -513,11 +513,11 @@ mod cross_algorithm {
     fn test_different_pubkey_formats() {
         let seed = [42u8; 32];
 
-        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed);
-        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk);
+        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk).unwrap();
 
-        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
-        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
+        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk).unwrap();
 
         // ECDSA uses compressed SEC1 (33 bytes with prefix)
         assert_eq!(ecdsa_vk.as_bytes().len(), 33);
@@ -535,12 +535,12 @@ mod cross_algorithm {
         let seed = [42u8; 32];
         let message = b"test message";
 
-        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed);
-        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk);
-        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, message);
+        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk).unwrap();
+        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, message).unwrap();
 
-        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
-        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
+        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk).unwrap();
         let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message).unwrap();
 
         // Each signature should only verify with its own algorithm
@@ -560,7 +560,7 @@ mod determinism {
     fn test_ecdsa_deterministic_signing() {
         // RFC 6979 requires deterministic ECDSA signatures
         let seed = [1u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
         let msg = [0u8; 32];
 
         let sig1 = Secp256k1Ecdsa::sign_prehashed(&sk, &msg).unwrap();
@@ -577,7 +577,7 @@ mod determinism {
     fn test_schnorr_deterministic_signing() {
         // BIP-340 specifies deterministic signature generation
         let seed = [1u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
         let msg = b"deterministic test";
 
         let sig1 = Secp256k1Schnorr::sign(&sk, msg).unwrap();
