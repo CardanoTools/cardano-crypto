@@ -16,8 +16,8 @@ use cardano_crypto::common::error::Result;
 use cardano_crypto::dsign::{DsignAlgorithm, Ed25519};
 use cardano_crypto::kes::{KesAlgorithm, Sum6Kes};
 use cardano_crypto::key::kes_period::{
-    is_kes_expired, kes_expiry_slot, kes_period_info, period_from_slot, KESPeriodInfo, KesPeriod,
-    KES_SLOTS_PER_PERIOD_MAINNET,
+    KES_SLOTS_PER_PERIOD_MAINNET, KESPeriodInfo, KesPeriod, is_kes_expired, kes_expiry_slot,
+    kes_period_info, period_from_slot,
 };
 use cardano_crypto::key::operational_cert::OperationalCertificate;
 

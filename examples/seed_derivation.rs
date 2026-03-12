@@ -3,7 +3,7 @@
 //! Demonstrates hierarchical deterministic key derivation matching
 //! Cardano's seed handling patterns.
 
-use cardano_crypto::seed::{derive_seed, expand_seed, SecureSeed, SEED_SIZE};
+use cardano_crypto::seed::{SEED_SIZE, SecureSeed, derive_seed, expand_seed};
 
 fn main() {
     println!("=== Cardano Seed Derivation Example ===\n");

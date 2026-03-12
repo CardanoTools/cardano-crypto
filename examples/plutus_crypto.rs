@@ -69,7 +69,7 @@ fn main() {
     // =========================================================================
     println!("--- Part 3: BLS12-381 (CIP-0381) ---");
 
-    use cardano_crypto::bls::{bls_verify, Bls12381, BlsSecretKey, G1Point, G2Point, Scalar};
+    use cardano_crypto::bls::{Bls12381, BlsSecretKey, G1Point, G2Point, Scalar, bls_verify};
 
     // G1 operations
     println!("\nG1 Operations:");

@@ -17,7 +17,7 @@
 //! - FIPS 180-4: Secure Hash Standard (SHS)
 //! - cardano-crypto-class hash implementations
 
-use cardano_crypto::hash::{sha256, sha512, Blake2b224, Blake2b256, Blake2b512, HashAlgorithm};
+use cardano_crypto::hash::{Blake2b224, Blake2b256, Blake2b512, HashAlgorithm, sha256, sha512};
 
 // ============================================================================
 // Helper Functions
@@ -118,7 +118,9 @@ fn test_blake2b_256_tx_body() {
 fn test_blake2b_256_block_header() {
     // Simplified block header hash calculation
     // Real block hashes are Blake2b-256 of the CBOR-encoded block header
-    let header_cbor = hex_decode("8284582028000000000000000000000000000000000000000000000000000000000000005820000000000000000000000000000000000000000000000000000000000000000000");
+    let header_cbor = hex_decode(
+        "8284582028000000000000000000000000000000000000000000000000000000000000005820000000000000000000000000000000000000000000000000000000000000000000",
+    );
     let hash = Blake2b256::hash(&header_cbor);
 
     assert_eq!(hash.len(), 32, "Block hash should be 32 bytes");

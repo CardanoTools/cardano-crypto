@@ -323,7 +323,7 @@ impl DsignKeyPair {
 mod cbor_impl {
     use super::*;
     use crate::cbor::{
-        decode_bytes, encode_bytes, encoded_size_bytes, CborError, FromCbor, ToCbor,
+        CborError, FromCbor, ToCbor, decode_bytes, encode_bytes, encoded_size_bytes,
     };
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;

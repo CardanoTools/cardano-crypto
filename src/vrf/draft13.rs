@@ -75,7 +75,7 @@ use sha2::{Digest, Sha512};
 use zeroize::Zeroizing;
 
 use crate::common::{
-    bytes_to_point, clamp_scalar, point_to_bytes, Result, SUITE_DRAFT13, THREE, TWO,
+    Result, SUITE_DRAFT13, THREE, TWO, bytes_to_point, clamp_scalar, point_to_bytes,
 };
 use crate::vrf::cardano_compat::{cardano_clear_cofactor, cardano_hash_to_curve_draft13};
 

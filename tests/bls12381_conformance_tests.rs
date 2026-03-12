@@ -6,8 +6,8 @@
 #![cfg(feature = "bls")]
 
 use cardano_crypto::bls::{
-    bls_verify, bls_verify_with_dst, Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature, G1Point,
-    G2Point, Scalar, G1_COMPRESSED_SIZE, G2_COMPRESSED_SIZE, SCALAR_SIZE,
+    Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature, G1_COMPRESSED_SIZE, G1Point,
+    G2_COMPRESSED_SIZE, G2Point, SCALAR_SIZE, Scalar, bls_verify, bls_verify_with_dst,
 };
 
 fn hex_to_bytes(hex: &str) -> Vec<u8> {

@@ -5,7 +5,7 @@
 //! Run with: cargo bench --bench kes_benchmarks
 
 use cardano_crypto::kes::{KesAlgorithm, Sum2Kes, Sum6Kes};
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 fn kes_sum2_keygen(c: &mut Criterion) {
     let mut group = c.benchmark_group("KES Sum2");

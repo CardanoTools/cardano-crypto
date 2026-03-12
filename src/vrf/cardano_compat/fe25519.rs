@@ -41,7 +41,7 @@ impl ConditionallySelectable for Fe25519 {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         let mut result = fiat_25519_tight_field_element([0u64; 5]);
         for i in 0..5 {
-            result.0[i] = u64::conditional_select(&a.0 .0[i], &b.0 .0[i], choice);
+            result.0[i] = u64::conditional_select(&a.0.0[i], &b.0.0[i], choice);
         }
         Fe25519(result)
     }
@@ -139,7 +139,7 @@ impl Fe25519 {
     /// Convert tight to loose for operations
     #[inline]
     fn as_loose(&self) -> fiat_25519_loose_field_element {
-        fiat_25519_loose_field_element(self.0 .0)
+        fiat_25519_loose_field_element(self.0.0)
     }
 
     /// Multiplication

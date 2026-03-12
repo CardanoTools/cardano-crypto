@@ -6,11 +6,11 @@
 #![cfg(feature = "hd")]
 
 use cardano_crypto::hd::{
-    hash_verification_key, Address, DerivationPath, ExtendedPrivateKey, Network,
+    Address, DerivationPath, ExtendedPrivateKey, Network, hash_verification_key,
 };
 use cardano_crypto::key::hash::{
-    role::{Payment, Staking},
     KeyHash,
+    role::{Payment, Staking},
 };
 
 fn hex_decode(s: &str) -> Vec<u8> {

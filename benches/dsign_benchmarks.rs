@@ -5,7 +5,7 @@
 //! Run with: cargo bench --bench dsign_benchmarks
 
 use cardano_crypto::dsign::{DsignAlgorithm, Ed25519};
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 fn ed25519_keygen(c: &mut Criterion) {
     let mut group = c.benchmark_group("Ed25519");

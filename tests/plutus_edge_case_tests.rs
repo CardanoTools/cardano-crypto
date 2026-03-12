@@ -6,8 +6,8 @@
 #![cfg(all(feature = "secp256k1", feature = "bls"))]
 
 use cardano_crypto::bls::{
-    Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature, G1Point, G2Point, Scalar,
-    G1_COMPRESSED_SIZE, G2_COMPRESSED_SIZE, SCALAR_SIZE,
+    Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature, G1_COMPRESSED_SIZE, G1Point,
+    G2_COMPRESSED_SIZE, G2Point, SCALAR_SIZE, Scalar,
 };
 use cardano_crypto::dsign::secp256k1::{
     Secp256k1Ecdsa, Secp256k1EcdsaSignature, Secp256k1EcdsaSigningKey,

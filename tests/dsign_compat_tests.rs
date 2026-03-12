@@ -421,7 +421,9 @@ fn test_ed25519_tx_signing() -> Result<()> {
     let pk = Ed25519::derive_verification_key(&sk);
 
     // Simulate a transaction body (CBOR encoded)
-    let tx_body_cbor = hex_decode("a400818258201234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef00018182583900112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00001a001e84800282a10083");
+    let tx_body_cbor = hex_decode(
+        "a400818258201234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef00018182583900112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00001a001e84800282a10083",
+    );
 
     // Hash the transaction body (Cardano uses Blake2b-256)
     let tx_body_hash = Blake2b256::hash(&tx_body_cbor);

@@ -49,11 +49,11 @@ pub mod test_vectors;
 
 // Re-export main types
 pub use draft03::{
-    VrfDraft03, OUTPUT_SIZE, PROOF_SIZE as DRAFT03_PROOF_SIZE, PUBLIC_KEY_SIZE, SECRET_KEY_SIZE,
-    SEED_SIZE,
+    OUTPUT_SIZE, PROOF_SIZE as DRAFT03_PROOF_SIZE, PUBLIC_KEY_SIZE, SECRET_KEY_SIZE, SEED_SIZE,
+    VrfDraft03,
 };
 
-pub use draft13::{VrfDraft13, PROOF_SIZE as DRAFT13_PROOF_SIZE};
+pub use draft13::{PROOF_SIZE as DRAFT13_PROOF_SIZE, VrfDraft13};
 
 /// VRF algorithm compatible with Cardano's batch verification (IETF Draft-13)
 ///
@@ -464,7 +464,7 @@ impl VrfKeyPair {
 mod cbor_impl {
     use super::*;
     use crate::cbor::{
-        decode_bytes, encode_bytes, encoded_size_bytes, CborError, FromCbor, ToCbor,
+        CborError, FromCbor, ToCbor, decode_bytes, encode_bytes, encoded_size_bytes,
     };
 
     impl ToCbor for OutputVrf {

@@ -27,7 +27,7 @@ use sha2::{Digest, Sha512};
 use subtle::ConstantTimeEq;
 
 use super::point::{cardano_clear_cofactor, cardano_hash_to_curve};
-use crate::common::{point_to_bytes, CryptoError, CryptoResult, SUITE_DRAFT03, THREE, TWO};
+use crate::common::{CryptoError, CryptoResult, SUITE_DRAFT03, THREE, TWO, point_to_bytes};
 
 /// Verify VRF proof using Cardano-compatible method
 ///

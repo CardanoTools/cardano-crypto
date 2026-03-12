@@ -139,9 +139,9 @@ pub use hash::{Blake2b224, Blake2b256, Blake2b512, HashAlgorithm};
 
 #[cfg(feature = "dsign")]
 pub use dsign::{
-    ed25519::{Ed25519Signature, Ed25519SigningKey, Ed25519VerificationKey},
     DsignAlgorithm, DsignKeyPair, DsignSignature, DsignSigningKey, DsignVerificationKey, Ed25519,
     SignedDsign,
+    ed25519::{Ed25519Signature, Ed25519SigningKey, Ed25519VerificationKey},
 };
 
 #[cfg(feature = "vrf")]
@@ -160,8 +160,9 @@ pub use kes::{
 
 #[cfg(feature = "bls")]
 pub use bls::{
-    bls_verify, bls_verify_with_dst, Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature, G1Point,
-    G2Point, PairingResult, Scalar, G1_COMPRESSED_SIZE, G2_COMPRESSED_SIZE, SCALAR_SIZE,
+    Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature, G1_COMPRESSED_SIZE, G1Point,
+    G2_COMPRESSED_SIZE, G2Point, PairingResult, SCALAR_SIZE, Scalar, bls_verify,
+    bls_verify_with_dst,
 };
 
 // Re-export secp256k1 types when feature is enabled
@@ -174,6 +175,11 @@ pub use dsign::{
 
 #[cfg(feature = "cbor")]
 pub use cbor::{
+    // Error type
+    CborError,
+    // Traits
+    FromCbor,
+    ToCbor,
     // Core CBOR functions
     decode_bytes,
     // Hash CBOR
@@ -229,15 +235,10 @@ pub use cbor::{
     encoded_verification_key_kes_size,
     encoded_verification_key_size,
     encoded_verification_key_vrf_size,
-    // Error type
-    CborError,
-    // Traits
-    FromCbor,
-    ToCbor,
 };
 
 #[cfg(feature = "seed")]
-pub use seed::{derive_seed, expand_seed, SecureSeed, Seed, SeedError, SEED_SIZE};
+pub use seed::{SEED_SIZE, SecureSeed, Seed, SeedError, derive_seed, expand_seed};
 
 // Re-export key module types
 pub use key::bech32;
@@ -245,17 +246,17 @@ pub use key::text_envelope;
 
 #[cfg(feature = "hash")]
 pub use key::hash::{
+    CommitteeColdKeyHash, CommitteeHotKeyHash, DRepKeyHash, GenesisDelegateKeyHash, GenesisKeyHash,
+    KEY_HASH_SIZE, KeyHash, PaymentKeyHash, PoolKeyHash, StakeKeyHash, VrfKeyHash,
     hash_payment_verification_key, hash_pool_verification_key, hash_raw,
     hash_stake_verification_key, hash_verification_key, hash_vrf_verification_key,
-    CommitteeColdKeyHash, CommitteeHotKeyHash, DRepKeyHash, GenesisDelegateKeyHash, GenesisKeyHash,
-    KeyHash, PaymentKeyHash, PoolKeyHash, StakeKeyHash, VrfKeyHash, KEY_HASH_SIZE,
 };
 
 #[cfg(feature = "kes")]
 pub use key::kes_period::{
-    is_kes_expired, is_valid_period, kes_expiry_slot, kes_period_info, period_from_slot,
-    slot_from_period, KESPeriod, KESPeriodInfo, KesPeriod, KES_MAX_PERIOD_SUM6,
-    KES_SLOTS_PER_PERIOD_MAINNET, KES_SLOTS_PER_PERIOD_TESTNET,
+    KES_MAX_PERIOD_SUM6, KES_SLOTS_PER_PERIOD_MAINNET, KES_SLOTS_PER_PERIOD_TESTNET, KESPeriod,
+    KESPeriodInfo, KesPeriod, is_kes_expired, is_valid_period, kes_expiry_slot, kes_period_info,
+    period_from_slot, slot_from_period,
 };
 
 #[cfg(feature = "hash")]

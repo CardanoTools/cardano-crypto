@@ -15,8 +15,8 @@
 //! - Cardano.Binary from cardano-base
 
 use cardano_crypto::cbor::{
-    decode_bytes, decode_signature, decode_verification_key, encode_bytes, encode_signature,
-    encode_verification_key, CborError, FromCbor, ToCbor,
+    CborError, FromCbor, ToCbor, decode_bytes, decode_signature, decode_verification_key,
+    encode_bytes, encode_signature, encode_verification_key,
 };
 
 // ============================================================================

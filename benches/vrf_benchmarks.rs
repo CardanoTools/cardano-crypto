@@ -5,7 +5,7 @@
 //! Run with: cargo bench --bench vrf_benchmarks
 
 use cardano_crypto::vrf::{VrfDraft03, VrfDraft13};
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 fn vrf_draft03_keypair_generation(c: &mut Criterion) {
     let mut group = c.benchmark_group("VRF Draft-03");

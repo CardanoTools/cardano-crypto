@@ -24,7 +24,7 @@ use sha2::{Digest, Sha512};
 use zeroize::Zeroizing;
 
 use super::point::cardano_hash_to_curve;
-use crate::common::{point_to_bytes, CryptoError, CryptoResult, SUITE_DRAFT03, TWO};
+use crate::common::{CryptoError, CryptoResult, SUITE_DRAFT03, TWO, point_to_bytes};
 
 /// Generate VRF proof using Cardano-compatible method
 ///

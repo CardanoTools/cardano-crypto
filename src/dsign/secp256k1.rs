@@ -26,16 +26,16 @@
 
 use crate::common::error::CryptoError;
 use k256::{
+    SecretKey,
     ecdsa::{
-        signature::{Signer as EcdsaSigner, Verifier as EcdsaVerifier},
         Signature as K256EcdsaSignature, SigningKey as K256SigningKey,
         VerifyingKey as K256VerifyingKey,
+        signature::{Signer as EcdsaSigner, Verifier as EcdsaVerifier},
     },
     schnorr::{
         Signature as K256SchnorrSignature, SigningKey as K256SchnorrSigningKey,
         VerifyingKey as K256SchnorrVerifyingKey,
     },
-    SecretKey,
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 

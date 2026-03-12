@@ -31,12 +31,12 @@
 
 use crate::common::error::CryptoError;
 use blst::{
-    blst_encode_to_g1, blst_encode_to_g2, blst_final_exp, blst_fp12, blst_fp12_is_one,
+    BLST_ERROR, blst_encode_to_g1, blst_encode_to_g2, blst_final_exp, blst_fp12, blst_fp12_is_one,
     blst_miller_loop, blst_p1, blst_p1_add_or_double, blst_p1_affine, blst_p1_cneg,
     blst_p1_compress, blst_p1_from_affine, blst_p1_mult, blst_p1_on_curve, blst_p1_to_affine,
     blst_p1_uncompress, blst_p2, blst_p2_add_or_double, blst_p2_affine, blst_p2_cneg,
     blst_p2_compress, blst_p2_from_affine, blst_p2_mult, blst_p2_on_curve, blst_p2_to_affine,
-    blst_p2_uncompress, blst_scalar, blst_scalar_from_bendian, BLST_ERROR,
+    blst_p2_uncompress, blst_scalar, blst_scalar_from_bendian,
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 

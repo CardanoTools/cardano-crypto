@@ -5,7 +5,7 @@
 //! Run with: cargo bench --bench hash_benchmarks
 
 use cardano_crypto::hash::{Blake2b224, Blake2b256, Blake2b512, HashAlgorithm};
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 fn blake2b224_hash(c: &mut Criterion) {
     let mut group = c.benchmark_group("Blake2b-224");

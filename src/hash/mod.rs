@@ -29,7 +29,7 @@ mod sha;
 
 // Re-export hash implementations
 pub use blake2b::{Blake2b224, Blake2b256, Blake2b512};
-pub use sha::{hash160, keccak256, ripemd160, sha256, sha256d, sha3_256, sha3_512, sha512};
+pub use sha::{hash160, keccak256, ripemd160, sha3_256, sha3_512, sha256, sha256d, sha512};
 
 /// Trait for hash algorithms used in KES schemes
 ///

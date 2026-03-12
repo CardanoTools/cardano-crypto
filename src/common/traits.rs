@@ -313,7 +313,7 @@ pub trait DsignAggregatable: DsignAlgorithm {
     /// let agg_key = Bls12381::aggregate_verification_keys(&keys)?;
     /// ```
     fn aggregate_verification_keys(keys: &[Self::VerificationKey])
-        -> Option<Self::VerificationKey>;
+    -> Option<Self::VerificationKey>;
 
     /// Aggregate multiple signatures
     ///

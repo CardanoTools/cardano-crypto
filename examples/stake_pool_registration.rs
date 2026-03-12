@@ -5,7 +5,7 @@
 
 use cardano_crypto::hash::{Blake2b256, HashAlgorithm};
 use cardano_crypto::key::hash::{
-    hash_pool_verification_key, hash_stake_verification_key, PoolKeyHash,
+    PoolKeyHash, hash_pool_verification_key, hash_stake_verification_key,
 };
 use cardano_crypto::key::stake_pool::{
     PoolMetadata, Rational, RewardAccount, StakePoolParams, StakePoolRelay, VrfKeyHash,
