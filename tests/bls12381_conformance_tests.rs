@@ -17,6 +17,7 @@ fn hex_to_bytes(hex: &str) -> Vec<u8> {
         .collect()
 }
 
+#[allow(dead_code)]
 fn hex_to_array<const N: usize>(hex: &str) -> [u8; N] {
     let bytes = hex_to_bytes(hex);
     assert_eq!(bytes.len(), N, "Expected {} bytes, got {}", N, bytes.len());
@@ -603,6 +604,7 @@ mod bls_signature_tests {
     use super::*;
 
     /// Standard domain separation tag for BLS signatures
+    #[allow(dead_code)]
     const STANDARD_DST: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 
     #[test]

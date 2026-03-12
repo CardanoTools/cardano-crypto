@@ -1840,8 +1840,8 @@ mod tests {
         let sig = sk.sign(msg);
 
         // Aggregating single items should work
-        let agg_pk = Bls12381::aggregate_verification_keys(&[pk.clone()]).unwrap();
-        let agg_sig = Bls12381::aggregate_signatures(&[sig.clone()]).unwrap();
+        let agg_pk = Bls12381::aggregate_verification_keys(core::slice::from_ref(&pk)).unwrap();
+        let agg_sig = Bls12381::aggregate_signatures(core::slice::from_ref(&sig)).unwrap();
 
         // Should equal the original
         assert_eq!(agg_pk.point, pk.point);

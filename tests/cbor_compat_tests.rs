@@ -50,11 +50,11 @@ fn test_cbor_byte_string_encoding() {
     assert_eq!(hex_encode(&bytes_4), "4401020304");
 
     // 23 bytes - max short form
-    let bytes_23 = encode_bytes(&vec![0xAB; 23]);
+    let bytes_23 = encode_bytes(&[0xAB; 23]);
     assert_eq!(bytes_23[0], 0x57); // 0x40 + 23
 
     // 24 bytes - requires 1-byte length
-    let bytes_24 = encode_bytes(&vec![0xCD; 24]);
+    let bytes_24 = encode_bytes(&[0xCD; 24]);
     assert_eq!(bytes_24[0], 0x58); // 0x58 = major type 2 + additional info 24
     assert_eq!(bytes_24[1], 24); // length byte
 
@@ -78,7 +78,7 @@ fn test_cbor_byte_string_decoding() -> std::result::Result<(), CborError> {
 
     // 24-byte string with 1-byte length
     let mut cbor = vec![0x58, 24];
-    cbor.extend_from_slice(&vec![0xAB; 24]);
+    cbor.extend_from_slice(&[0xAB; 24]);
     let decoded = decode_bytes(&cbor)?;
     assert_eq!(decoded, vec![0xAB; 24]);
 
@@ -88,14 +88,16 @@ fn test_cbor_byte_string_decoding() -> std::result::Result<(), CborError> {
 /// Test encode/decode roundtrip
 #[test]
 fn test_encode_decode_roundtrip() -> std::result::Result<(), CborError> {
+    let buf_100 = [0xAB; 100];
+    let buf_1000 = [0xCD; 1000];
     let test_cases: &[&[u8]] = &[
         &[],
         &[0x00],
         &[0xFF],
         &[0x01, 0x02, 0x03, 0x04, 0x05],
         &[0xDE, 0xAD, 0xBE, 0xEF],
-        &vec![0xAB; 100],
-        &vec![0xCD; 1000],
+        &buf_100,
+        &buf_1000,
     ];
 
     for original in test_cases {

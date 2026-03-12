@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         arr.copy_from_slice(&vrf_hash_vec);
         arr
     };
-    println!("VRF key hash: {}", hex::encode(&vrf_hash));
+    println!("VRF key hash: {}", hex::encode(vrf_hash));
 
     // Step 2: Define economic parameters
     println!("\n--- Step 2: Economic Parameters ---");
@@ -150,7 +150,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     params.set_metadata(metadata)?;
 
     println!("✓ Metadata URL: {}", metadata_url);
-    println!("✓ Metadata hash: {}", hex::encode(&metadata_hash));
+    println!("✓ Metadata hash: {}", hex::encode(metadata_hash));
 
     // Step 8: Validate all parameters
     println!("\n--- Step 8: Validation ---");

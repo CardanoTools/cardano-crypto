@@ -78,8 +78,8 @@ mod vrf_edge_cases {
 
         // Get a valid proof then corrupt half of it
         let mut proof = VrfDraft03::prove(&sk, b"test").expect("Prove should succeed");
-        for i in 0..40 {
-            proof[i] ^= 0xFF;
+        for item in proof.iter_mut().take(40) {
+            *item ^= 0xFF;
         }
         assert!(
             VrfDraft03::verify(&pk, &proof, b"test").is_err(),
