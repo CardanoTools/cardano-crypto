@@ -1,6 +1,7 @@
-# CLAUDE.md - AI Assistant Guide for cardano-crypto
-
-> This document provides essential context for AI assistants working with this repository.
+---
+name: AI Assistant Guide for cardano-crypto
+description: This document provides essential context for AI assistants working with this repository.
+---
 
 ## Project Overview
 

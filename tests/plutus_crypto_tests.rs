@@ -155,7 +155,7 @@ mod schnorr_tests {
         let vk = Secp256k1Schnorr::derive_verification_key(&sk);
 
         let message = b"Schnorr signature for Plutus!";
-        let signature = Secp256k1Schnorr::sign(&sk, message);
+        let signature = Secp256k1Schnorr::sign(&sk, message).unwrap();
 
         assert!(Secp256k1Schnorr::verify(&vk, message, &signature).is_ok());
     }
@@ -167,7 +167,7 @@ mod schnorr_tests {
         let vk = Secp256k1Schnorr::derive_verification_key(&sk);
 
         let message = b"Original Schnorr message";
-        let signature = Secp256k1Schnorr::sign(&sk, message);
+        let signature = Secp256k1Schnorr::sign(&sk, message).unwrap();
 
         assert!(Secp256k1Schnorr::verify(&vk, b"Different message", &signature).is_err());
     }
@@ -194,7 +194,7 @@ mod schnorr_tests {
         let sk = Secp256k1Schnorr::gen_key(&seed);
 
         let message = b"Schnorr roundtrip";
-        let signature = Secp256k1Schnorr::sign(&sk, message);
+        let signature = Secp256k1Schnorr::sign(&sk, message).unwrap();
 
         let sig_bytes = signature.as_bytes().to_vec();
         let sig_restored = Secp256k1SchnorrSignature::from_bytes(&sig_bytes).unwrap();
@@ -638,7 +638,7 @@ mod integration_tests {
         // Schnorr
         let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
         let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
-        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message);
+        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message).unwrap();
         assert!(Secp256k1Schnorr::verify(&schnorr_vk, message, &schnorr_sig).is_ok());
 
         // BLS

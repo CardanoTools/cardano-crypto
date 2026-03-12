@@ -82,15 +82,24 @@ mod ecdsa_cardano_base_vectors {
     }
 
     /// ECDSA Verify-Only test vector from cardano-base
+    ///
+    /// In cardano-base, ECDSA's `toSignable` applies SHA3-256 to the message.
+    /// The Haskell string "0000...0000" is a 64-byte ASCII ByteString (each byte is 0x30).
+    /// The prehash used for verification is SHA3-256 of those ASCII bytes.
     #[test]
     fn test_ecdsa_verify_only_vector() {
+        use sha3::{Digest, Sha3_256};
+
         // From ecdsaVerifyOnlyTestVector in cardano-base
         let vk_hex = "02599de3e582e2a3779208a210dfeae8f330b9af00a47a7fb22e9bb8ef596f301b";
-        let msg_hex = "0000000000000000000000000000000000000000000000000000000000000000";
         let sig_hex = "354b868c757ef0b796003f7c23dd754d2d1726629145be2c7b7794a25fec80a06254f0915935f33b91bceb16d46ff2814f659e9b6791a4a21ff8764b78d7e114";
 
+        // In Haskell, the message is the ASCII string "0000...0000" (64 chars of '0').
+        // ECDSA toSignable applies SHA3-256 to the raw bytes.
+        let ascii_msg = b"0000000000000000000000000000000000000000000000000000000000000000";
+        let msg: [u8; 32] = Sha3_256::digest(ascii_msg).into();
+
         let vk = Secp256k1EcdsaVerificationKey::from_bytes(&hex_to_bytes(vk_hex)).unwrap();
-        let msg: [u8; 32] = hex_to_array(msg_hex);
         let sig = Secp256k1EcdsaSignature::from_bytes(&hex_to_bytes(sig_hex)).unwrap();
 
         assert!(Secp256k1Ecdsa::verify_prehashed(&vk, &msg, &sig).is_ok());
@@ -389,18 +398,23 @@ mod schnorr_cardano_base_vectors {
     use super::*;
 
     /// Schnorr verify-only test vector from cardano-base
+    ///
+    /// In cardano-base, Schnorr's `toSignable` is the identity function.
+    /// The Haskell string "0000...0000" is a 64-byte ASCII ByteString (each byte is 0x30),
+    /// NOT hex-decoded to 32 zero bytes.
     #[test]
     fn test_schnorr_verify_only_vector() {
         // From schnorrVerifyOnlyTestVector in cardano-base
         let vk_hex = "599de3e582e2a3779208a210dfeae8f330b9af00a47a7fb22e9bb8ef596f301b";
-        let msg_hex = "0000000000000000000000000000000000000000000000000000000000000000";
         let sig_hex = "5a56da88e6fd8419181dec4d3dd6997bab953d2fc71ab65e23cfc9e7e3d1a310613454a60f6703819a39fdac2a410a094442afd1fc083354443e8d8bb4461a9b";
 
+        // The message in Haskell is the ASCII bytes of the hex string, not decoded
+        let msg = b"0000000000000000000000000000000000000000000000000000000000000000";
+
         let vk = Secp256k1SchnorrVerificationKey::from_bytes(&hex_to_bytes(vk_hex)).unwrap();
-        let msg = hex_to_bytes(msg_hex);
         let sig = Secp256k1SchnorrSignature::from_bytes(&hex_to_bytes(sig_hex)).unwrap();
 
-        assert!(Secp256k1Schnorr::verify(&vk, &msg, &sig).is_ok());
+        assert!(Secp256k1Schnorr::verify(&vk, msg, &sig).is_ok());
     }
 
     /// Test wrong message with valid signature
@@ -525,7 +539,7 @@ mod cross_algorithm {
 
         let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
         let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
-        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message);
+        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message).unwrap();
 
         // Each signature should only verify with its own algorithm
         assert!(Secp256k1Ecdsa::verify(&ecdsa_vk, message, &ecdsa_sig).is_ok());
@@ -564,8 +578,8 @@ mod determinism {
         let sk = Secp256k1Schnorr::gen_key(&seed);
         let msg = b"deterministic test";
 
-        let sig1 = Secp256k1Schnorr::sign(&sk, msg);
-        let sig2 = Secp256k1Schnorr::sign(&sk, msg);
+        let sig1 = Secp256k1Schnorr::sign(&sk, msg).unwrap();
+        let sig2 = Secp256k1Schnorr::sign(&sk, msg).unwrap();
 
         assert_eq!(
             sig1.as_bytes(),

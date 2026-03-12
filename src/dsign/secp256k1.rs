@@ -449,18 +449,29 @@ impl Secp256k1Schnorr {
 
     /// Signs a message using the signing key.
     ///
-    /// Uses BIP-340 tagged hashing internally.
+    /// Performs pure BIP-340 Schnorr signing: the raw message is fed directly
+    /// into the tagged challenge hash without any pre-hashing.
+    ///
+    /// # Errors
+    ///
+    /// Returns `CryptoError::SigningFailed` if the derived nonce is zero
+    /// (probability ~2^{-256}).
     pub fn sign(
         signing_key: &Secp256k1SchnorrSigningKey,
         message: &[u8],
-    ) -> Secp256k1SchnorrSignature {
+    ) -> Result<Secp256k1SchnorrSignature, CryptoError> {
         let k256_sk = signing_key.to_k256_signing_key();
-        let signature: K256SchnorrSignature = k256_sk.sign(message);
+        let signature: K256SchnorrSignature = k256_sk
+            .sign_raw(message, &[0u8; 32])
+            .map_err(|_| CryptoError::SigningFailed)?;
         let bytes: [u8; 64] = signature.to_bytes();
-        Secp256k1SchnorrSignature { bytes }
+        Ok(Secp256k1SchnorrSignature { bytes })
     }
 
     /// Verifies a signature against a message and verification key.
+    ///
+    /// Performs pure BIP-340 Schnorr verification: the raw message is fed
+    /// directly into the tagged challenge hash without any pre-hashing.
     pub fn verify(
         verification_key: &Secp256k1SchnorrVerificationKey,
         message: &[u8],
@@ -469,7 +480,7 @@ impl Secp256k1Schnorr {
         let k256_vk = verification_key.to_k256_verifying_key();
         let k256_sig = signature.to_k256_signature();
         k256_vk
-            .verify(message, &k256_sig)
+            .verify_raw(message, &k256_sig)
             .map_err(|_| CryptoError::SignatureVerificationFailed)
     }
 
@@ -592,7 +603,7 @@ mod tests {
         let verification_key = Secp256k1Schnorr::derive_verification_key(&signing_key);
 
         let message = b"Hello, Plutus!";
-        let signature = Secp256k1Schnorr::sign(&signing_key, message);
+        let signature = Secp256k1Schnorr::sign(&signing_key, message).unwrap();
 
         assert!(Secp256k1Schnorr::verify(&verification_key, message, &signature).is_ok());
     }
@@ -604,7 +615,7 @@ mod tests {
         let verification_key = Secp256k1Schnorr::derive_verification_key(&signing_key);
 
         let message = b"Hello, Plutus!";
-        let signature = Secp256k1Schnorr::sign(&signing_key, message);
+        let signature = Secp256k1Schnorr::sign(&signing_key, message).unwrap();
 
         // Wrong message
         assert!(Secp256k1Schnorr::verify(&verification_key, b"Wrong message", &signature).is_err());

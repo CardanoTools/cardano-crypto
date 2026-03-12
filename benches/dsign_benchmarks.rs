@@ -120,11 +120,11 @@ fn secp256k1_benchmarks(c: &mut Criterion) {
         
         group.bench_function("sign", |b| {
             b.iter(|| {
-                black_box(Secp256k1Schnorr::sign(black_box(&sk), black_box(message)))
+                black_box(Secp256k1Schnorr::sign(black_box(&sk), black_box(message)).unwrap())
             });
         });
         
-        let signature = Secp256k1Schnorr::sign(&sk, message);
+        let signature = Secp256k1Schnorr::sign(&sk, message).unwrap();
         group.bench_function("verify", |b| {
             b.iter(|| {
                 black_box(Secp256k1Schnorr::verify(black_box(&vk), black_box(message), black_box(&signature))).unwrap()

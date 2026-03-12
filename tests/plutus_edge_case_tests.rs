@@ -68,7 +68,7 @@ mod secp256k1_edge_cases {
         let vk = Secp256k1Schnorr::derive_verification_key(&sk);
 
         let empty_msg: &[u8] = b"";
-        let sig = Secp256k1Schnorr::sign(&sk, empty_msg);
+        let sig = Secp256k1Schnorr::sign(&sk, empty_msg).unwrap();
         assert!(
             Secp256k1Schnorr::verify(&vk, empty_msg, &sig).is_ok(),
             "Empty message should be valid for Schnorr"
@@ -84,7 +84,7 @@ mod secp256k1_edge_cases {
 
         // 10KB message
         let long_msg = vec![0xABu8; 10240];
-        let sig = Secp256k1Schnorr::sign(&sk, &long_msg);
+        let sig = Secp256k1Schnorr::sign(&sk, &long_msg).unwrap();
         assert!(Secp256k1Schnorr::verify(&vk, &long_msg, &sig).is_ok());
     }
 
@@ -311,7 +311,7 @@ mod integration_tests {
         // Schnorr
         let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
         let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
-        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message);
+        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message).unwrap();
         assert!(Secp256k1Schnorr::verify(&schnorr_vk, message, &schnorr_sig).is_ok());
 
         // BLS
@@ -392,7 +392,7 @@ mod integration_tests {
         // Sign with each
         let msg = b"isolation test";
         let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, msg);
-        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, msg);
+        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, msg).unwrap();
         let bls_sig = bls_sk.sign(msg);
 
         // Verify only with correct algorithm
@@ -422,7 +422,7 @@ mod integration_tests {
         // Schnorr
         let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
         let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
-        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, b"test");
+        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, b"test").unwrap();
 
         let schnorr_sk2 = Secp256k1SchnorrSigningKey::from_bytes(schnorr_sk.as_bytes()).unwrap();
         let schnorr_vk2 =
@@ -582,7 +582,7 @@ mod plutus_builtin_equivalence {
         // Test various message lengths
         for len in &[0, 1, 32, 64, 100, 1000] {
             let msg = vec![0xABu8; *len];
-            let sig = Secp256k1Schnorr::sign(&sk, &msg);
+            let sig = Secp256k1Schnorr::sign(&sk, &msg).unwrap();
             assert!(
                 Secp256k1Schnorr::verify(&vk, &msg, &sig).is_ok(),
                 "Failed for message length {}",
@@ -626,7 +626,7 @@ mod stress_tests {
             let vk = Secp256k1Schnorr::derive_verification_key(&sk);
 
             let msg = vec![i.wrapping_add(1); i as usize + 1];
-            let sig = Secp256k1Schnorr::sign(&sk, &msg);
+            let sig = Secp256k1Schnorr::sign(&sk, &msg).unwrap();
             assert!(Secp256k1Schnorr::verify(&vk, &msg, &sig).is_ok());
         }
     }
