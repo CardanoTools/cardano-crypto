@@ -229,8 +229,8 @@ mod bls_g1_tests {
 
     #[test]
     fn test_g1_generator() {
-        let gen = G1Point::generator();
-        assert!(!Bls12381::g1_is_identity(&gen));
+        let generator = G1Point::generator();
+        assert!(!Bls12381::g1_is_identity(&generator));
     }
 
     #[test]
@@ -241,47 +241,47 @@ mod bls_g1_tests {
 
     #[test]
     fn test_g1_add_identity() {
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
         let id = G1Point::identity();
-        let result = Bls12381::g1_add(&gen, &id);
-        assert_eq!(gen, result);
+        let result = Bls12381::g1_add(&generator, &id);
+        assert_eq!(generator, result);
     }
 
     #[test]
     fn test_g1_neg() {
-        let gen = G1Point::generator();
-        let neg = Bls12381::g1_neg(&gen);
-        let sum = Bls12381::g1_add(&gen, &neg);
+        let generator = G1Point::generator();
+        let neg = Bls12381::g1_neg(&generator);
+        let sum = Bls12381::g1_add(&generator, &neg);
         assert!(Bls12381::g1_is_identity(&sum));
     }
 
     #[test]
     fn test_g1_scalar_mul() {
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
 
         // 2 * G = G + G
         let mut two_bytes = [0u8; 32];
         two_bytes[31] = 2;
         let two = Scalar::from_bytes_be(&two_bytes).unwrap();
 
-        let doubled = Bls12381::g1_scalar_mul(&two, &gen);
-        let also_doubled = Bls12381::g1_add(&gen, &gen);
+        let doubled = Bls12381::g1_scalar_mul(&two, &generator);
+        let also_doubled = Bls12381::g1_add(&generator, &generator);
 
         assert_eq!(doubled, also_doubled);
     }
 
     #[test]
     fn test_g1_compress_uncompress() {
-        let gen = G1Point::generator();
-        let compressed = Bls12381::g1_compress(&gen);
+        let generator = G1Point::generator();
+        let compressed = Bls12381::g1_compress(&generator);
         let restored = Bls12381::g1_uncompress(&compressed).unwrap();
-        assert_eq!(gen, restored);
+        assert_eq!(generator, restored);
     }
 
     #[test]
     fn test_g1_compress_size() {
-        let gen = G1Point::generator();
-        let compressed = Bls12381::g1_compress(&gen);
+        let generator = G1Point::generator();
+        let compressed = Bls12381::g1_compress(&generator);
         assert_eq!(compressed.len(), G1_COMPRESSED_SIZE);
     }
 
@@ -312,8 +312,8 @@ mod bls_g2_tests {
 
     #[test]
     fn test_g2_generator() {
-        let gen = G2Point::generator();
-        assert!(!Bls12381::g2_is_identity(&gen));
+        let generator = G2Point::generator();
+        assert!(!Bls12381::g2_is_identity(&generator));
     }
 
     #[test]
@@ -324,46 +324,46 @@ mod bls_g2_tests {
 
     #[test]
     fn test_g2_add_identity() {
-        let gen = G2Point::generator();
+        let generator = G2Point::generator();
         let id = G2Point::identity();
-        let result = Bls12381::g2_add(&gen, &id);
-        assert_eq!(gen, result);
+        let result = Bls12381::g2_add(&generator, &id);
+        assert_eq!(generator, result);
     }
 
     #[test]
     fn test_g2_neg() {
-        let gen = G2Point::generator();
-        let neg = Bls12381::g2_neg(&gen);
-        let sum = Bls12381::g2_add(&gen, &neg);
+        let generator = G2Point::generator();
+        let neg = Bls12381::g2_neg(&generator);
+        let sum = Bls12381::g2_add(&generator, &neg);
         assert!(Bls12381::g2_is_identity(&sum));
     }
 
     #[test]
     fn test_g2_scalar_mul() {
-        let gen = G2Point::generator();
+        let generator = G2Point::generator();
 
         let mut three_bytes = [0u8; 32];
         three_bytes[31] = 3;
         let three = Scalar::from_bytes_be(&three_bytes).unwrap();
 
-        let tripled = Bls12381::g2_scalar_mul(&three, &gen);
-        let also_tripled = Bls12381::g2_add(&gen, &Bls12381::g2_add(&gen, &gen));
+        let tripled = Bls12381::g2_scalar_mul(&three, &generator);
+        let also_tripled = Bls12381::g2_add(&generator, &Bls12381::g2_add(&generator, &generator));
 
         assert_eq!(tripled, also_tripled);
     }
 
     #[test]
     fn test_g2_compress_uncompress() {
-        let gen = G2Point::generator();
-        let compressed = Bls12381::g2_compress(&gen);
+        let generator = G2Point::generator();
+        let compressed = Bls12381::g2_compress(&generator);
         let restored = Bls12381::g2_uncompress(&compressed).unwrap();
-        assert_eq!(gen, restored);
+        assert_eq!(generator, restored);
     }
 
     #[test]
     fn test_g2_compress_size() {
-        let gen = G2Point::generator();
-        let compressed = Bls12381::g2_compress(&gen);
+        let generator = G2Point::generator();
+        let compressed = Bls12381::g2_compress(&generator);
         assert_eq!(compressed.len(), G2_COMPRESSED_SIZE);
     }
 

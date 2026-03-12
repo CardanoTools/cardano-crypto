@@ -647,12 +647,12 @@ mod stress_tests {
 
     #[test]
     fn test_many_g1_operations() {
-        let gen = G1Point::generator();
-        let mut point = gen.clone();
+        let generator = G1Point::generator();
+        let mut point = generator.clone();
 
         for i in 1..50u32 {
             // Accumulate: point = i*G
-            point = Bls12381::g1_add(&point, &gen);
+            point = Bls12381::g1_add(&point, &generator);
 
             // Verify: (i+1)*G
             let mut scalar_bytes = [0u8; 32];
@@ -662,7 +662,7 @@ mod stress_tests {
             scalar_bytes[30] = ((i_plus_1 >> 8) & 0xFF) as u8;
             scalar_bytes[31] = (i_plus_1 & 0xFF) as u8;
             let scalar = Scalar::from_bytes_be(&scalar_bytes).unwrap();
-            let expected = Bls12381::g1_scalar_mul(&scalar, &gen);
+            let expected = Bls12381::g1_scalar_mul(&scalar, &generator);
 
             assert_eq!(point, expected, "Mismatch at iteration {}", i);
         }

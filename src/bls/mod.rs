@@ -1500,24 +1500,24 @@ mod tests {
 
     #[test]
     fn test_g1_generator() {
-        let gen = G1Point::generator();
-        assert!(!gen.is_identity());
+        let generator = G1Point::generator();
+        assert!(!generatorerator.is_identity());
 
         // Verify roundtrip
-        let compressed = gen.to_compressed();
+        let compressed = generator.to_compressed();
         let restored = G1Point::from_compressed(&compressed).unwrap();
-        assert_eq!(gen, restored);
+        assert_eq!(generator, restored);
     }
 
     #[test]
     fn test_g2_generator() {
-        let gen = G2Point::generator();
-        assert!(!gen.is_identity());
+        let generator = G2Point::generator();
+        assert!(!generatorerator.is_identity());
 
         // Verify roundtrip
-        let compressed = gen.to_compressed();
+        let compressed = generator.to_compressed();
         let restored = G2Point::from_compressed(&compressed).unwrap();
-        assert_eq!(gen, restored);
+        assert_eq!(generator, restored);
     }
 
     #[test]
@@ -1526,9 +1526,9 @@ mod tests {
         assert!(id.is_identity());
 
         // Adding identity should give the same point
-        let gen = G1Point::generator();
-        let result = gen.add(&id);
-        assert_eq!(gen, result);
+        let generator = G1Point::generator();
+        let result = generator.add(&id);
+        assert_eq!(generator, result);
     }
 
     #[test]
@@ -1537,32 +1537,32 @@ mod tests {
         assert!(id.is_identity());
 
         // Adding identity should give the same point
-        let gen = G2Point::generator();
-        let result = gen.add(&id);
-        assert_eq!(gen, result);
+        let generator = G2Point::generator();
+        let result = generator.add(&id);
+        assert_eq!(generator, result);
     }
 
     #[test]
     fn test_g1_add() {
-        let gen = G1Point::generator();
-        let doubled = gen.add(&gen);
+        let generator = G1Point::generator();
+        let doubled = generator.add(&generator);
 
         // Create scalar 2
         let mut scalar_bytes = [0u8; 32];
         scalar_bytes[31] = 2;
         let scalar = Scalar::from_bytes_be(&scalar_bytes).unwrap();
 
-        let also_doubled = gen.mul(&scalar);
+        let also_doubled = generator.mul(&scalar);
         assert_eq!(doubled, also_doubled);
     }
 
     #[test]
     fn test_g1_neg() {
-        let gen = G1Point::generator();
-        let neg = gen.neg();
+        let generator = G1Point::generator();
+        let neg = generator.neg();
 
         // g + (-g) should be identity
-        let sum = gen.add(&neg);
+        let sum = generator.add(&neg);
         assert!(sum.is_identity());
     }
 

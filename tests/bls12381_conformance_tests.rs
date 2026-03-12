@@ -88,20 +88,20 @@ mod g1_identity_tests {
 
     #[test]
     fn test_g1_add_identity_left() {
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
         let id = G1Point::identity();
-        let result = Bls12381::g1_add(&id, &gen);
+        let result = Bls12381::g1_add(&id, &generator);
 
-        assert_eq!(gen, result, "0 + G = G");
+        assert_eq!(generator, result, "0 + G = G");
     }
 
     #[test]
     fn test_g1_add_identity_right() {
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
         let id = G1Point::identity();
-        let result = Bls12381::g1_add(&gen, &id);
+        let result = Bls12381::g1_add(&generator, &id);
 
-        assert_eq!(gen, result, "G + 0 = G");
+        assert_eq!(generator, result, "G + 0 = G");
     }
 
     #[test]
@@ -114,9 +114,9 @@ mod g1_identity_tests {
 
     #[test]
     fn test_g1_scalar_mul_zero() {
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
         let zero = Scalar::from_bytes_be(&[0u8; 32]).unwrap();
-        let result = Bls12381::g1_scalar_mul(&zero, &gen);
+        let result = Bls12381::g1_scalar_mul(&zero, &generator);
 
         assert!(Bls12381::g1_is_identity(&result), "0 * G = 0");
     }
@@ -158,20 +158,20 @@ mod g2_identity_tests {
 
     #[test]
     fn test_g2_add_identity_left() {
-        let gen = G2Point::generator();
+        let generator = G2Point::generator();
         let id = G2Point::identity();
-        let result = Bls12381::g2_add(&id, &gen);
+        let result = Bls12381::g2_add(&id, &generator);
 
-        assert_eq!(gen, result, "0 + G2 = G2");
+        assert_eq!(generator, result, "0 + G2 = G2");
     }
 
     #[test]
     fn test_g2_add_identity_right() {
-        let gen = G2Point::generator();
+        let generator = G2Point::generator();
         let id = G2Point::identity();
-        let result = Bls12381::g2_add(&gen, &id);
+        let result = Bls12381::g2_add(&generator, &id);
 
-        assert_eq!(gen, result, "G2 + 0 = G2");
+        assert_eq!(generator, result, "G2 + 0 = G2");
     }
 
     #[test]
@@ -184,9 +184,9 @@ mod g2_identity_tests {
 
     #[test]
     fn test_g2_scalar_mul_zero() {
-        let gen = G2Point::generator();
+        let generator = G2Point::generator();
         let zero = Scalar::from_bytes_be(&[0u8; 32]).unwrap();
-        let result = Bls12381::g2_scalar_mul(&zero, &gen);
+        let result = Bls12381::g2_scalar_mul(&zero, &generator);
 
         assert!(Bls12381::g2_is_identity(&result), "0 * G2 = 0");
     }
@@ -201,71 +201,71 @@ mod g1_operations_tests {
 
     #[test]
     fn test_g1_generator_not_identity() {
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
         assert!(
-            !Bls12381::g1_is_identity(&gen),
+            !Bls12381::g1_is_identity(&generator),
             "Generator should not be identity"
         );
     }
 
     #[test]
     fn test_g1_generator_roundtrip() {
-        let gen = G1Point::generator();
-        let compressed = Bls12381::g1_compress(&gen);
+        let generator = G1Point::generator();
+        let compressed = Bls12381::g1_compress(&generator);
         let restored = Bls12381::g1_uncompress(&compressed).unwrap();
 
         assert_eq!(
-            gen, restored,
+            generator, restored,
             "Generator should roundtrip through compression"
         );
     }
 
     #[test]
     fn test_g1_add_inverse_is_identity() {
-        let gen = G1Point::generator();
-        let neg_gen = Bls12381::g1_neg(&gen);
-        let sum = Bls12381::g1_add(&gen, &neg_gen);
+        let generator = G1Point::generator();
+        let neg_gen = Bls12381::g1_neg(&generator);
+        let sum = Bls12381::g1_add(&generator, &neg_gen);
 
         assert!(Bls12381::g1_is_identity(&sum), "G + (-G) = 0");
     }
 
     #[test]
     fn test_g1_double_is_scalar_mul_2() {
-        let gen = G1Point::generator();
-        let doubled = Bls12381::g1_add(&gen, &gen);
+        let generator = G1Point::generator();
+        let doubled = Bls12381::g1_add(&generator, &generator);
 
         let mut two_bytes = [0u8; 32];
         two_bytes[31] = 2;
         let two = Scalar::from_bytes_be(&two_bytes).unwrap();
-        let scaled = Bls12381::g1_scalar_mul(&two, &gen);
+        let scaled = Bls12381::g1_scalar_mul(&two, &generator);
 
         assert_eq!(doubled, scaled, "G + G = 2*G");
     }
 
     #[test]
     fn test_g1_scalar_mul_one() {
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
         let mut one_bytes = [0u8; 32];
         one_bytes[31] = 1;
         let one = Scalar::from_bytes_be(&one_bytes).unwrap();
-        let result = Bls12381::g1_scalar_mul(&one, &gen);
+        let result = Bls12381::g1_scalar_mul(&one, &generator);
 
-        assert_eq!(gen, result, "1 * G = G");
+        assert_eq!(generator, result, "1 * G = G");
     }
 
     #[test]
     fn test_g1_triple() {
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
 
         // 3*G via addition
-        let doubled = Bls12381::g1_add(&gen, &gen);
-        let tripled_add = Bls12381::g1_add(&doubled, &gen);
+        let doubled = Bls12381::g1_add(&generator, &generator);
+        let tripled_add = Bls12381::g1_add(&doubled, &generator);
 
         // 3*G via scalar multiplication
         let mut three_bytes = [0u8; 32];
         three_bytes[31] = 3;
         let three = Scalar::from_bytes_be(&three_bytes).unwrap();
-        let tripled_mul = Bls12381::g1_scalar_mul(&three, &gen);
+        let tripled_mul = Bls12381::g1_scalar_mul(&three, &generator);
 
         assert_eq!(tripled_add, tripled_mul, "G + G + G = 3*G");
     }
@@ -273,7 +273,7 @@ mod g1_operations_tests {
     #[test]
     fn test_g1_scalar_mul_associativity() {
         // (a*b)*G = a*(b*G)
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
 
         let mut a_bytes = [0u8; 32];
         a_bytes[31] = 5;
@@ -288,10 +288,10 @@ mod g1_operations_tests {
         let ab = Scalar::from_bytes_be(&ab_bytes).unwrap();
 
         // (a*b)*G
-        let result1 = Bls12381::g1_scalar_mul(&ab, &gen);
+        let result1 = Bls12381::g1_scalar_mul(&ab, &generator);
 
         // a*(b*G)
-        let b_g = Bls12381::g1_scalar_mul(&b, &gen);
+        let b_g = Bls12381::g1_scalar_mul(&b, &generator);
         let result2 = Bls12381::g1_scalar_mul(&a, &b_g);
 
         assert_eq!(result1, result2, "(a*b)*G = a*(b*G)");
@@ -299,7 +299,7 @@ mod g1_operations_tests {
 
     #[test]
     fn test_g1_add_commutativity() {
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
 
         let mut two_bytes = [0u8; 32];
         two_bytes[31] = 2;
@@ -309,8 +309,8 @@ mod g1_operations_tests {
         three_bytes[31] = 3;
         let three = Scalar::from_bytes_be(&three_bytes).unwrap();
 
-        let p = Bls12381::g1_scalar_mul(&two, &gen);
-        let q = Bls12381::g1_scalar_mul(&three, &gen);
+        let p = Bls12381::g1_scalar_mul(&two, &generator);
+        let q = Bls12381::g1_scalar_mul(&three, &generator);
 
         let pq = Bls12381::g1_add(&p, &q);
         let qp = Bls12381::g1_add(&q, &p);
@@ -328,56 +328,56 @@ mod g2_operations_tests {
 
     #[test]
     fn test_g2_generator_not_identity() {
-        let gen = G2Point::generator();
+        let generator = G2Point::generator();
         assert!(
-            !Bls12381::g2_is_identity(&gen),
+            !Bls12381::g2_is_identity(&generator),
             "Generator should not be identity"
         );
     }
 
     #[test]
     fn test_g2_generator_roundtrip() {
-        let gen = G2Point::generator();
-        let compressed = Bls12381::g2_compress(&gen);
+        let generator = G2Point::generator();
+        let compressed = Bls12381::g2_compress(&generator);
         let restored = Bls12381::g2_uncompress(&compressed).unwrap();
 
         assert_eq!(
-            gen, restored,
+            generator, restored,
             "Generator should roundtrip through compression"
         );
     }
 
     #[test]
     fn test_g2_add_inverse_is_identity() {
-        let gen = G2Point::generator();
-        let neg_gen = Bls12381::g2_neg(&gen);
-        let sum = Bls12381::g2_add(&gen, &neg_gen);
+        let generator = G2Point::generator();
+        let neg_gen = Bls12381::g2_neg(&generator);
+        let sum = Bls12381::g2_add(&generator, &neg_gen);
 
         assert!(Bls12381::g2_is_identity(&sum), "G2 + (-G2) = 0");
     }
 
     #[test]
     fn test_g2_double_is_scalar_mul_2() {
-        let gen = G2Point::generator();
-        let doubled = Bls12381::g2_add(&gen, &gen);
+        let generator = G2Point::generator();
+        let doubled = Bls12381::g2_add(&generator, &generator);
 
         let mut two_bytes = [0u8; 32];
         two_bytes[31] = 2;
         let two = Scalar::from_bytes_be(&two_bytes).unwrap();
-        let scaled = Bls12381::g2_scalar_mul(&two, &gen);
+        let scaled = Bls12381::g2_scalar_mul(&two, &generator);
 
         assert_eq!(doubled, scaled, "G2 + G2 = 2*G2");
     }
 
     #[test]
     fn test_g2_scalar_mul_one() {
-        let gen = G2Point::generator();
+        let generator = G2Point::generator();
         let mut one_bytes = [0u8; 32];
         one_bytes[31] = 1;
         let one = Scalar::from_bytes_be(&one_bytes).unwrap();
-        let result = Bls12381::g2_scalar_mul(&one, &gen);
+        let result = Bls12381::g2_scalar_mul(&one, &generator);
 
-        assert_eq!(gen, result, "1 * G2 = G2");
+        assert_eq!(generator, result, "1 * G2 = G2");
     }
 }
 
