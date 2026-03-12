@@ -12,6 +12,8 @@ use crate::common::error::{CryptoError, Result};
 use crate::kes::hash::KesHashAlgorithm;
 use crate::kes::single::compact::{CompactKesComponents, CompactSingleKes, OptimizedKesSignature};
 use crate::kes::{KesAlgorithm, Period};
+use subtle::ConstantTimeEq;
+use zeroize::Zeroize;
 
 /// CompactSumKES is an optimized version of SumKES that stores fewer verification keys.
 ///
@@ -233,7 +235,7 @@ where
         let vk1_bytes = D::raw_serialize_verification_key_kes(&vk1);
         let computed_vk = H::hash_concat(&vk0_bytes, &vk1_bytes);
 
-        if &computed_vk != verification_key {
+        if !bool::from(computed_vk.ct_eq(verification_key)) {
             return Err(CryptoError::VerificationFailed);
         }
 
@@ -254,12 +256,15 @@ where
 
         if period + 1 == t_half {
             // Transition from left to right subtree
-            let r1_seed = signing_key
+            let mut r1_seed = signing_key
                 .r1_seed
                 .take()
                 .ok_or(CryptoError::KesError(crate::kes::KesError::KeyExpired))?;
 
             let sk1 = D::gen_key_kes_from_seed_bytes(&r1_seed)?;
+
+            // Zeroize seed before dropping
+            r1_seed.zeroize();
 
             Ok(Some(CompactSumSigningKey {
                 sk: sk1,
@@ -300,11 +305,14 @@ where
 
     fn gen_key_kes_from_seed_bytes(seed: &[u8]) -> Result<Self::SigningKey> {
         // Split seed into r0 and r1 using the hash algorithm
-        let (r0_bytes, r1_bytes) = H::expand_seed(seed);
+        let (mut r0_bytes, r1_bytes) = H::expand_seed(seed);
 
         // Generate sk_0 from r0
         let sk0 = D::gen_key_kes_from_seed_bytes(&r0_bytes)?;
         let vk0 = D::derive_verification_key(&sk0)?;
+
+        // Zeroize r0 seed after use
+        r0_bytes.zeroize();
 
         // Generate sk_1 from r1 (only to derive vk1, then forget)
         let sk1 = D::gen_key_kes_from_seed_bytes(&r1_bytes)?;
@@ -359,7 +367,10 @@ where
 
     fn forget_signing_key_kes(signing_key: Self::SigningKey) {
         D::forget_signing_key_kes(signing_key.sk);
-        // vk0, vk1, r1_seed will be dropped automatically
+        // Zeroize r1_seed if present
+        if let Some(mut seed) = signing_key.r1_seed {
+            seed.zeroize();
+        }
     }
 }
 

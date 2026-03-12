@@ -324,7 +324,7 @@ impl VrfDraft03 {
 
         let gamma_bytes: [u8; 32] = proof[0..32]
             .try_into()
-            .expect("proof gamma segment must be 32 bytes");
+            .map_err(|_| crate::common::CryptoError::InvalidProof)?;
 
         let gamma = bytes_to_point(&gamma_bytes)?;
         let gamma_cleared = cardano_clear_cofactor(&gamma);

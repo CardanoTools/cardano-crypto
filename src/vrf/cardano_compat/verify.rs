@@ -24,6 +24,7 @@ use curve25519_dalek::{
     constants::ED25519_BASEPOINT_POINT, edwards::CompressedEdwardsY, scalar::Scalar,
 };
 use sha2::{Digest, Sha512};
+use subtle::ConstantTimeEq;
 
 use super::point::{cardano_clear_cofactor, cardano_hash_to_curve};
 use crate::common::{point_to_bytes, CryptoError, CryptoResult, SUITE_DRAFT03, THREE, TWO};
@@ -80,13 +81,13 @@ pub fn cardano_vrf_verify(
     // Step 1: Parse proof components
     let gamma_bytes: [u8; 32] = proof[0..32]
         .try_into()
-        .expect("VRF proof gamma segment must be 32 bytes");
+        .map_err(|_| CryptoError::InvalidProof)?;
     let c_bytes_short: [u8; 16] = proof[32..48]
         .try_into()
-        .expect("VRF proof challenge segment must be 16 bytes");
+        .map_err(|_| CryptoError::InvalidProof)?;
     let s_bytes: [u8; 32] = proof[48..80]
         .try_into()
-        .expect("VRF proof scalar segment must be 32 bytes");
+        .map_err(|_| CryptoError::InvalidProof)?;
 
     // Parse public key
     let y_point = CompressedEdwardsY(*public_key)
@@ -140,8 +141,8 @@ pub fn cardano_vrf_verify(
     let c_hash = c_hasher.finalize();
 
     // Step 5: Verify challenge matches using constant-time comparison
-    // This is a cryptographic best practice to prevent timing attacks
-    let challenge_matches = c_hash[0..16] == c_bytes_short[..];
+    // Prevents timing side-channel attacks on proof verification
+    let challenge_matches: bool = c_hash[0..16].ct_eq(&c_bytes_short[..]).into();
     if !challenge_matches {
         return Err(CryptoError::VerificationFailed);
     }

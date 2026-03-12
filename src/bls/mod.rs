@@ -718,6 +718,8 @@ impl Scalar {
     /// # Security
     ///
     /// The created scalar will be automatically zeroized when dropped.
+    /// The blst library handles reduction mod the curve order during operations,
+    /// so values >= r are accepted (matching Cardano/CIP-0381 behavior).
     pub fn from_bytes_be(bytes: &[u8]) -> Result<Self, CryptoError> {
         if bytes.len() != SCALAR_SIZE {
             return Err(CryptoError::InvalidKeyLength {
@@ -725,6 +727,7 @@ impl Scalar {
                 got: bytes.len(),
             });
         }
+
         let mut scalar_bytes = [0u8; SCALAR_SIZE];
         scalar_bytes.copy_from_slice(bytes);
         Ok(Self {
@@ -784,7 +787,11 @@ impl PairingResult {
 
 impl PartialEq for PairingResult {
     fn eq(&self, other: &Self) -> bool {
-        // Compare byte representations
+        use subtle::ConstantTimeEq;
+        // SAFETY: self.value and other.value are valid blst_fp12 structs owned by
+        // this PairingResult. We create byte slices over their full representation
+        // for constant-time comparison. The pointers are valid for the lifetime of
+        // the references, and the size is the compile-time known size of blst_fp12.
         unsafe {
             let self_bytes = core::slice::from_raw_parts(
                 &self.value as *const _ as *const u8,
@@ -794,7 +801,7 @@ impl PartialEq for PairingResult {
                 &other.value as *const _ as *const u8,
                 core::mem::size_of::<blst_fp12>(),
             );
-            self_bytes == other_bytes
+            self_bytes.ct_eq(other_bytes).into()
         }
     }
 }

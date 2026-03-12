@@ -214,7 +214,10 @@ impl VrfDraft13 {
 
         let secret_scalar_bytes: [u8; 32] = az[0..32]
             .try_into()
-            .expect("secret key slice must be 32 bytes");
+            .map_err(|_| crate::common::error::CryptoError::InvalidKeyLength {
+                expected: 32,
+                got: az[0..32].len(),
+            })?;
         let x = Scalar::from_bytes_mod_order(secret_scalar_bytes);
 
         let pk = &secret_key[32..64];
@@ -251,7 +254,9 @@ impl VrfDraft13 {
         c_hasher.update(k_h_bytes);
         c_hasher.update([0x00]);
         let c_hash = c_hasher.finalize();
-        let c_bytes_short: [u8; 16] = c_hash[0..16].try_into().unwrap();
+        let c_bytes_short: [u8; 16] = c_hash[0..16]
+            .try_into()
+            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
 
         let mut c_bytes = [0u8; 32];
         c_bytes[0..16].copy_from_slice(&c_bytes_short);
@@ -290,10 +295,18 @@ impl VrfDraft13 {
         message: &[u8],
     ) -> Result<[u8; OUTPUT_SIZE]> {
         // Parse proof components
-        let gamma_bytes: [u8; 32] = proof[0..32].try_into().unwrap();
-        let c_bytes_short: [u8; 16] = proof[32..48].try_into().unwrap();
-        let s_bytes: [u8; 32] = proof[48..80].try_into().unwrap();
-        let h_string: [u8; 48] = proof[80..128].try_into().unwrap();
+        let gamma_bytes: [u8; 32] = proof[0..32]
+            .try_into()
+            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
+        let c_bytes_short: [u8; 16] = proof[32..48]
+            .try_into()
+            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
+        let s_bytes: [u8; 32] = proof[48..80]
+            .try_into()
+            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
+        let h_string: [u8; 48] = proof[80..128]
+            .try_into()
+            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
 
         // Decode points and scalars
         let gamma = bytes_to_point(&gamma_bytes)?;
@@ -335,10 +348,12 @@ impl VrfDraft13 {
         c_hasher.update(k_h_bytes);
         c_hasher.update([0x00]);
         let c_hash = c_hasher.finalize();
-        let recomputed_c_bytes: [u8; 16] = c_hash[0..16].try_into().unwrap();
+        let recomputed_c_bytes: [u8; 16] = c_hash[0..16]
+            .try_into()
+            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
 
-        // Verify challenge matches
-        if c_bytes_short != recomputed_c_bytes {
+        // Verify challenge matches using constant-time comparison
+        if !bool::from(subtle::ConstantTimeEq::ct_eq(&c_bytes_short[..], &recomputed_c_bytes[..])) {
             return Err(crate::common::error::CryptoError::VerificationFailed);
         }
 
@@ -376,7 +391,7 @@ impl VrfDraft13 {
     pub fn proof_to_hash(proof: &[u8; PROOF_SIZE]) -> Result<[u8; OUTPUT_SIZE]> {
         let gamma_bytes: [u8; 32] = proof[0..32]
             .try_into()
-            .expect("proof gamma segment must be 32 bytes");
+            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
 
         let gamma = bytes_to_point(&gamma_bytes)?;
         let gamma_cleared = cardano_clear_cofactor(&gamma);

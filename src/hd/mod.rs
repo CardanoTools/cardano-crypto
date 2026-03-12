@@ -66,6 +66,11 @@ impl ExtendedPrivateKey {
         key.copy_from_slice(&hash[0..32]);
         chain_code_bytes.copy_from_slice(&hash[32..64]);
 
+        // Zeroize hash output containing key material
+        let mut hash_bytes = [0u8; 64];
+        hash_bytes.copy_from_slice(&hash);
+        hash_bytes.zeroize();
+
         key[0] &= 0xF8;
         key[31] &= 0x7F;
         key[31] |= 0x40;
@@ -110,11 +115,19 @@ impl ExtendedPrivateKey {
         hasher.update(&data);
         let hash = hasher.finalize();
 
+        // Zeroize data vec (may contain secret key bytes in hardened derivation)
+        data.zeroize();
+
         let mut child_key = [0u8; KEY_SIZE];
         let mut child_chain_code = [0u8; CHAIN_CODE_SIZE];
 
         child_key.copy_from_slice(&hash[0..32]);
         child_chain_code.copy_from_slice(&hash[32..64]);
+
+        // Zeroize hash output containing key material
+        let mut hash_bytes = [0u8; 64];
+        hash_bytes.copy_from_slice(&hash);
+        hash_bytes.zeroize();
 
         child_key[0] &= 0xF8;
         child_key[31] &= 0x7F;

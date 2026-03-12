@@ -15,6 +15,8 @@ use alloc::vec::Vec;
 use crate::common::error::{CryptoError, Result};
 use crate::kes::hash::KesHashAlgorithm;
 use crate::kes::{KesAlgorithm, KesError, Period};
+use subtle::ConstantTimeEq;
+use zeroize::Zeroize;
 
 /// SumKES composes two KES schemes to create a scheme with double the periods
 ///
@@ -204,7 +206,7 @@ where
         let vk1_bytes = D::raw_serialize_verification_key_kes(&signature.vk1);
         let computed_vk = H::hash_concat(&vk0_bytes, &vk1_bytes);
 
-        if &computed_vk != verification_key {
+        if !bool::from(computed_vk.ct_eq(verification_key)) {
             return Err(CryptoError::KesError(KesError::VerificationFailed));
         }
 
@@ -240,13 +242,16 @@ where
 
         if period + 1 == t_half {
             // Transition from left to right subtree
-            let r1_seed = signing_key
+            let mut r1_seed = signing_key
                 .r1_seed
                 .take()
                 .ok_or(CryptoError::KesError(KesError::KeyExpired))?;
 
             // Generate right subtree key
             let sk1 = D::gen_key_kes_from_seed_bytes(&r1_seed)?;
+
+            // Zeroize seed before dropping
+            r1_seed.zeroize();
 
             // Forget left subtree key
             D::forget_signing_key_kes(signing_key.sk);
@@ -297,11 +302,14 @@ where
         }
 
         // Expand seed into two seeds
-        let (r0_bytes, r1_bytes) = H::expand_seed(seed);
+        let (mut r0_bytes, r1_bytes) = H::expand_seed(seed);
 
         // Generate keys for both subtrees
         let sk0 = D::gen_key_kes_from_seed_bytes(&r0_bytes)?;
         let vk0 = D::derive_verification_key(&sk0)?;
+
+        // Zeroize r0 seed after use
+        r0_bytes.zeroize();
 
         let sk1 = D::gen_key_kes_from_seed_bytes(&r1_bytes)?;
         let vk1 = D::derive_verification_key(&sk1)?;
@@ -360,7 +368,10 @@ where
 
     fn forget_signing_key_kes(signing_key: Self::SigningKey) {
         D::forget_signing_key_kes(signing_key.sk);
-        // r1_seed will be dropped automatically
+        // Zeroize r1_seed if present
+        if let Some(mut seed) = signing_key.r1_seed {
+            seed.zeroize();
+        }
     }
 }
 
