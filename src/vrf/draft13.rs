@@ -1,17 +1,17 @@
 //! VRF implementation following IETF draft-13 specification
 //!
-//! Implements **ECVRF-ED25519-SHA512-TAI** (Try-And-Increment hash-to-curve) as defined in
+//! Implements **ECVRF-ED25519-SHA512-ELL2** (Elligator2 hash-to-curve) as defined in
 //! [draft-irtf-cfrg-vrf-13](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-vrf-13).
 //! This variant produces 128-byte proofs and supports **batch verification** for improved
 //! performance when validating multiple proofs.
 //!
 //! # Specification Details
 //!
-//! - **Suite**: ECVRF-ED25519-SHA512-TAI
+//! - **Suite**: ECVRF-ED25519-SHA512-ELL2
 //! - **Curve**: Edwards25519 (Ed25519)
 //! - **Hash Function**: SHA-512
-//! - **Hash-to-Curve**: Try-And-Increment (deterministic, uniform distribution)
-//! - **Proof Size**: 128 bytes (Gamma 32 + c 32 + s 32 + H-string 32 bytes)
+//! - **Hash-to-Curve**: Elligator2 via XMD-SHA-512 (deterministic, uniform distribution)
+//! - **Proof Size**: 128 bytes (Gamma 32 + c 16 + s 32 + H-string 48 bytes)
 //! - **Public Key Size**: 32 bytes
 //! - **Secret Key Size**: 64 bytes (Ed25519 expanded key format)
 //! - **Output Size**: 64 bytes (SHA-512)
@@ -21,8 +21,8 @@
 //! | Feature | Draft-03 | Draft-13 |
 //! |---------|----------|----------|
 //! | Proof Size | 80 bytes | 128 bytes |
-//! | Hash-to-Curve | Elligator2 | Try-And-Increment |
-//! | Challenge Size | 16 bytes | 32 bytes (full) |
+//! | Hash-to-Curve | Elligator2 (direct) | Elligator2 (XMD-SHA-512) |
+//! | Challenge Size | 16 bytes | 16 bytes |
 //! | Batch Verification | No | Yes |
 //! | Cardano Compatible | Yes | No |
 //!
@@ -31,7 +31,7 @@
 //! Use this variant when:
 //! - You need batch verification (40-50% faster for multiple proofs)
 //! - Larger proof size (128 bytes) is acceptable
-//! - Uniform hash-to-curve distribution is important
+//! - Uniform hash-to-curve distribution via Elligator2 is important
 //!
 //! For Cardano compatibility, use [`VrfDraft03`](crate::vrf::VrfDraft03).
 //!
@@ -66,7 +66,7 @@
 //!
 //! Typical operation times on modern hardware:
 //! - Keypair generation: ~20μs
-//! - Proof generation: ~1.5ms (slightly slower than draft-03 due to TAI)
+//! - Proof generation: ~1.5ms
 //! - Proof verification: ~900μs
 //! - Batch verification (4 proofs): ~2.5ms (vs 3.6ms individual)
 

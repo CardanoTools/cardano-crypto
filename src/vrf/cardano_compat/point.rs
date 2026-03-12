@@ -5,7 +5,7 @@
 //!
 //! - Cofactor clearing for security
 //! - Hash-to-curve for Draft-03 (Elligator2-based)
-//! - Hash-to-curve for Draft-13 (Try-And-Increment)
+//! - Hash-to-curve for Draft-13 (Elligator2 via XMD-SHA-512)
 //!
 //! # Security Considerations
 //!
@@ -24,12 +24,12 @@
 //! Each hash-to-curve variant uses a unique suite identifier to prevent
 //! cross-protocol attacks:
 //! - Draft-03: `0x04` (ECVRF-ED25519-SHA512-ELL2)
-//! - Draft-13: `0x03` (ECVRF-ED25519-SHA512-TAI)
+//! - Draft-13: `0x03` (ECVRF-ED25519-SHA512-ELL2)
 
 use alloc::vec;
 use alloc::vec::Vec;
 
-use curve25519_dalek::edwards::{CompressedEdwardsY, EdwardsPoint};
+use curve25519_dalek::edwards::EdwardsPoint;
 use sha2::{Digest, Sha512};
 
 use crate::common::{CryptoError, CryptoResult, ONE, SUITE_DRAFT03};
@@ -272,42 +272,19 @@ pub fn cardano_hash_to_curve_draft13(
     let mut h_string = [0u8; 48];
     h_string.copy_from_slice(&expanded);
 
-    // Use first 32 bytes for curve point
-    let mut point_bytes = [0u8; 32];
-    point_bytes.copy_from_slice(&h_string[0..32]);
+    // Use first 32 bytes as Elligator2 input (same mapping as draft-03)
+    let mut ell2_input = [0u8; 32];
+    ell2_input.copy_from_slice(&h_string[0..32]);
 
-    // Clear the sign bit
-    point_bytes[31] &= 0x7f;
+    // Apply Elligator2 mapping — always succeeds, unlike Y-decompression
+    use super::elligator2::elligator2_to_edwards;
 
-    // Try to decompress
-    match CompressedEdwardsY(point_bytes).decompress() {
+    match elligator2_to_edwards(&ell2_input) {
         Some(point) => {
-            // Apply cofactor clearing for draft-13
-            let cleared = cardano_clear_cofactor(&point);
-            Ok((cleared, h_string))
+            // elligator2_to_edwards already clears cofactor internally
+            Ok((point, h_string))
         }
-        None => {
-            // Fallback with retry using first 32 bytes as seed
-            for i in 0..=255u8 {
-                let mut retry_hasher = Sha512::new();
-                retry_hasher.update(point_bytes);
-                retry_hasher.update([i]);
-                let retry_hash = retry_hasher.finalize();
-
-                let mut retry_bytes = [0u8; 32];
-                retry_bytes.copy_from_slice(&retry_hash[0..32]);
-                retry_bytes[31] &= 0x7f;
-
-                if let Some(point) = CompressedEdwardsY(retry_bytes).decompress() {
-                    let cleared = cardano_clear_cofactor(&point);
-                    // Update h_string with the successful retry bytes
-                    h_string[0..32].copy_from_slice(&retry_bytes);
-                    return Ok((cleared, h_string));
-                }
-            }
-
-            Err(CryptoError::InvalidPoint)
-        }
+        None => Err(CryptoError::InvalidPoint),
     }
 }
 

@@ -46,6 +46,7 @@
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
+use crate::common::CryptoError;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 // ============================================================================
@@ -132,7 +133,7 @@ pub const SEED_SIZE: usize = 32;
 /// use cardano_crypto::seed::SecureSeed;
 ///
 /// fn generate_key() {
-///     let seed = SecureSeed::from_bytes(&[42u8; 32]);
+///     let seed = SecureSeed::from_bytes(&[42u8; 32]).unwrap();
 ///     // Use the seed...
 ///     // Seed is automatically zeroized when this function returns
 /// }
@@ -159,9 +160,7 @@ impl SecureSeed {
 
     /// Create from a byte slice
     ///
-    /// # Panics
-    ///
-    /// Panics if the slice is not exactly 32 bytes.
+    /// Returns an error if the slice is not exactly 32 bytes.
     ///
     /// # Example
     ///
@@ -169,14 +168,15 @@ impl SecureSeed {
     /// use cardano_crypto::seed::SecureSeed;
     ///
     /// let bytes = [2u8; 32];
-    /// let secure = SecureSeed::from_bytes(&bytes);
+    /// let secure = SecureSeed::from_bytes(&bytes).unwrap();
     /// ```
-    #[must_use]
-    pub fn from_bytes(bytes: &[u8]) -> Self {
-        assert_eq!(bytes.len(), SEED_SIZE, "Seed must be exactly 32 bytes");
+    pub fn from_bytes(bytes: &[u8]) -> crate::common::Result<Self> {
+        if bytes.len() != SEED_SIZE {
+            return Err(CryptoError::InvalidInput);
+        }
         let mut seed = [0u8; SEED_SIZE];
         seed.copy_from_slice(bytes);
-        Self(seed)
+        Ok(Self(seed))
     }
 
     /// Try to create from a byte slice

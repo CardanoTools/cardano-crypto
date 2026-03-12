@@ -49,13 +49,13 @@ pub const SUITE_DRAFT03: u8 = 0x04;
 ///
 /// Value: `0x03`
 ///
-/// Full name: **ECVRF-ED25519-SHA512-TAI**
+/// Full name: **ECVRF-ED25519-SHA512-ELL2**
 ///
 /// This suite uses:
 /// - Curve: Edwards25519 (Ed25519)
 /// - Hash: SHA-512
-/// - Hash-to-curve: Try-And-Increment (uniform, slower)
-/// - Proof size: 128 bytes (includes full challenge)
+/// - Hash-to-curve: Elligator2 via XMD-SHA-512 (deterministic, uniform)
+/// - Proof size: 128 bytes (includes H-string for batch verification)
 ///
 /// This variant provides:
 /// - Batch verification support

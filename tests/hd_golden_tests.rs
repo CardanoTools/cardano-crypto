@@ -28,7 +28,7 @@ fn test_hd_derivation_root_key() {
          0000000000000000000000000000000000000000000000000000000000000000",
     );
 
-    let root = ExtendedPrivateKey::from_seed(&seed);
+    let root = ExtendedPrivateKey::from_seed(&seed).unwrap();
 
     // Root key should be deterministic
     assert_eq!(root.key_bytes().len(), 32);
@@ -45,7 +45,7 @@ fn test_hd_derivation_root_key() {
 fn test_hd_derivation_cardano_payment_path() {
     // Test CIP-1852 payment address derivation: m/1852'/1815'/0'/0/0
     let seed = [1u8; 64];
-    let root = ExtendedPrivateKey::from_seed(&seed);
+    let root = ExtendedPrivateKey::from_seed(&seed).unwrap();
 
     let path = DerivationPath::cardano_payment(0, 0);
     let payment_key = root.derive_path(&path).unwrap();
@@ -63,7 +63,7 @@ fn test_hd_derivation_cardano_payment_path() {
 fn test_hd_derivation_cardano_stake_path() {
     // Test CIP-1852 stake address derivation: m/1852'/1815'/0'/2/0
     let seed = [2u8; 64];
-    let root = ExtendedPrivateKey::from_seed(&seed);
+    let root = ExtendedPrivateKey::from_seed(&seed).unwrap();
 
     let path = DerivationPath::cardano_stake(0, 0);
     let stake_key = root.derive_path(&path).unwrap();
@@ -79,7 +79,7 @@ fn test_hd_derivation_cardano_stake_path() {
 #[test]
 fn test_hd_public_key_derivation() {
     let seed = [3u8; 64];
-    let root = ExtendedPrivateKey::from_seed(&seed);
+    let root = ExtendedPrivateKey::from_seed(&seed).unwrap();
 
     let pub_key = root.to_public();
     assert_eq!(pub_key.key_bytes().len(), 32);
@@ -213,7 +213,7 @@ fn test_address_bech32_encoding() {
 fn test_full_wallet_address_generation() {
     // End-to-end test: seed -> derivation -> address
     let seed = [7u8; 64];
-    let root = ExtendedPrivateKey::from_seed(&seed);
+    let root = ExtendedPrivateKey::from_seed(&seed).unwrap();
 
     // Derive payment key (m/1852'/1815'/0'/0/0)
     let payment_path = DerivationPath::cardano_payment(0, 0);

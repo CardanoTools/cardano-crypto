@@ -87,14 +87,17 @@ pub trait HashAlgorithm: Clone + Send + Sync + 'static {
     /// assert_ne!(seed0, seed1);
     /// ```
     fn expand_seed(seed: &[u8]) -> (Vec<u8>, Vec<u8>) {
+        // Prefix ordering with tags 0x01/0x02 to match upstream cardano-base expandSeed:
+        //   seed0 = hash(0x01 || seed)
+        //   seed1 = hash(0x02 || seed)
         let mut seed0_input = Vec::with_capacity(seed.len() + 1);
+        seed0_input.push(1);
         seed0_input.extend_from_slice(seed);
-        seed0_input.push(0);
         let seed0 = Self::hash(&seed0_input);
 
         let mut seed1_input = Vec::with_capacity(seed.len() + 1);
+        seed1_input.push(2);
         seed1_input.extend_from_slice(seed);
-        seed1_input.push(1);
         let seed1 = Self::hash(&seed1_input);
 
         (seed0, seed1)

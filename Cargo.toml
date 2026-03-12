@@ -101,6 +101,7 @@ base64ct = ">=1.0.0, <1.8.0"
 # Hash functions
 blake2 = { version = "0.10", default-features = false }
 digest = { version = "0.10", default-features = false }
+hmac = { version = "0.12", default-features = false }
 ripemd = { version = "0.1", default-features = false }
 sha3 = { version = "0.10", default-features = false }
 subtle = { version = "2.6", default-features = false }

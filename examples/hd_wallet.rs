@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 1: Create root key from BIP39 seed
     // In production, this would come from a mnemonic phrase
     let seed = [42u8; 64];
-    let root = ExtendedPrivateKey::from_seed(&seed);
+    let root = ExtendedPrivateKey::from_seed(&seed)?;
     println!("✓ Root extended private key created");
 
     // Step 2: Derive payment key (m/1852'/1815'/0'/0/0)

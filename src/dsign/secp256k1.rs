@@ -455,6 +455,10 @@ impl Secp256k1Schnorr {
     /// Performs pure BIP-340 Schnorr signing: the raw message is fed directly
     /// into the tagged challenge hash without any pre-hashing.
     ///
+    /// Uses zero auxiliary randomness (`[0u8; 32]`) for deterministic signatures,
+    /// matching Cardano's Plutus Schnorr behavior (CIP-0049). This means signing
+    /// the same message with the same key always produces the identical signature.
+    ///
     /// # Errors
     ///
     /// Returns `CryptoError::SigningFailed` if the derived nonce is zero

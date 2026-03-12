@@ -28,12 +28,14 @@ pub struct ChainCode([u8; CHAIN_CODE_SIZE]);
 impl ChainCode {
     /// Create from bytes
     #[inline]
+    #[must_use]
     pub fn from_bytes(bytes: &[u8; CHAIN_CODE_SIZE]) -> Self {
         Self(*bytes)
     }
 
     /// Get bytes
     #[inline]
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8; CHAIN_CODE_SIZE] {
         &self.0
     }
@@ -53,14 +55,25 @@ pub struct ExtendedPrivateKey {
 }
 
 impl ExtendedPrivateKey {
-    /// Create from seed
-    pub fn from_seed(seed: &[u8]) -> Self {
-        use sha2::{Digest, Sha512};
+    /// Create from seed using HMAC-SHA-512
+    ///
+    /// Matches BIP32-Ed25519 / cardano-addresses: HMAC-SHA-512 with key "ed25519 seed"
+    ///
+    /// # Errors
+    ///
+    /// Returns error if HMAC initialization fails (should not happen in practice).
+    pub fn from_seed(seed: &[u8]) -> Result<Self> {
+        use hmac::{Hmac, Mac};
+        use sha2::Sha512;
 
-        let mut hasher = Sha512::new();
-        hasher.update(b"ed25519 seed");
-        hasher.update(seed);
-        let hash = hasher.finalize();
+        let mut mac = Hmac::<Sha512>::new_from_slice(b"ed25519 seed").map_err(|_| {
+            crate::common::error::CryptoError::InvalidKeyLength {
+                expected: 12,
+                got: 0,
+            }
+        })?;
+        mac.update(seed);
+        let hash = mac.finalize().into_bytes();
 
         let mut key = [0u8; KEY_SIZE];
         let mut chain_code_bytes = [0u8; CHAIN_CODE_SIZE];
@@ -77,27 +90,32 @@ impl ExtendedPrivateKey {
         key[31] &= 0x7F;
         key[31] |= 0x40;
 
-        Self {
+        Ok(Self {
             key,
             chain_code: ChainCode::from_bytes(&chain_code_bytes),
-        }
+        })
     }
 
     /// Get key bytes
     #[inline]
+    #[must_use]
     pub fn key_bytes(&self) -> &[u8; KEY_SIZE] {
         &self.key
     }
 
     /// Get chain code
     #[inline]
+    #[must_use]
     pub fn chain_code(&self) -> &ChainCode {
         &self.chain_code
     }
 
-    /// Derive child key
+    /// Derive child key using HMAC-SHA-512
+    ///
+    /// Matches BIP32-Ed25519: HMAC-SHA-512 with chain code as HMAC key
     pub fn derive_child(&self, index: u32) -> Result<Self> {
-        use sha2::{Digest, Sha512};
+        use hmac::{Hmac, Mac};
+        use sha2::Sha512;
 
         let hardened = index >= HARDENED_OFFSET;
         let mut data = Vec::with_capacity(37);
@@ -112,10 +130,14 @@ impl ExtendedPrivateKey {
 
         data.extend_from_slice(&index.to_be_bytes());
 
-        let mut hasher = Sha512::new();
-        hasher.update(self.chain_code.as_bytes());
-        hasher.update(&data);
-        let hash = hasher.finalize();
+        let mut mac = Hmac::<Sha512>::new_from_slice(self.chain_code.as_bytes()).map_err(|_| {
+            crate::common::error::CryptoError::InvalidKeyLength {
+                expected: CHAIN_CODE_SIZE,
+                got: 0,
+            }
+        })?;
+        mac.update(&data);
+        let hash = mac.finalize().into_bytes();
 
         // Zeroize data vec (may contain secret key bytes in hardened derivation)
         data.zeroize();
@@ -157,6 +179,7 @@ impl ExtendedPrivateKey {
     }
 
     /// Convert to public key
+    #[must_use]
     pub fn to_public(&self) -> ExtendedPublicKey {
         ExtendedPublicKey {
             key: self.derive_public_key(),
@@ -183,12 +206,14 @@ pub struct ExtendedPublicKey {
 impl ExtendedPublicKey {
     /// Get key bytes
     #[inline]
+    #[must_use]
     pub fn key_bytes(&self) -> &[u8; KEY_SIZE] {
         &self.key
     }
 
     /// Get chain code
     #[inline]
+    #[must_use]
     pub fn chain_code(&self) -> &ChainCode {
         &self.chain_code
     }
@@ -208,6 +233,7 @@ pub struct DerivationPath {
 
 impl DerivationPath {
     /// Create new path
+    #[must_use]
     pub fn new() -> Self {
         Self {
             indices: Vec::new(),
@@ -221,11 +247,13 @@ impl DerivationPath {
 
     /// Get indices
     #[inline]
+    #[must_use]
     pub fn as_slice(&self) -> &[u32] {
         &self.indices
     }
 
     /// Create Cardano payment key path: m/1852'/1815'/account'/0/index
+    #[must_use]
     pub fn cardano_payment(account: u32, index: u32) -> Self {
         Self {
             indices: vec![
@@ -239,6 +267,7 @@ impl DerivationPath {
     }
 
     /// Create Cardano stake key path: m/1852'/1815'/account'/2/index
+    #[must_use]
     pub fn cardano_stake(account: u32, index: u32) -> Self {
         Self {
             indices: vec![
