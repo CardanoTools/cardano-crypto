@@ -1501,7 +1501,7 @@ mod tests {
     #[test]
     fn test_g1_generator() {
         let generator = G1Point::generator();
-        assert!(!generatorerator.is_identity());
+        assert!(!generator.is_identity());
 
         // Verify roundtrip
         let compressed = generator.to_compressed();
@@ -1512,7 +1512,7 @@ mod tests {
     #[test]
     fn test_g2_generator() {
         let generator = G2Point::generator();
-        assert!(!generatorerator.is_identity());
+        assert!(!generator.is_identity());
 
         // Verify roundtrip
         let compressed = generator.to_compressed();
