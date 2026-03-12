@@ -146,6 +146,7 @@ impl std::error::Error for CborError {}
 /// let cbor = encode_bytes(data);
 /// assert!(cbor.len() > data.len()); // Has CBOR header
 /// ```
+#[must_use]
 #[cfg(feature = "alloc")]
 pub fn encode_bytes(bytes: &[u8]) -> Vec<u8> {
     let len = bytes.len();
@@ -252,6 +253,7 @@ pub fn decode_bytes(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 /// let cbor = encode_verification_key(vkey_bytes);
 /// assert!(cbor.len() >= 32);
 /// ```
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_verification_key(raw_bytes: &[u8]) -> Vec<u8> {
@@ -293,6 +295,7 @@ pub fn decode_verification_key(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 /// // CBOR wrapper adds at least a small header, so encoded length should be >= raw length
 /// assert!(cbor.len() >= sig_bytes.len());
 /// ```
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_signature(raw_bytes: &[u8]) -> Vec<u8> {
@@ -315,6 +318,7 @@ pub fn decode_signature(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 /// Encode KES verification key to CBOR format
 ///
 /// Matches `encodeVerKeyKES` from Cardano.Crypto.KES.Class
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_verification_key_kes(raw_bytes: &[u8]) -> Vec<u8> {
@@ -333,6 +337,7 @@ pub fn decode_verification_key_kes(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 /// Encode KES signature to CBOR format
 ///
 /// Matches `encodeSigKES` from Cardano.Crypto.KES.Class
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_signature_kes(raw_bytes: &[u8]) -> Vec<u8> {
@@ -355,6 +360,7 @@ pub fn decode_signature_kes(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 /// Encode VRF verification key to CBOR format
 ///
 /// Matches `encodeVerKeyVRF` from Cardano.Crypto.VRF.Class
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_verification_key_vrf(raw_bytes: &[u8]) -> Vec<u8> {
@@ -378,6 +384,7 @@ pub fn decode_verification_key_vrf(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 ///
 /// VRF signing keys should be handled with extreme care.
 /// Consider whether CBOR serialization is truly necessary.
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_signing_key_vrf(raw_bytes: &[u8]) -> Vec<u8> {
@@ -396,6 +403,7 @@ pub fn decode_signing_key_vrf(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 /// Encode VRF proof/certificate to CBOR format
 ///
 /// Matches `encodeCertVRF` from Cardano.Crypto.VRF.Class
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_proof_vrf(raw_bytes: &[u8]) -> Vec<u8> {
@@ -418,6 +426,7 @@ pub fn decode_proof_vrf(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 /// Encode DSIGN verification key to CBOR format
 ///
 /// Matches `encodeVerKeyDSIGN` from Cardano.Crypto.DSIGN.Class
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_verification_key_dsign(raw_bytes: &[u8]) -> Vec<u8> {
@@ -441,6 +450,7 @@ pub fn decode_verification_key_dsign(cbor: &[u8]) -> Result<Vec<u8>, CborError> 
 ///
 /// DSIGN signing keys should be handled with extreme care.
 /// Consider whether CBOR serialization is truly necessary.
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_signing_key_dsign(raw_bytes: &[u8]) -> Vec<u8> {
@@ -459,6 +469,7 @@ pub fn decode_signing_key_dsign(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 /// Encode DSIGN signature to CBOR format
 ///
 /// Matches `encodeSigDSIGN` from Cardano.Crypto.DSIGN.Class
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_signature_dsign(raw_bytes: &[u8]) -> Vec<u8> {
@@ -479,6 +490,7 @@ pub fn decode_signature_dsign(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 // ============================================================================
 
 /// Encode a hash digest to CBOR format
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_hash(raw_bytes: &[u8]) -> Vec<u8> {
@@ -499,6 +511,7 @@ pub fn decode_hash(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 /// Encode VRF output to CBOR format
 ///
 /// Matches `encodeOutputVRF` from Cardano.Crypto.VRF.Class
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_output_vrf(raw_bytes: &[u8]) -> Vec<u8> {
@@ -526,6 +539,7 @@ pub fn decode_output_vrf(cbor: &[u8]) -> Result<Vec<u8>, CborError> {
 ///
 /// KES signing keys should be handled with extreme care.
 /// Consider whether CBOR serialization is truly necessary.
+#[must_use]
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_signing_key_kes(raw_bytes: &[u8]) -> Vec<u8> {

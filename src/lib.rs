@@ -258,7 +258,7 @@ pub use key::kes_period::{
     KES_SLOTS_PER_PERIOD_MAINNET, KES_SLOTS_PER_PERIOD_TESTNET,
 };
 
-#[cfg(feature = "alloc")]
+#[cfg(feature = "hash")]
 pub use key::stake_pool::{PoolMetadata, Rational, RewardAccount, StakePoolParams, StakePoolRelay};
 
 // ============================================================================

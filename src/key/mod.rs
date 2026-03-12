@@ -88,7 +88,7 @@ pub use hash::*;
 #[cfg(feature = "kes")]
 pub use kes_period::*;
 
-#[cfg(feature = "alloc")]
+#[cfg(feature = "hash")]
 pub use stake_pool::{PoolMetadata, Rational, RewardAccount, StakePoolParams, StakePoolRelay};
 
 #[cfg(feature = "kes")]

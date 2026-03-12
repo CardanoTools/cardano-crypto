@@ -146,19 +146,17 @@ fn main() {
     // ========================================================================
     // Step 9: Sign Block with KES Key
     // ========================================================================
+    // KES period parameter for sign/verify is relative to key creation (0-based),
+    // not the absolute blockchain period. Since we haven't evolved the key,
+    // we sign at period 0.
+    let kes_period: u64 = 0;
     println!(
-        "9. Signing block with KES key (period {})...",
-        current_period.0
+        "9. Signing block with KES key (KES period {})...",
+        kes_period
     );
 
     let block_hash = b"block_header_hash_12345";
-    let kes_signature = Sum6Kes::sign_kes(
-        &(),
-        u64::from(current_period.value()),
-        block_hash,
-        &kes_signing_key,
-    )
-    .unwrap();
+    let kes_signature = Sum6Kes::sign_kes(&(), kes_period, block_hash, &kes_signing_key).unwrap();
 
     let sig_bytes = Sum6Kes::raw_serialize_signature_kes(&kes_signature);
     println!("   Block signed successfully");
@@ -168,7 +166,7 @@ fn main() {
     match Sum6Kes::verify_kes(
         &(),
         &kes_verification_key,
-        u64::from(current_period.value()),
+        kes_period,
         block_hash,
         &kes_signature,
     ) {
