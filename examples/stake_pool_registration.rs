@@ -4,7 +4,7 @@
 //! pool registration certificates on the Cardano blockchain.
 
 use cardano_crypto::key::hash::{
-    hash_pool_verification_key, hash_stake_verification_key, PoolKeyHash, StakeKeyHash,
+    hash_pool_verification_key, hash_stake_verification_key, PoolKeyHash,
 };
 use cardano_crypto::key::stake_pool::{
     PoolMetadata, Rational, RewardAccount, StakePoolParams, StakePoolRelay, VrfKeyHash,
