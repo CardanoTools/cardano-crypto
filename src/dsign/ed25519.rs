@@ -579,8 +579,7 @@ impl super::DsignAlgorithm for Ed25519 {
             SEED_SIZE,
             "Ed25519 seed must be exactly 32 bytes"
         );
-        Ed25519SigningKey::from_seed_bytes(seed)
-            .expect("seed length already validated")
+        Ed25519SigningKey::from_seed_bytes(seed).expect("seed length already validated")
     }
 
     fn raw_serialize_verification_key(key: &Self::VerificationKey) -> &[u8] {

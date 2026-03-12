@@ -6,9 +6,9 @@
 //! Run with: cargo run --example operational_cert
 
 use cardano_crypto::dsign::{DsignAlgorithm, Ed25519};
-use cardano_crypto::key::operational_cert::OperationalCertificate;
-use cardano_crypto::key::kes_period::KesPeriod;
 use cardano_crypto::kes::{KesAlgorithm, Sum6Kes};
+use cardano_crypto::key::kes_period::KesPeriod;
+use cardano_crypto::key::operational_cert::OperationalCertificate;
 
 fn main() {
     println!("=== Cardano Operational Certificate Example ===\n");
@@ -22,7 +22,10 @@ fn main() {
     let cold_signing_key = Ed25519::gen_key(&cold_seed);
     let cold_verification_key = Ed25519::derive_verification_key(&cold_signing_key);
 
-    println!("   Cold verification key hash: {:02x?}...", &cold_verification_key.as_bytes()[..8]);
+    println!(
+        "   Cold verification key hash: {:02x?}...",
+        &cold_verification_key.as_bytes()[..8]
+    );
     println!();
 
     // ========================================================================
@@ -34,7 +37,10 @@ fn main() {
     let (kes_signing_key, kes_verification_key) = Sum6Kes::keygen(&kes_seed).unwrap();
     let kes_vk_bytes = Sum6Kes::raw_serialize_verification_key_kes(&kes_verification_key);
 
-    println!("   KES verification key hash: {:02x?}...", &kes_vk_bytes[..8]);
+    println!(
+        "   KES verification key hash: {:02x?}...",
+        &kes_vk_bytes[..8]
+    );
     println!("   KES key total periods: {}", Sum6Kes::total_periods());
     println!();
 
@@ -124,12 +130,8 @@ fn main() {
     let new_counter = 1;
     let new_start_period = KesPeriod(164); // 64 periods later (Sum6 max period)
 
-    let renewed_cert = OperationalCertificate::new(
-        new_kes_vk,
-        new_counter,
-        new_start_period,
-        &cold_signing_key,
-    );
+    let renewed_cert =
+        OperationalCertificate::new(new_kes_vk, new_counter, new_start_period, &cold_signing_key);
 
     println!("   New counter: {}", renewed_cert.counter());
     println!("   New start period: {}", renewed_cert.kes_period().0);
@@ -144,17 +146,32 @@ fn main() {
     // ========================================================================
     // Step 9: Sign Block with KES Key
     // ========================================================================
-    println!("9. Signing block with KES key (period {})...", current_period.0);
+    println!(
+        "9. Signing block with KES key (period {})...",
+        current_period.0
+    );
 
     let block_hash = b"block_header_hash_12345";
-    let kes_signature = Sum6Kes::sign_kes(&(), u64::from(current_period.value()), block_hash, &kes_signing_key).unwrap();
+    let kes_signature = Sum6Kes::sign_kes(
+        &(),
+        u64::from(current_period.value()),
+        block_hash,
+        &kes_signing_key,
+    )
+    .unwrap();
 
     let sig_bytes = Sum6Kes::raw_serialize_signature_kes(&kes_signature);
     println!("   Block signed successfully");
     println!("   Signature size: {} bytes", sig_bytes.len());
 
     // Verify block signature
-    match Sum6Kes::verify_kes(&(), &kes_verification_key, u64::from(current_period.value()), block_hash, &kes_signature) {
+    match Sum6Kes::verify_kes(
+        &(),
+        &kes_verification_key,
+        u64::from(current_period.value()),
+        block_hash,
+        &kes_signature,
+    ) {
         Ok(()) => println!("   ✓ Block signature verified"),
         Err(e) => println!("   ✗ Block verification failed: {:?}", e),
     }

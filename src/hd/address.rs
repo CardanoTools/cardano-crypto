@@ -151,7 +151,9 @@ impl Address {
             0b0000 => {
                 // Base address
                 if bytes.len() != 57 {
-                    return Err(CryptoError::InvalidParameter("Invalid base address length".into()));
+                    return Err(CryptoError::InvalidParameter(
+                        "Invalid base address length".into(),
+                    ));
                 }
                 let mut payment_bytes = [0u8; 28];
                 let mut stake_bytes = [0u8; 28];

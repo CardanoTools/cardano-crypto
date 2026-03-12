@@ -69,12 +69,13 @@ pub fn cardano_vrf_prove(secret_key: &[u8; 64], message: &[u8]) -> CryptoResult<
     az[31] &= 127;
     az[31] |= 64;
 
-    let secret_scalar_bytes: [u8; 32] = az[0..32]
-        .try_into()
-        .map_err(|_| CryptoError::InvalidKeyLength {
-            expected: 32,
-            got: az[0..32].len(),
-        })?;
+    let secret_scalar_bytes: [u8; 32] =
+        az[0..32]
+            .try_into()
+            .map_err(|_| CryptoError::InvalidKeyLength {
+                expected: 32,
+                got: az[0..32].len(),
+            })?;
     let x = Scalar::from_bytes_mod_order(secret_scalar_bytes);
 
     // Extract public key

@@ -3,13 +3,13 @@
 //! Demonstrates creating and validating stake pool parameters for
 //! pool registration certificates on the Cardano blockchain.
 
+use cardano_crypto::hash::{Blake2b256, HashAlgorithm};
 use cardano_crypto::key::hash::{
     hash_pool_verification_key, hash_stake_verification_key, PoolKeyHash,
 };
 use cardano_crypto::key::stake_pool::{
     PoolMetadata, Rational, RewardAccount, StakePoolParams, StakePoolRelay, VrfKeyHash,
 };
-use cardano_crypto::hash::{Blake2b256, HashAlgorithm};
 use std::collections::BTreeSet;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -172,10 +172,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "│ Cost:       {:>10} ADA/epoch             │",
         cost / 1_000_000
     );
-    println!("│ Margin:     {:>10.2}%                     │", margin_for_display.to_f64() * 100.0);
-    println!("│ Owners:     {:>10}                        │", params.owners.len());
-    println!("│ Relays:     {:>10}                        │", params.relays.len());
-    println!("│ Metadata:   {:>10}                        │", if params.metadata.is_some() { "Yes" } else { "No" });
+    println!(
+        "│ Margin:     {:>10.2}%                     │",
+        margin_for_display.to_f64() * 100.0
+    );
+    println!(
+        "│ Owners:     {:>10}                        │",
+        params.owners.len()
+    );
+    println!(
+        "│ Relays:     {:>10}                        │",
+        params.relays.len()
+    );
+    println!(
+        "│ Metadata:   {:>10}                        │",
+        if params.metadata.is_some() {
+            "Yes"
+        } else {
+            "No"
+        }
+    );
     println!("└─────────────────────────────────────────────────┘");
 
     // Step 10: Next steps

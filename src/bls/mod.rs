@@ -1448,7 +1448,9 @@ impl DsignAlgorithm for Bls12381 {
         BlsSecretKey::from_bytes(seed)
     }
 
-    fn derive_verification_key(signing_key: &Self::SigningKey) -> Result<Self::VerificationKey, CryptoError> {
+    fn derive_verification_key(
+        signing_key: &Self::SigningKey,
+    ) -> Result<Self::VerificationKey, CryptoError> {
         Ok(signing_key.public_key())
     }
 
@@ -1749,7 +1751,8 @@ mod tests {
         let pk3 = sk3.public_key();
 
         // Aggregate keys
-        let agg_pk = Bls12381::aggregate_verification_keys(&[pk1.clone(), pk2.clone(), pk3.clone()]);
+        let agg_pk =
+            Bls12381::aggregate_verification_keys(&[pk1.clone(), pk2.clone(), pk3.clone()]);
         assert!(agg_pk.is_some());
 
         // Manual aggregation should match
@@ -1875,9 +1878,18 @@ mod tests {
         let attacker_pop = Bls12381::generate_possession_proof(&attacker_sk);
 
         // Only legitimate PoPs pass
-        assert!(Bls12381::verify_possession_proof(&attacker_pk, &attacker_pop));
-        assert!(!Bls12381::verify_possession_proof(&attacker_pk, &honest_pop));
-        assert!(!Bls12381::verify_possession_proof(&honest_pk, &attacker_pop));
+        assert!(Bls12381::verify_possession_proof(
+            &attacker_pk,
+            &attacker_pop
+        ));
+        assert!(!Bls12381::verify_possession_proof(
+            &attacker_pk,
+            &honest_pop
+        ));
+        assert!(!Bls12381::verify_possession_proof(
+            &honest_pk,
+            &attacker_pop
+        ));
     }
 
     #[test]

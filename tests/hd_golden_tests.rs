@@ -6,9 +6,12 @@
 #![cfg(feature = "hd")]
 
 use cardano_crypto::hd::{
-    Address, DerivationPath, ExtendedPrivateKey, Network, hash_verification_key,
+    hash_verification_key, Address, DerivationPath, ExtendedPrivateKey, Network,
 };
-use cardano_crypto::key::hash::{KeyHash, role::{Payment, Staking}};
+use cardano_crypto::key::hash::{
+    role::{Payment, Staking},
+    KeyHash,
+};
 
 fn hex_decode(s: &str) -> Vec<u8> {
     (0..s.len())
@@ -22,15 +25,15 @@ fn test_hd_derivation_root_key() {
     // Test vector from cardano-wallet
     let seed = hex_decode(
         "0000000000000000000000000000000000000000000000000000000000000000\
-         0000000000000000000000000000000000000000000000000000000000000000"
+         0000000000000000000000000000000000000000000000000000000000000000",
     );
 
     let root = ExtendedPrivateKey::from_seed(&seed);
-    
+
     // Root key should be deterministic
     assert_eq!(root.key_bytes().len(), 32);
     assert_eq!(root.chain_code().as_bytes().len(), 32);
-    
+
     // Verify key is clamped correctly for Ed25519
     let key = root.key_bytes();
     assert_eq!(key[0] & 0x07, 0); // Lower 3 bits cleared

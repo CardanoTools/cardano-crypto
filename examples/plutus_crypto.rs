@@ -50,8 +50,8 @@ fn main() {
     println!("  {:?}", hex::encode(schnorr_verification_key.as_bytes()));
 
     // Sign a message
-    let schnorr_signature = Secp256k1Schnorr::sign(&schnorr_signing_key, message)
-        .expect("Schnorr signing failed");
+    let schnorr_signature =
+        Secp256k1Schnorr::sign(&schnorr_signing_key, message).expect("Schnorr signing failed");
 
     println!("Schnorr Signature (64 bytes, r||s):");
     println!("  {:?}", hex::encode(schnorr_signature.as_bytes()));

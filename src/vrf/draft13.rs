@@ -212,12 +212,12 @@ impl VrfDraft13 {
         az[31] &= 127;
         az[31] |= 64;
 
-        let secret_scalar_bytes: [u8; 32] = az[0..32]
-            .try_into()
-            .map_err(|_| crate::common::error::CryptoError::InvalidKeyLength {
+        let secret_scalar_bytes: [u8; 32] = az[0..32].try_into().map_err(|_| {
+            crate::common::error::CryptoError::InvalidKeyLength {
                 expected: 32,
                 got: az[0..32].len(),
-            })?;
+            }
+        })?;
         let x = Scalar::from_bytes_mod_order(secret_scalar_bytes);
 
         let pk = &secret_key[32..64];
@@ -353,7 +353,10 @@ impl VrfDraft13 {
             .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
 
         // Verify challenge matches using constant-time comparison
-        if !bool::from(subtle::ConstantTimeEq::ct_eq(&c_bytes_short[..], &recomputed_c_bytes[..])) {
+        if !bool::from(subtle::ConstantTimeEq::ct_eq(
+            &c_bytes_short[..],
+            &recomputed_c_bytes[..],
+        )) {
             return Err(crate::common::error::CryptoError::VerificationFailed);
         }
 

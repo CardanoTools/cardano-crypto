@@ -40,8 +40,7 @@ mod vrf_edge_cases {
         let (sk, pk) = VrfDraft03::keypair_from_seed(&seed);
 
         let proof = VrfDraft03::prove(&sk, &[42]).expect("Single byte message should work");
-        let output =
-            VrfDraft03::verify(&pk, &proof, &[42]).expect("Verification should succeed");
+        let output = VrfDraft03::verify(&pk, &proof, &[42]).expect("Verification should succeed");
         assert_eq!(output.len(), 64);
     }
 
@@ -53,8 +52,8 @@ mod vrf_edge_cases {
         // Test with very large message (Cardano block headers can be large)
         let large_msg = vec![0xFF; 10_000];
         let proof = VrfDraft03::prove(&sk, &large_msg).expect("Large message should work");
-        let output = VrfDraft03::verify(&pk, &proof, &large_msg)
-            .expect("Verification should succeed");
+        let output =
+            VrfDraft03::verify(&pk, &proof, &large_msg).expect("Verification should succeed");
         assert_eq!(output.len(), 64);
     }
 
@@ -252,7 +251,10 @@ mod kes_edge_cases {
 
             if let Some(corrupted_sig) = Sum6Kes::raw_deserialize_signature_kes(&sig_bytes) {
                 let result = Sum6Kes::verify_kes(&(), &vk, 0, msg, &corrupted_sig);
-                assert!(result.is_err(), "Corrupted signature should fail verification");
+                assert!(
+                    result.is_err(),
+                    "Corrupted signature should fail verification"
+                );
             }
         }
 
@@ -302,7 +304,10 @@ mod kes_edge_cases {
         if let Ok(sig) = result {
             // Verification at invalid period should fail
             let verify_result = Sum6Kes::verify_kes(&(), &vk, 100, b"msg", &sig);
-            assert!(verify_result.is_err(), "Invalid period should fail verification");
+            assert!(
+                verify_result.is_err(),
+                "Invalid period should fail verification"
+            );
         }
 
         Ok(())
@@ -530,14 +535,21 @@ mod cross_module_edge_cases {
         // VRF
         let (vrf_sk1, vrf_pk1) = VrfDraft03::keypair_from_seed(&seed);
         let (vrf_sk2, vrf_pk2) = VrfDraft03::keypair_from_seed(&seed);
-        assert_eq!(vrf_pk1, vrf_pk2, "VRF key derivation should be deterministic");
+        assert_eq!(
+            vrf_pk1, vrf_pk2,
+            "VRF key derivation should be deterministic"
+        );
 
         // Ed25519
         let ed_sk1 = Ed25519::gen_key(&seed);
         let ed_sk2 = Ed25519::gen_key(&seed);
         let ed_vk1 = Ed25519::derive_verification_key(&ed_sk1);
         let ed_vk2 = Ed25519::derive_verification_key(&ed_sk2);
-        assert_eq!(ed_vk1.as_bytes(), ed_vk2.as_bytes(), "Ed25519 should be deterministic");
+        assert_eq!(
+            ed_vk1.as_bytes(),
+            ed_vk2.as_bytes(),
+            "Ed25519 should be deterministic"
+        );
 
         // VRF proofs
         let proof1 = VrfDraft03::prove(&vrf_sk1, b"test").unwrap();

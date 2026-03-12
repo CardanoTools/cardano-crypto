@@ -93,9 +93,9 @@ use alloc::vec::Vec;
 
 use crate::common::error::{CryptoError, Result};
 use crate::dsign::{DsignAlgorithm, Ed25519};
-use crate::{Ed25519Signature, Ed25519SigningKey, Ed25519VerificationKey};
 use crate::kes::{KesVerificationKey, Sum6Kes};
 use crate::key::kes_period::KesPeriod;
+use crate::{Ed25519Signature, Ed25519SigningKey, Ed25519VerificationKey};
 
 // Type aliases for operational certificates (using Sum6Kes which is Cardano mainnet default)
 type VerificationKeyKes = KesVerificationKey<Sum6Kes>;
@@ -346,8 +346,12 @@ impl OperationalCertificate {
         };
 
         let signature_bytes = signable.to_bytes();
-        Ed25519::verify(cold_verification_key, &signature_bytes, &self.cold_key_signature)
-            .map_err(|_| CryptoError::OCert(OCertError::InvalidSignature))
+        Ed25519::verify(
+            cold_verification_key,
+            &signature_bytes,
+            &self.cold_key_signature,
+        )
+        .map_err(|_| CryptoError::OCert(OCertError::InvalidSignature))
     }
 
     /// Check if the certificate is valid for a given KES period and expected counter
@@ -389,7 +393,11 @@ impl OperationalCertificate {
     /// // Invalid counter
     /// assert!(ocert.is_valid_for_period(KesPeriod(105), 1).is_err());
     /// ```
-    pub fn is_valid_for_period(&self, current_period: KesPeriod, expected_counter: u64) -> Result<()> {
+    pub fn is_valid_for_period(
+        &self,
+        current_period: KesPeriod,
+        expected_counter: u64,
+    ) -> Result<()> {
         // Counter must match expected value
         if self.counter != expected_counter {
             return Err(CryptoError::OCert(OCertError::CounterMismatch {
@@ -501,7 +509,7 @@ fn encode_u64(bytes: &mut Vec<u8>, value: u64) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::kes::{Sum6Kes, KesAlgorithm};
+    use crate::kes::{KesAlgorithm, Sum6Kes};
 
     #[test]
     fn test_ocert_new_and_verify() {

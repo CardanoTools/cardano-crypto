@@ -593,8 +593,8 @@ fn hex_preview(bytes: &[u8]) -> alloc::string::String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::role::*;
+    use super::*;
 
     #[test]
     fn test_key_hash_size() {
@@ -759,7 +759,10 @@ mod tests {
 
     #[test]
     fn test_keyhash_debug_display() {
-        let bytes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
+        let bytes = [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28,
+        ];
         let hash = KeyHash::<Payment>::from_bytes(bytes);
 
         // Debug should show preview

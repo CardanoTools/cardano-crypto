@@ -360,7 +360,10 @@ fn test_vrf03_random_proof_content_fails() {
     // Valid-sized proof but random content
     let random_proof: [u8; 80] = [0x42u8; 80];
     let result = VrfDraft03::verify(&pk, &random_proof, b"msg");
-    assert!(result.is_err(), "Random proof content should fail verification");
+    assert!(
+        result.is_err(),
+        "Random proof content should fail verification"
+    );
 }
 
 #[test]
@@ -371,5 +374,8 @@ fn test_vrf13_random_proof_content_fails() {
     // Valid-sized proof for Draft-13 but random content
     let random_proof: [u8; 128] = [0x42u8; 128];
     let result = VrfDraft13::verify(&pk, &random_proof, b"msg");
-    assert!(result.is_err(), "Random proof content should fail verification");
+    assert!(
+        result.is_err(),
+        "Random proof content should fail verification"
+    );
 }

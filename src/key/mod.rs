@@ -64,8 +64,8 @@ pub mod hash;
 pub mod kes_period;
 
 /// Stake pool parameters
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg(feature = "hash")]
+#[cfg_attr(docsrs, doc(cfg(feature = "hash")))]
 pub mod stake_pool;
 
 /// Operational Certificates for stake pool block production

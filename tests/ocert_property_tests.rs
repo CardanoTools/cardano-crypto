@@ -8,9 +8,9 @@
 
 use cardano_crypto::common::Result;
 use cardano_crypto::dsign::{DsignAlgorithm, Ed25519};
-use cardano_crypto::key::operational_cert::OperationalCertificate;
-use cardano_crypto::key::kes_period::KesPeriod;
 use cardano_crypto::kes::{KesAlgorithm, Sum6Kes};
+use cardano_crypto::key::kes_period::KesPeriod;
+use cardano_crypto::key::operational_cert::OperationalCertificate;
 use proptest::prelude::*;
 
 // ============================================================================
@@ -260,12 +260,7 @@ fn test_ocert_counter_increment() -> Result<()> {
 
     // Create OCerts with increasing counters
     for counter in 0..5 {
-        let ocert = OperationalCertificate::new(
-            kes_vk.clone(),
-            counter,
-            KesPeriod(0),
-            &cold_sk,
-        );
+        let ocert = OperationalCertificate::new(kes_vk.clone(), counter, KesPeriod(0), &cold_sk);
         ocert.verify(&cold_vk)?;
         assert_eq!(ocert.counter(), counter);
     }
@@ -284,12 +279,7 @@ fn test_ocert_period_boundary() -> Result<()> {
     let cold_sk = Ed25519::gen_key(&cold_seed);
 
     // Create OCert at period 50
-    let ocert = OperationalCertificate::new(
-        kes_vk,
-        0,
-        KesPeriod(50),
-        &cold_sk,
-    );
+    let ocert = OperationalCertificate::new(kes_vk, 0, KesPeriod(50), &cold_sk);
 
     // Valid at exactly period 50
     assert!(ocert.is_valid_for_period(KesPeriod(50), 0).is_ok());
@@ -319,7 +309,10 @@ fn test_ocert_zero_values() -> Result<()> {
     // All zero values should work
     let ocert = OperationalCertificate::new(kes_vk, 0, KesPeriod(0), &cold_sk);
 
-    assert!(ocert.verify(&cold_vk).is_ok(), "Zero values should be valid");
+    assert!(
+        ocert.verify(&cold_vk).is_ok(),
+        "Zero values should be valid"
+    );
 
     Ok(())
 }
