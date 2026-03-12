@@ -26,7 +26,7 @@
 //! # Examples
 //!
 //! ```rust
-//! use cardano_crypto::key::kes_period::{KESPeriod, kes_period_info};
+//! use cardano_crypto::key::kes_period::{KesPeriod, kes_period_info};
 //!
 //! let period = KesPeriod(0);
 //! let info = kes_period_info::<cardano_crypto::Sum6Kes>(period);

@@ -32,10 +32,9 @@
 //! # Examples
 //!
 //! ```rust
-//! use cardano_crypto::key::stake_pool::{StakePoolParams, Rational, StakePoolRelay};
+//! use cardano_crypto::key::stake_pool::{StakePoolParams, Rational, StakePoolRelay, RewardAccount};
 //! use cardano_crypto::key::hash::{PoolKeyHash, StakeKeyHash, role};
-//! use cardano_crypto::hd::address::RewardAccount;
-//! use alloc::collections::BTreeSet;
+//! use std::collections::BTreeSet;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create pool parameters
@@ -545,7 +544,7 @@ impl PoolMetadata {
 /// ```rust
 /// use cardano_crypto::key::stake_pool::{StakePoolParams, Rational, RewardAccount};
 /// use cardano_crypto::key::hash::{PoolKeyHash, StakeKeyHash};
-/// use alloc::collections::BTreeSet;
+/// use std::collections::BTreeSet;
 ///
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let pool_id = PoolKeyHash::from_bytes([1u8; 28]);
@@ -664,7 +663,7 @@ impl StakePoolParams {
     /// ```rust
     /// use cardano_crypto::key::stake_pool::{StakePoolParams, Rational, RewardAccount};
     /// use cardano_crypto::key::hash::{PoolKeyHash, StakeKeyHash};
-    /// use alloc::collections::BTreeSet;
+    /// use std::collections::BTreeSet;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut owners = BTreeSet::new();
@@ -738,7 +737,7 @@ impl StakePoolParams {
     /// ```rust
     /// use cardano_crypto::key::stake_pool::{StakePoolParams, Rational, RewardAccount};
     /// use cardano_crypto::key::hash::{PoolKeyHash, StakeKeyHash};
-    /// use alloc::collections::BTreeSet;
+    /// use std::collections::BTreeSet;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut owners = BTreeSet::new();

@@ -289,11 +289,12 @@ mod schnorr_bip340_vectors {
     }
 
     /// BIP-340 test vector 4
+    /// Source: https://github.com/bitcoin/bips/blob/master/bip-0340/test-vectors.csv
     #[test]
     fn test_bip340_vector_04() {
         let vk_hex = "d69c3509bb99e412e68b0fe8544e72837dfa30746d8be2aa65975f29d22dc7b9";
         let msg_hex = "4df3c3f68fcc83b27e9d42c90431a72499f17875c81a599b566c9889b9696703";
-        let sig_hex = "28705f5a12003f6cc27e56a7f6e0d09c3dae4d3d8de58d17034921df1c73cc18d3dba29bb2c8ec9ad9fc2e7601187e5f0c47bc86cb3e4aec1e60b5c6913b0f42";
+        let sig_hex = "00000000000000000000003b78ce563f89a0ed9414f5aa28ad0d96d6795f9c6376afb1548af603b3eb45c9f8207dee1060cb71c04e80f593060b07d28308d7f4";
 
         let vk = Secp256k1SchnorrVerificationKey::from_bytes(&hex_to_bytes(vk_hex)).unwrap();
         let msg = hex_to_bytes(msg_hex);
@@ -376,11 +377,12 @@ mod schnorr_bip340_vectors {
     }
 
     /// BIP-340 test vector 17 - 17-byte message (valid)
+    /// Source: https://github.com/bitcoin/bips/blob/master/bip-0340/test-vectors.csv
     #[test]
     fn test_bip340_vector_17_seventeen_bytes() {
         let vk_hex = "778caa53b4393ac467774d09497a87224bf9fab6f6e68b23086497324d6fd117";
         let msg_hex = "0102030405060708090a0b0c0d0e0f1011";
-        let sig_hex = "5130f39a4059b43bc7cac09a19ece52b5d8699d1a71e3c52da9afdb6b50571369f28a309a1c1be0cb5b9b7f8c7bc9a0a91b57e42e92a28f5b2fced99ff59c5f4";
+        let sig_hex = "5130f39a4059b43bc7cac09a19ece52b5d8699d1a71e3c52da9afdb6b50ac370c4a482b77bf960f8681540e25b6771ece1e5a37fd80e5a51897c5566a97ea5a5";
 
         let vk = Secp256k1SchnorrVerificationKey::from_bytes(&hex_to_bytes(vk_hex)).unwrap();
         let msg = hex_to_bytes(msg_hex);
