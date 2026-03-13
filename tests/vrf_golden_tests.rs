@@ -1,3 +1,4 @@
+#![cfg(feature = "vrf")]
 //! Golden test vectors for VRF implementations (Cardano-compatible)
 //!
 //! These tests verify byte-for-byte compatibility with:

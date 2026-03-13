@@ -1,3 +1,4 @@
+#![cfg(feature = "vrf")]
 //! Property-based tests for VRF implementations
 //!
 //! These tests use proptest to verify VRF invariants across random inputs,

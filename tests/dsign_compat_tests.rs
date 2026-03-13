@@ -1,3 +1,4 @@
+#![cfg(feature = "dsign")]
 //! DSIGN (Digital Signature) Tests - Cardano Compatibility
 //!
 //! These tests verify that our Ed25519 implementation produces output compatible

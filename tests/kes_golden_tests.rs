@@ -1,3 +1,4 @@
+#![cfg(feature = "kes")]
 //! Golden test vectors for KES implementations (Cardano-compatible)
 //!
 //! These tests verify compatibility with Cardano's Key Evolving Signature schemes

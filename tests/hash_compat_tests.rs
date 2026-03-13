@@ -1,3 +1,4 @@
+#![cfg(feature = "hash")]
 //! Hash Algorithm Tests - Cardano Compatibility
 //!
 //! These tests verify that our Blake2b and SHA hash implementations produce
