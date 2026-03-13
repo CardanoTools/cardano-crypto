@@ -26,7 +26,7 @@
 //! # Examples
 //!
 //! ```rust
-//! use cardano_crypto::key::kes_period::{KESPeriod, kes_period_info};
+//! use cardano_crypto::key::kes_period::{KesPeriod, kes_period_info};
 //!
 //! let period = KesPeriod(0);
 //! let info = kes_period_info::<cardano_crypto::Sum6Kes>(period);
@@ -153,7 +153,11 @@ pub struct KESPeriodInfo {
 pub fn kes_period_info<K: KesAlgorithm>(period: KesPeriod) -> KESPeriodInfo {
     let total_periods = K::total_periods() as u32;
     let is_valid = (period.0 as u64) < K::total_periods();
-    let remaining_periods = if is_valid { total_periods - period.0 } else { 0 };
+    let remaining_periods = if is_valid {
+        total_periods - period.0
+    } else {
+        0
+    };
 
     KESPeriodInfo {
         period,

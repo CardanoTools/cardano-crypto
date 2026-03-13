@@ -71,7 +71,7 @@ use curve25519_dalek::{constants::ED25519_BASEPOINT_POINT, scalar::Scalar};
 use sha2::{Digest, Sha512};
 use zeroize::Zeroizing;
 
-use crate::common::{clamp_scalar, point_to_bytes, CryptoResult, SUITE_DRAFT03, THREE};
+use crate::common::{CryptoResult, SUITE_DRAFT03, THREE, clamp_scalar, point_to_bytes};
 use crate::vrf::cardano_compat::{cardano_vrf_prove, cardano_vrf_verify};
 
 /// VRF proof size for draft-03: 80 bytes
@@ -324,7 +324,7 @@ impl VrfDraft03 {
 
         let gamma_bytes: [u8; 32] = proof[0..32]
             .try_into()
-            .expect("proof gamma segment must be 32 bytes");
+            .map_err(|_| crate::common::CryptoError::InvalidProof)?;
 
         let gamma = bytes_to_point(&gamma_bytes)?;
         let gamma_cleared = cardano_clear_cofactor(&gamma);

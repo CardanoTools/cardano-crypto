@@ -94,8 +94,14 @@ fn main() {
     println!("4. Aggregating signatures...");
 
     let aggregate_signature = Bls12381::aggregate_signatures(&signatures).unwrap();
-    println!("   ✓ {} individual signatures → 1 aggregate signature", signatures.len());
-    println!("   Aggregate signature size: {} bytes", aggregate_signature.to_compressed().len());
+    println!(
+        "   ✓ {} individual signatures → 1 aggregate signature",
+        signatures.len()
+    );
+    println!(
+        "   Aggregate signature size: {} bytes",
+        aggregate_signature.to_compressed().len()
+    );
     println!();
 
     // ========================================================================
@@ -105,7 +111,10 @@ fn main() {
 
     let aggregate_key = Bls12381::aggregate_verification_keys(&public_keys).unwrap();
     println!("   ✓ {} public keys → 1 aggregate key", public_keys.len());
-    println!("   Aggregate key size: {} bytes", aggregate_key.to_compressed().len());
+    println!(
+        "   Aggregate key size: {} bytes",
+        aggregate_key.to_compressed().len()
+    );
     println!();
 
     // ========================================================================
@@ -131,12 +140,20 @@ fn main() {
     // ========================================================================
     println!("7. Size comparison:");
 
-    let individual_size = signatures.iter().map(|s| s.to_compressed().len()).sum::<usize>();
+    let individual_size = signatures
+        .iter()
+        .map(|s| s.to_compressed().len())
+        .sum::<usize>();
     let aggregate_size = aggregate_signature.to_compressed().len();
 
-    println!("   Individual signatures: {} bytes ({} × 96)", individual_size, signatures.len());
+    println!(
+        "   Individual signatures: {} bytes ({} × 96)",
+        individual_size,
+        signatures.len()
+    );
     println!("   Aggregate signature:   {} bytes", aggregate_size);
-    println!("   Space saved:           {} bytes ({}%)",
+    println!(
+        "   Space saved:           {} bytes ({}%)",
         individual_size - aggregate_size,
         ((individual_size - aggregate_size) as f64 / individual_size as f64 * 100.0) as usize
     );
@@ -211,7 +228,8 @@ fn main() {
     println!("• Batch transaction validation");
     println!("• Cross-chain bridge signatures");
     println!();
-    println!("Space efficiency: {}%",
+    println!(
+        "Space efficiency: {}%",
         ((individual_size - aggregate_size) as f64 / individual_size as f64 * 100.0) as usize
     );
 }

@@ -5,7 +5,7 @@
 //!
 //! - Cofactor clearing for security
 //! - Hash-to-curve for Draft-03 (Elligator2-based)
-//! - Hash-to-curve for Draft-13 (Try-And-Increment)
+//! - Hash-to-curve for Draft-13 (Elligator2 via XMD-SHA-512)
 //!
 //! # Security Considerations
 //!
@@ -24,15 +24,15 @@
 //! Each hash-to-curve variant uses a unique suite identifier to prevent
 //! cross-protocol attacks:
 //! - Draft-03: `0x04` (ECVRF-ED25519-SHA512-ELL2)
-//! - Draft-13: `0x03` (ECVRF-ED25519-SHA512-TAI)
+//! - Draft-13: `0x03` (ECVRF-ED25519-SHA512-ELL2)
 
 use alloc::vec;
 use alloc::vec::Vec;
 
-use curve25519_dalek::edwards::{CompressedEdwardsY, EdwardsPoint};
+use curve25519_dalek::edwards::EdwardsPoint;
 use sha2::{Digest, Sha512};
 
-use crate::common::{CryptoError, CryptoResult, ONE, SUITE_DRAFT03};
+use crate::common::{CryptoError, CryptoResult, ONE, SUITE_DRAFT03, point_to_bytes};
 
 /// Clear the cofactor from an Edwards curve point (Cardano-compatible)
 ///
@@ -253,61 +253,43 @@ fn expand_message_xmd(dst: &[u8], msg: &[u8], len_in_bytes: usize) -> Vec<u8> {
 /// let pk = [0u8; 32];
 /// let message = b"batch verification test";
 /// let (point, h_string) = cardano_hash_to_curve_draft13(&pk, message)?;
-/// assert_eq!(h_string.len(), 48);
+/// assert_eq!(h_string.len(), 32);
 /// ```
 pub fn cardano_hash_to_curve_draft13(
     pk: &[u8],
     message: &[u8],
-) -> CryptoResult<(EdwardsPoint, [u8; 48])> {
+) -> CryptoResult<(EdwardsPoint, [u8; 32])> {
     // Build the input string: pk || message
     let mut input = Vec::with_capacity(pk.len() + message.len());
     input.extend_from_slice(pk);
     input.extend_from_slice(message);
 
     // Domain separation tag for Draft-13 Elligator2
+    // The trailing \x04 is the suite byte (same for Draft-03 and Draft-13)
     let dst = b"ECVRF_edwards25519_XMD:SHA-512_ELL2_NU_\x04";
 
-    // Expand to 48 bytes using XMD
+    // Expand to 48 bytes using XMD (SHA-512)
     let expanded = expand_message_xmd(dst, &input, 48);
-    let mut h_string = [0u8; 48];
-    h_string.copy_from_slice(&expanded);
 
-    // Use first 32 bytes for curve point
-    let mut point_bytes = [0u8; 32];
-    point_bytes.copy_from_slice(&h_string[0..32]);
+    // Upstream _string_to_points pipeline:
+    // 1. Reverse 48 bytes (big-endian to little-endian)
+    // 2. Zero-pad to 64 bytes
+    // 3. Apply ge25519_from_hash (reduce64 + Elligator2 with notsquare sign correction)
+    let mut h = [0u8; 64];
+    for j in 0..48 {
+        h[j] = expanded[47 - j];
+    }
+    // h[48..64] is already zero from initialization
 
-    // Clear the sign bit
-    point_bytes[31] &= 0x7f;
+    use super::elligator2::ge25519_from_hash;
 
-    // Try to decompress
-    match CompressedEdwardsY(point_bytes).decompress() {
+    match ge25519_from_hash(&h) {
         Some(point) => {
-            // Apply cofactor clearing for draft-13
-            let cleared = cardano_clear_cofactor(&point);
-            Ok((cleared, h_string))
+            // ge25519_from_hash already clears cofactor internally
+            let h_string = point_to_bytes(&point);
+            Ok((point, h_string))
         }
-        None => {
-            // Fallback with retry using first 32 bytes as seed
-            for i in 0..=255u8 {
-                let mut retry_hasher = Sha512::new();
-                retry_hasher.update(point_bytes);
-                retry_hasher.update([i]);
-                let retry_hash = retry_hasher.finalize();
-
-                let mut retry_bytes = [0u8; 32];
-                retry_bytes.copy_from_slice(&retry_hash[0..32]);
-                retry_bytes[31] &= 0x7f;
-
-                if let Some(point) = CompressedEdwardsY(retry_bytes).decompress() {
-                    let cleared = cardano_clear_cofactor(&point);
-                    // Update h_string with the successful retry bytes
-                    h_string[0..32].copy_from_slice(&retry_bytes);
-                    return Ok((cleared, h_string));
-                }
-            }
-
-            Err(CryptoError::InvalidPoint)
-        }
+        None => Err(CryptoError::InvalidPoint),
     }
 }
 
@@ -344,7 +326,7 @@ mod tests {
         assert!(result.is_ok());
 
         if let Ok((_, h_string)) = result {
-            assert_eq!(h_string.len(), 48);
+            assert_eq!(h_string.len(), 32);
         }
     }
 }

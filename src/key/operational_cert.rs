@@ -36,7 +36,7 @@
 //!
 //! // Generate cold key (pool operator)
 //! let cold_seed = [1u8; 32];
-//! let cold_sk = Ed25519::gen_key(&cold_seed);
+//! let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 //! let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 //!
 //! // Generate hot KES key
@@ -64,7 +64,7 @@
 //! # use cardano_crypto::key::kes_period::KesPeriod;
 //! #
 //! # let cold_seed = [1u8; 32];
-//! # let cold_sk = Ed25519::gen_key(&cold_seed);
+//! # let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 //! # let kes_seed = [2u8; 32];
 //! # let (kes_sk, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
 //! # let ocert = OperationalCertificate::new(kes_vk, 0, KesPeriod(100), &cold_sk);
@@ -93,9 +93,9 @@ use alloc::vec::Vec;
 
 use crate::common::error::{CryptoError, Result};
 use crate::dsign::{DsignAlgorithm, Ed25519};
-use crate::{Ed25519Signature, Ed25519SigningKey, Ed25519VerificationKey};
 use crate::kes::{KesVerificationKey, Sum6Kes};
 use crate::key::kes_period::KesPeriod;
+use crate::{Ed25519Signature, Ed25519SigningKey, Ed25519VerificationKey};
 
 // Type aliases for operational certificates (using Sum6Kes which is Cardano mainnet default)
 type VerificationKeyKes = KesVerificationKey<Sum6Kes>;
@@ -265,7 +265,7 @@ impl OperationalCertificate {
     /// use cardano_crypto::key::kes_period::KesPeriod;
     ///
     /// let cold_seed = [1u8; 32];
-    /// let cold_sk = Ed25519::gen_key(&cold_seed);
+    /// let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
     ///
     /// let kes_seed = [2u8; 32];
     /// let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
@@ -323,7 +323,7 @@ impl OperationalCertificate {
     /// # use cardano_crypto::key::kes_period::KesPeriod;
     /// #
     /// # let cold_seed = [1u8; 32];
-    /// # let cold_sk = Ed25519::gen_key(&cold_seed);
+    /// # let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
     /// # let cold_vk = Ed25519::derive_verification_key(&cold_sk);
     /// # let kes_seed = [2u8; 32];
     /// # let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
@@ -334,7 +334,7 @@ impl OperationalCertificate {
     ///
     /// // Verify with wrong cold key (fails)
     /// let wrong_seed = [99u8; 32];
-    /// let wrong_sk = Ed25519::gen_key(&wrong_seed);
+    /// let wrong_sk = Ed25519::gen_key(&wrong_seed).unwrap();
     /// let wrong_vk = Ed25519::derive_verification_key(&wrong_sk);
     /// assert!(ocert.verify(&wrong_vk).is_err());
     /// ```
@@ -346,8 +346,12 @@ impl OperationalCertificate {
         };
 
         let signature_bytes = signable.to_bytes();
-        Ed25519::verify(cold_verification_key, &signature_bytes, &self.cold_key_signature)
-            .map_err(|_| CryptoError::OCert(OCertError::InvalidSignature))
+        Ed25519::verify(
+            cold_verification_key,
+            &signature_bytes,
+            &self.cold_key_signature,
+        )
+        .map_err(|_| CryptoError::OCert(OCertError::InvalidSignature))
     }
 
     /// Check if the certificate is valid for a given KES period and expected counter
@@ -375,7 +379,7 @@ impl OperationalCertificate {
     /// # use cardano_crypto::key::kes_period::KesPeriod;
     /// #
     /// # let cold_seed = [1u8; 32];
-    /// # let cold_sk = Ed25519::gen_key(&cold_seed);
+    /// # let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
     /// # let kes_seed = [2u8; 32];
     /// # let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
     /// # let ocert = OperationalCertificate::new(kes_vk, 0, KesPeriod(100), &cold_sk);
@@ -389,7 +393,11 @@ impl OperationalCertificate {
     /// // Invalid counter
     /// assert!(ocert.is_valid_for_period(KesPeriod(105), 1).is_err());
     /// ```
-    pub fn is_valid_for_period(&self, current_period: KesPeriod, expected_counter: u64) -> Result<()> {
+    pub fn is_valid_for_period(
+        &self,
+        current_period: KesPeriod,
+        expected_counter: u64,
+    ) -> Result<()> {
         // Counter must match expected value
         if self.counter != expected_counter {
             return Err(CryptoError::OCert(OCertError::CounterMismatch {
@@ -437,60 +445,32 @@ impl OperationalCertificate {
 impl OCertSignable {
     /// Serialize the signable data to bytes for signing
     ///
-    /// The format matches cardano-base CBOR encoding:
-    /// `CBOR(array [kes_vk, counter, period])`
+    /// The format matches `cardano-ledger`'s `SignableRepresentation` for `OCertSignable`:
+    /// `rawSerialiseVerKeyKES(vk) || word64BE(counter) || word64BE(period)`
+    ///
+    /// This produces exactly 48 bytes (32 + 8 + 8).
     ///
     /// # Cardano Compatibility
     ///
     /// This matches the encoding in `Cardano.Protocol.TPraos.OCert`:
     /// ```haskell
-    /// instance Crypto c => ToCBOR (OCertSignable c) where
-    ///   toCBOR (OCertSignable vkHot n kesPeriod) =
-    ///     encodeListLen 3
-    ///       <> toCBOR vkHot
-    ///       <> toCBOR n
-    ///       <> toCBOR kesPeriod
+    /// instance Crypto c => SignableRepresentation (OCertSignable c) where
+    ///   getSignableRepresentation (OCertSignable vk counter period) =
+    ///     runByteBuilder (fromIntegral $ KES.verKeySizeKES (Proxy @(KES c)) + 8 + 8) $
+    ///       BS.byteStringCopy (KES.rawSerialiseVerKeyKES vk)
+    ///         <> BS.word64BE counter
+    ///         <> BS.word64BE (fromIntegral $ unKESPeriod period)
     /// ```
     #[cfg(feature = "alloc")]
     fn to_bytes(&self) -> Vec<u8> {
-        // CBOR encoding: array [kes_vk, counter, period]
-        let mut bytes = Vec::new();
-
-        // CBOR array header (3 elements)
-        bytes.push(0x83); // Array of 3 items
-
-        // Element 1: KES verification key (32 bytes)
-        bytes.push(0x58); // Byte string (1-byte length follows)
-        bytes.push(32); // Length = 32
+        let mut bytes = Vec::with_capacity(48);
+        // Raw KES verification key bytes (32 bytes)
         bytes.extend_from_slice(&self.kes_verification_key);
-
-        // Element 2: Counter (u64)
-        encode_u64(&mut bytes, self.counter);
-
-        // Element 3: KES period (u64)
-        encode_u64(&mut bytes, self.kes_period.value() as u64);
-
+        // Counter as big-endian u64 (8 bytes)
+        bytes.extend_from_slice(&self.counter.to_be_bytes());
+        // KES period as big-endian u64 (8 bytes)
+        bytes.extend_from_slice(&(self.kes_period.value() as u64).to_be_bytes());
         bytes
-    }
-}
-
-/// Encode a u64 as CBOR
-#[cfg(feature = "alloc")]
-fn encode_u64(bytes: &mut Vec<u8>, value: u64) {
-    if value <= 23 {
-        bytes.push(value as u8);
-    } else if value <= 0xFF {
-        bytes.push(0x18); // uint8
-        bytes.push(value as u8);
-    } else if value <= 0xFFFF {
-        bytes.push(0x19); // uint16
-        bytes.extend_from_slice(&(value as u16).to_be_bytes());
-    } else if value <= 0xFFFF_FFFF {
-        bytes.push(0x1A); // uint32
-        bytes.extend_from_slice(&(value as u32).to_be_bytes());
-    } else {
-        bytes.push(0x1B); // uint64
-        bytes.extend_from_slice(&value.to_be_bytes());
     }
 }
 
@@ -501,13 +481,13 @@ fn encode_u64(bytes: &mut Vec<u8>, value: u64) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::kes::{Sum6Kes, KesAlgorithm};
+    use crate::kes::{KesAlgorithm, Sum6Kes};
 
     #[test]
     fn test_ocert_new_and_verify() {
         // Generate cold key (pool operator)
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
         let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
         // Generate hot KES key
@@ -529,7 +509,7 @@ mod tests {
     #[test]
     fn test_ocert_verify_wrong_key() {
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 
         let kes_seed = [2u8; 32];
         let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
@@ -538,7 +518,7 @@ mod tests {
 
         // Try to verify with wrong cold key
         let wrong_seed = [99u8; 32];
-        let wrong_sk = Ed25519::gen_key(&wrong_seed);
+        let wrong_sk = Ed25519::gen_key(&wrong_seed).unwrap();
         let wrong_vk = Ed25519::derive_verification_key(&wrong_sk);
 
         assert!(ocert.verify(&wrong_vk).is_err());
@@ -547,7 +527,7 @@ mod tests {
     #[test]
     fn test_ocert_period_validation() {
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 
         let kes_seed = [2u8; 32];
         let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
@@ -565,7 +545,7 @@ mod tests {
     #[test]
     fn test_ocert_counter_validation() {
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 
         let kes_seed = [2u8; 32];
         let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
@@ -587,24 +567,30 @@ mod tests {
         let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();
 
         let signable = OCertSignable {
-            kes_verification_key: kes_vk,
+            kes_verification_key: kes_vk.clone(),
             counter: 42,
             kes_period: KesPeriod(12345),
         };
 
         let bytes = signable.to_bytes();
 
-        // CBOR array header
-        assert_eq!(bytes[0], 0x83); // Array of 3
+        // Raw format: vk(32) || counter_BE(8) || period_BE(8) = 48 bytes
+        assert_eq!(bytes.len(), 48);
 
-        // Should have: array header + byte string header + 32 bytes + counter encoding + period encoding
-        assert!(bytes.len() >= 35); // Minimum size
+        // First 32 bytes are the raw KES verification key
+        assert_eq!(&bytes[..32], &kes_vk[..]);
+
+        // Next 8 bytes are counter as big-endian u64
+        assert_eq!(&bytes[32..40], &42u64.to_be_bytes());
+
+        // Last 8 bytes are KES period as big-endian u64
+        assert_eq!(&bytes[40..48], &12345u64.to_be_bytes());
     }
 
     #[test]
     fn test_ocert_multiple_counters() {
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
         let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
         let kes_seed1 = [2u8; 32];
@@ -640,7 +626,7 @@ mod tests {
         // kp_ < c0_ + maxKESiterations
         // where maxKESiterations = 62 (KES_MAX_EVOLUTION)
         let cold_seed = [1u8; 32];
-        let cold_sk = Ed25519::gen_key(&cold_seed);
+        let cold_sk = Ed25519::gen_key(&cold_seed).unwrap();
 
         let kes_seed = [2u8; 32];
         let (_, kes_vk) = Sum6Kes::keygen(&kes_seed).unwrap();

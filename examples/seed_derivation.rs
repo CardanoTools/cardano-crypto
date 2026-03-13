@@ -3,7 +3,7 @@
 //! Demonstrates hierarchical deterministic key derivation matching
 //! Cardano's seed handling patterns.
 
-use cardano_crypto::seed::{derive_seed, expand_seed, SecureSeed, SEED_SIZE};
+use cardano_crypto::seed::{SEED_SIZE, SecureSeed, derive_seed, expand_seed};
 
 fn main() {
     println!("=== Cardano Seed Derivation Example ===\n");
@@ -115,7 +115,7 @@ fn main() {
 
     // Generate Ed25519 keys
     use cardano_crypto::dsign::{DsignAlgorithm, Ed25519};
-    let signing_key = Ed25519::gen_key(&payment_seed);
+    let signing_key = Ed25519::gen_key(&payment_seed).unwrap();
     let verification_key = Ed25519::derive_verification_key(&signing_key);
     println!(
         "Payment Ed25519 VK: {}...",

@@ -32,10 +32,9 @@
 //! # Examples
 //!
 //! ```rust
-//! use cardano_crypto::key::stake_pool::{StakePoolParams, Rational, StakePoolRelay};
+//! use cardano_crypto::key::stake_pool::{StakePoolParams, Rational, StakePoolRelay, RewardAccount};
 //! use cardano_crypto::key::hash::{PoolKeyHash, StakeKeyHash, role};
-//! use cardano_crypto::hd::address::RewardAccount;
-//! use alloc::collections::BTreeSet;
+//! use std::collections::BTreeSet;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create pool parameters
@@ -396,7 +395,9 @@ impl StakePoolRelay {
             StakePoolRelay::SingleHostName { dns_name, .. }
             | StakePoolRelay::MultiHostName { dns_name } => {
                 if dns_name.is_empty() {
-                    return Err(CryptoError::InvalidParameter("DNS name cannot be empty".into()));
+                    return Err(CryptoError::InvalidParameter(
+                        "DNS name cannot be empty".into(),
+                    ));
                 }
                 if dns_name.len() > 64 {
                     return Err(CryptoError::InvalidParameter(
@@ -484,7 +485,9 @@ impl PoolMetadata {
             return Err(CryptoError::InvalidParameter("URL cannot be empty".into()));
         }
         if url.len() > 64 {
-            return Err(CryptoError::InvalidParameter("URL too long (max 64 chars)".into()));
+            return Err(CryptoError::InvalidParameter(
+                "URL too long (max 64 chars)".into(),
+            ));
         }
         Ok(Self { url, hash })
     }
@@ -495,7 +498,9 @@ impl PoolMetadata {
             return Err(CryptoError::InvalidParameter("URL cannot be empty".into()));
         }
         if self.url.len() > 64 {
-            return Err(CryptoError::InvalidParameter("URL too long (max 64 chars)".into()));
+            return Err(CryptoError::InvalidParameter(
+                "URL too long (max 64 chars)".into(),
+            ));
         }
         Ok(())
     }
@@ -545,7 +550,7 @@ impl PoolMetadata {
 /// ```rust
 /// use cardano_crypto::key::stake_pool::{StakePoolParams, Rational, RewardAccount};
 /// use cardano_crypto::key::hash::{PoolKeyHash, StakeKeyHash};
-/// use alloc::collections::BTreeSet;
+/// use std::collections::BTreeSet;
 ///
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let pool_id = PoolKeyHash::from_bytes([1u8; 28]);
@@ -664,7 +669,7 @@ impl StakePoolParams {
     /// ```rust
     /// use cardano_crypto::key::stake_pool::{StakePoolParams, Rational, RewardAccount};
     /// use cardano_crypto::key::hash::{PoolKeyHash, StakeKeyHash};
-    /// use alloc::collections::BTreeSet;
+    /// use std::collections::BTreeSet;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut owners = BTreeSet::new();
@@ -738,7 +743,7 @@ impl StakePoolParams {
     /// ```rust
     /// use cardano_crypto::key::stake_pool::{StakePoolParams, Rational, RewardAccount};
     /// use cardano_crypto::key::hash::{PoolKeyHash, StakeKeyHash};
-    /// use alloc::collections::BTreeSet;
+    /// use std::collections::BTreeSet;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut owners = BTreeSet::new();
@@ -775,7 +780,9 @@ impl StakePoolParams {
 
         // Validate at least one owner
         if self.owners.is_empty() {
-            return Err(CryptoError::InvalidParameter("At least one owner required".into()));
+            return Err(CryptoError::InvalidParameter(
+                "At least one owner required".into(),
+            ));
         }
 
         // Validate metadata if present
@@ -853,7 +860,8 @@ mod tests {
     #[test]
     #[cfg(feature = "alloc")]
     fn test_pool_metadata_new() {
-        let metadata = PoolMetadata::new("https://pool.example.com/meta.json".to_string(), [0u8; 32]).unwrap();
+        let metadata =
+            PoolMetadata::new("https://pool.example.com/meta.json".to_string(), [0u8; 32]).unwrap();
         assert_eq!(metadata.url, "https://pool.example.com/meta.json");
     }
 
@@ -911,7 +919,7 @@ mod tests {
         let pool_id = PoolKeyHash::from_bytes([1u8; 28]);
         let vrf_hash = [2u8; 32];
         let reward_account = RewardAccount::from_stake_key_hash([3u8; 28]);
-        
+
         let mut owners = BTreeSet::new();
         owners.insert(StakeKeyHash::from_bytes([4u8; 28]));
 
@@ -934,7 +942,7 @@ mod tests {
         let pool_id = PoolKeyHash::from_bytes([1u8; 28]);
         let vrf_hash = [2u8; 32];
         let reward_account = RewardAccount::from_stake_key_hash([3u8; 28]);
-        
+
         let owners = BTreeSet::new(); // Empty!
 
         let params = StakePoolParams::new(
@@ -956,7 +964,7 @@ mod tests {
         let pool_id = PoolKeyHash::from_bytes([1u8; 28]);
         let vrf_hash = [2u8; 32];
         let reward_account = RewardAccount::from_stake_key_hash([3u8; 28]);
-        
+
         let mut owners = BTreeSet::new();
         owners.insert(StakeKeyHash::from_bytes([4u8; 28]));
 
@@ -979,7 +987,7 @@ mod tests {
         let pool_id = PoolKeyHash::from_bytes([1u8; 28]);
         let vrf_hash = [2u8; 32];
         let reward_account = RewardAccount::from_stake_key_hash([3u8; 28]);
-        
+
         let mut owners = BTreeSet::new();
         owners.insert(StakeKeyHash::from_bytes([4u8; 28]));
 
@@ -1009,7 +1017,7 @@ mod tests {
         let pool_id = PoolKeyHash::from_bytes([1u8; 28]);
         let vrf_hash = [2u8; 32];
         let reward_account = RewardAccount::from_stake_key_hash([3u8; 28]);
-        
+
         let mut owners = BTreeSet::new();
         owners.insert(StakeKeyHash::from_bytes([4u8; 28]));
 
@@ -1024,7 +1032,8 @@ mod tests {
         )
         .unwrap();
 
-        let metadata = PoolMetadata::new("https://pool.example.com/meta.json".to_string(), [0u8; 32]).unwrap();
+        let metadata =
+            PoolMetadata::new("https://pool.example.com/meta.json".to_string(), [0u8; 32]).unwrap();
 
         assert!(params.set_metadata(metadata).is_ok());
         assert!(params.metadata.is_some());

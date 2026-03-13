@@ -2,7 +2,7 @@
 //!
 //! Demonstrates CIP-1852 HD derivation and Cardano address generation
 
-use cardano_crypto::hd::{ExtendedPrivateKey, DerivationPath, Address, Network};
+use cardano_crypto::hd::{Address, DerivationPath, ExtendedPrivateKey, Network};
 use cardano_crypto::key::hash::{hash_payment_verification_key, hash_stake_verification_key};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 1: Create root key from BIP39 seed
     // In production, this would come from a mnemonic phrase
     let seed = [42u8; 64];
-    let root = ExtendedPrivateKey::from_seed(&seed);
+    let root = ExtendedPrivateKey::from_seed(&seed)?;
     println!("✓ Root extended private key created");
 
     // Step 2: Derive payment key (m/1852'/1815'/0'/0/0)
@@ -55,7 +55,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Enterprise address (payment only)
     let enterprise_addr = Address::enterprise(Network::Mainnet, payment_hash);
     let enterprise_bytes = enterprise_addr.to_bytes();
-    println!("\nEnterprise address (29 bytes): {}", hex::encode(&enterprise_bytes));
+    println!(
+        "\nEnterprise address (29 bytes): {}",
+        hex::encode(&enterprise_bytes)
+    );
 
     #[cfg(feature = "bech32-encoding")]
     {
@@ -66,7 +69,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Reward address (stake only)
     let reward_addr = Address::reward(Network::Mainnet, stake_hash);
     let reward_bytes = reward_addr.to_bytes();
-    println!("\nReward address (29 bytes): {}", hex::encode(&reward_bytes));
+    println!(
+        "\nReward address (29 bytes): {}",
+        hex::encode(&reward_bytes)
+    );
 
     #[cfg(feature = "bech32-encoding")]
     {

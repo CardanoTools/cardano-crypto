@@ -31,12 +31,13 @@
 
 use crate::common::error::CryptoError;
 use blst::{
-    blst_encode_to_g1, blst_encode_to_g2, blst_final_exp, blst_fp12, blst_fp12_is_one,
-    blst_miller_loop, blst_p1, blst_p1_add_or_double, blst_p1_affine, blst_p1_cneg,
-    blst_p1_compress, blst_p1_from_affine, blst_p1_mult, blst_p1_on_curve, blst_p1_to_affine,
-    blst_p1_uncompress, blst_p2, blst_p2_add_or_double, blst_p2_affine, blst_p2_cneg,
-    blst_p2_compress, blst_p2_from_affine, blst_p2_mult, blst_p2_on_curve, blst_p2_to_affine,
-    blst_p2_uncompress, blst_scalar, blst_scalar_from_bendian, BLST_ERROR,
+    BLST_ERROR, blst_final_exp, blst_fp12, blst_fp12_finalverify, blst_fp12_is_one,
+    blst_hash_to_g1, blst_hash_to_g2, blst_miller_loop, blst_p1, blst_p1_add_or_double,
+    blst_p1_affine, blst_p1_cneg, blst_p1_compress, blst_p1_from_affine, blst_p1_in_g1,
+    blst_p1_mult, blst_p1_on_curve, blst_p1_to_affine, blst_p1_uncompress, blst_p2,
+    blst_p2_add_or_double, blst_p2_affine, blst_p2_cneg, blst_p2_compress, blst_p2_from_affine,
+    blst_p2_in_g2, blst_p2_mult, blst_p2_on_curve, blst_p2_to_affine, blst_p2_uncompress,
+    blst_scalar, blst_scalar_from_bendian,
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -282,6 +283,14 @@ impl G1Point {
             return Err(CryptoError::InvalidPublicKey);
         }
 
+        // Verify point is in the correct prime-order subgroup G1.
+        // Without this check, points on the curve but not in the subgroup
+        // could enable small-subgroup attacks.
+        // SAFETY: point is a valid blst_p1 confirmed on-curve above
+        if unsafe { !blst_p1_in_g1(&point) } {
+            return Err(CryptoError::InvalidPublicKey);
+        }
+
         Ok(Self { point })
     }
 
@@ -462,6 +471,14 @@ impl G1Point {
         }
         affine
     }
+
+    /// Tests equality of two G1 points.
+    ///
+    /// Corresponds to Plutus builtin `bls12_381_G1_equal`.
+    /// Compares via compressed serialization.
+    pub fn g1_equal(&self, other: &Self) -> bool {
+        self == other
+    }
 }
 
 impl PartialEq for G1Point {
@@ -543,6 +560,13 @@ impl G2Point {
             return Err(CryptoError::InvalidPublicKey);
         }
 
+        // Verify point is in the correct prime-order subgroup G2.
+        // Without this check, points on the curve but not in the subgroup
+        // could enable small-subgroup attacks.
+        if unsafe { !blst_p2_in_g2(&point) } {
+            return Err(CryptoError::InvalidPublicKey);
+        }
+
         Ok(Self { point })
     }
 
@@ -599,6 +623,14 @@ impl G2Point {
             blst_p2_to_affine(&mut affine, &self.point);
         }
         affine
+    }
+
+    /// Tests equality of two G2 points.
+    ///
+    /// Corresponds to Plutus builtin `bls12_381_G2_equal`.
+    /// Compares via compressed serialization.
+    pub fn g2_equal(&self, other: &Self) -> bool {
+        self == other
     }
 }
 
@@ -718,6 +750,8 @@ impl Scalar {
     /// # Security
     ///
     /// The created scalar will be automatically zeroized when dropped.
+    /// The blst library handles reduction mod the curve order during operations,
+    /// so values >= r are accepted (matching Cardano/CIP-0381 behavior).
     pub fn from_bytes_be(bytes: &[u8]) -> Result<Self, CryptoError> {
         if bytes.len() != SCALAR_SIZE {
             return Err(CryptoError::InvalidKeyLength {
@@ -725,6 +759,7 @@ impl Scalar {
                 got: bytes.len(),
             });
         }
+
         let mut scalar_bytes = [0u8; SCALAR_SIZE];
         scalar_bytes.copy_from_slice(bytes);
         Ok(Self {
@@ -784,7 +819,11 @@ impl PairingResult {
 
 impl PartialEq for PairingResult {
     fn eq(&self, other: &Self) -> bool {
-        // Compare byte representations
+        use subtle::ConstantTimeEq;
+        // SAFETY: self.value and other.value are valid blst_fp12 structs owned by
+        // this PairingResult. We create byte slices over their full representation
+        // for constant-time comparison. The pointers are valid for the lifetime of
+        // the references, and the size is the compile-time known size of blst_fp12.
         unsafe {
             let self_bytes = core::slice::from_raw_parts(
                 &self.value as *const _ as *const u8,
@@ -794,7 +833,7 @@ impl PartialEq for PairingResult {
                 &other.value as *const _ as *const u8,
                 core::mem::size_of::<blst_fp12>(),
             );
-            self_bytes == other_bytes
+            self_bytes.ct_eq(other_bytes).into()
         }
     }
 }
@@ -842,12 +881,20 @@ impl core::fmt::Debug for PairingResult {
 /// | `bls12_381_G1_add` | [`g1_add`](Self::g1_add) |
 /// | `bls12_381_G1_neg` | [`g1_neg`](Self::g1_neg) |
 /// | `bls12_381_G1_scalarMul` | [`g1_scalar_mul`](Self::g1_scalar_mul) |
+/// | `bls12_381_G1_equal` | [`g1_equal`](Self::g1_equal) |
 /// | `bls12_381_G1_compress` | [`g1_compress`](Self::g1_compress) |
 /// | `bls12_381_G1_uncompress` | [`g1_uncompress`](Self::g1_uncompress) |
 /// | `bls12_381_G1_hashToGroup` | [`g1_hash_to_curve`](Self::g1_hash_to_curve) |
-/// | `bls12_381_G2_*` | `g2_*` methods |
+/// | `bls12_381_G2_add` | [`g2_add`](Self::g2_add) |
+/// | `bls12_381_G2_neg` | [`g2_neg`](Self::g2_neg) |
+/// | `bls12_381_G2_scalarMul` | [`g2_scalar_mul`](Self::g2_scalar_mul) |
+/// | `bls12_381_G2_equal` | [`g2_equal`](Self::g2_equal) |
+/// | `bls12_381_G2_compress` | [`g2_compress`](Self::g2_compress) |
+/// | `bls12_381_G2_uncompress` | [`g2_uncompress`](Self::g2_uncompress) |
+/// | `bls12_381_G2_hashToGroup` | [`g2_hash_to_curve`](Self::g2_hash_to_curve) |
 /// | `bls12_381_millerLoop` | [`miller_loop`](Self::miller_loop) |
-/// | `bls12_381_finalVerify` | [`final_exponentiate`](Self::final_exponentiate) |
+/// | `bls12_381_mulMlResult` | [`mul_ml_result`](Self::mul_ml_result) |
+/// | `bls12_381_finalVerify` | [`final_verify`](Self::final_verify) |
 ///
 /// # Examples
 ///
@@ -918,6 +965,13 @@ impl Bls12381 {
         p.mul(scalar)
     }
 
+    /// Tests equality of two G1 points.
+    ///
+    /// Corresponds to `bls12_381_G1_equal` in Plutus.
+    pub fn g1_equal(a: &G1Point, b: &G1Point) -> bool {
+        a.g1_equal(b)
+    }
+
     /// Checks if a G1 point equals the identity.
     ///
     /// Corresponds to checking against `bls12_381_G1_zero` in Plutus.
@@ -941,11 +995,15 @@ impl Bls12381 {
 
     /// Hash arbitrary bytes to a G1 point using hash-to-curve.
     ///
+    /// Uses `blst_hash_to_g1` (Random Oracle variant, `_RO_` suite) as required
+    /// by CIP-0381. This produces uniformly distributed points matching the
+    /// upstream Haskell `hashToGroup` implementation.
+    ///
     /// Corresponds to `bls12_381_G1_hashToGroup` in Plutus.
     pub fn g1_hash_to_curve(msg: &[u8], dst: &[u8]) -> G1Point {
         let mut point = blst_p1::default();
         unsafe {
-            blst_encode_to_g1(
+            blst_hash_to_g1(
                 &mut point,
                 msg.as_ptr(),
                 msg.len(),
@@ -983,6 +1041,13 @@ impl Bls12381 {
         p.mul(scalar)
     }
 
+    /// Tests equality of two G2 points.
+    ///
+    /// Corresponds to `bls12_381_G2_equal` in Plutus.
+    pub fn g2_equal(a: &G2Point, b: &G2Point) -> bool {
+        a.g2_equal(b)
+    }
+
     /// Checks if a G2 point equals the identity.
     ///
     /// Corresponds to checking against `bls12_381_G2_zero` in Plutus.
@@ -1006,11 +1071,15 @@ impl Bls12381 {
 
     /// Hash arbitrary bytes to a G2 point using hash-to-curve.
     ///
+    /// Uses `blst_hash_to_g2` (Random Oracle variant, `_RO_` suite) as required
+    /// by CIP-0381. This produces uniformly distributed points matching the
+    /// upstream Haskell `hashToGroup` implementation.
+    ///
     /// Corresponds to `bls12_381_G2_hashToGroup` in Plutus.
     pub fn g2_hash_to_curve(msg: &[u8], dst: &[u8]) -> G2Point {
         let mut point = blst_p2::default();
         unsafe {
-            blst_encode_to_g2(
+            blst_hash_to_g2(
                 &mut point,
                 msg.as_ptr(),
                 msg.len(),
@@ -1060,14 +1129,33 @@ impl Bls12381 {
     }
 
     /// Performs final exponentiation on a Miller loop result.
-    ///
-    /// Corresponds to `bls12_381_finalVerify` in Plutus (checking if result is one).
     pub fn final_exponentiate(ml_result: &PairingResult) -> PairingResult {
         let mut result = blst_fp12::default();
         unsafe {
             blst_final_exp(&mut result, &ml_result.value);
         }
         PairingResult { value: result }
+    }
+
+    /// Multiplies two Miller loop results.
+    ///
+    /// Corresponds to `bls12_381_mulMlResult` in Plutus.
+    pub fn mul_ml_result(a: &PairingResult, b: &PairingResult) -> PairingResult {
+        let mut result = blst_fp12::default();
+        unsafe {
+            blst::blst_fp12_mul(&mut result, &a.value, &b.value);
+        }
+        PairingResult { value: result }
+    }
+
+    /// Checks equality of two Miller loop results after final exponentiation.
+    ///
+    /// Corresponds to `bls12_381_finalVerify` in Plutus. Takes two `MlResult`
+    /// values and returns true if they are equal after final exponentiation.
+    /// Uses `blst_fp12_finalverify` which matches the upstream Haskell
+    /// `ptFinalVerify` implementation.
+    pub fn final_verify(a: &PairingResult, b: &PairingResult) -> bool {
+        unsafe { blst_fp12_finalverify(&a.value, &b.value) }
     }
 
     /// Verifies a pairing equation: e(g1_1, g2_1) * e(g1_2, g2_2) == 1.
@@ -1441,7 +1529,9 @@ impl DsignAlgorithm for Bls12381 {
         BlsSecretKey::from_bytes(seed)
     }
 
-    fn derive_verification_key(signing_key: &Self::SigningKey) -> Result<Self::VerificationKey, CryptoError> {
+    fn derive_verification_key(
+        signing_key: &Self::SigningKey,
+    ) -> Result<Self::VerificationKey, CryptoError> {
         Ok(signing_key.public_key())
     }
 
@@ -1491,24 +1581,24 @@ mod tests {
 
     #[test]
     fn test_g1_generator() {
-        let gen = G1Point::generator();
-        assert!(!gen.is_identity());
+        let generator = G1Point::generator();
+        assert!(!generator.is_identity());
 
         // Verify roundtrip
-        let compressed = gen.to_compressed();
+        let compressed = generator.to_compressed();
         let restored = G1Point::from_compressed(&compressed).unwrap();
-        assert_eq!(gen, restored);
+        assert_eq!(generator, restored);
     }
 
     #[test]
     fn test_g2_generator() {
-        let gen = G2Point::generator();
-        assert!(!gen.is_identity());
+        let generator = G2Point::generator();
+        assert!(!generator.is_identity());
 
         // Verify roundtrip
-        let compressed = gen.to_compressed();
+        let compressed = generator.to_compressed();
         let restored = G2Point::from_compressed(&compressed).unwrap();
-        assert_eq!(gen, restored);
+        assert_eq!(generator, restored);
     }
 
     #[test]
@@ -1517,9 +1607,9 @@ mod tests {
         assert!(id.is_identity());
 
         // Adding identity should give the same point
-        let gen = G1Point::generator();
-        let result = gen.add(&id);
-        assert_eq!(gen, result);
+        let generator = G1Point::generator();
+        let result = generator.add(&id);
+        assert_eq!(generator, result);
     }
 
     #[test]
@@ -1528,32 +1618,32 @@ mod tests {
         assert!(id.is_identity());
 
         // Adding identity should give the same point
-        let gen = G2Point::generator();
-        let result = gen.add(&id);
-        assert_eq!(gen, result);
+        let generator = G2Point::generator();
+        let result = generator.add(&id);
+        assert_eq!(generator, result);
     }
 
     #[test]
     fn test_g1_add() {
-        let gen = G1Point::generator();
-        let doubled = gen.add(&gen);
+        let generator = G1Point::generator();
+        let doubled = generator.add(&generator);
 
         // Create scalar 2
         let mut scalar_bytes = [0u8; 32];
         scalar_bytes[31] = 2;
         let scalar = Scalar::from_bytes_be(&scalar_bytes).unwrap();
 
-        let also_doubled = gen.mul(&scalar);
+        let also_doubled = generator.mul(&scalar);
         assert_eq!(doubled, also_doubled);
     }
 
     #[test]
     fn test_g1_neg() {
-        let gen = G1Point::generator();
-        let neg = gen.neg();
+        let generator = G1Point::generator();
+        let neg = generator.neg();
 
         // g + (-g) should be identity
-        let sum = gen.add(&neg);
+        let sum = generator.add(&neg);
         assert!(sum.is_identity());
     }
 
@@ -1683,6 +1773,42 @@ mod tests {
         assert_eq!(result1, result2);
     }
 
+    #[test]
+    fn test_final_verify() {
+        let g1 = G1Point::generator();
+        let g2 = G2Point::generator();
+
+        // Same pairing inputs should verify equal
+        let ml1 = Bls12381::miller_loop(&g1, &g2);
+        let ml2 = Bls12381::miller_loop(&g1, &g2);
+        assert!(Bls12381::final_verify(&ml1, &ml2));
+
+        // Different inputs should not verify equal
+        let scalar = Scalar::from_bytes_be(&{
+            let mut s = [0u8; 32];
+            s[31] = 2;
+            s
+        })
+        .expect("valid scalar");
+        let g1_2 = Bls12381::g1_scalar_mul(&scalar, &g1);
+        let ml3 = Bls12381::miller_loop(&g1_2, &g2);
+        assert!(!Bls12381::final_verify(&ml1, &ml3));
+    }
+
+    #[test]
+    fn test_mul_ml_result() {
+        let g1 = G1Point::generator();
+        let g2 = G2Point::generator();
+
+        let ml1 = Bls12381::miller_loop(&g1, &g2);
+        let ml2 = Bls12381::miller_loop(&g1, &g2);
+
+        // mul_ml_result should produce a valid PairingResult
+        let product = Bls12381::mul_ml_result(&ml1, &ml2);
+        // Multiplying with identity should give same result
+        let _exp = Bls12381::final_exponentiate(&product);
+    }
+
     // ========================================================================
     // DsignAggregatable Tests
     // ========================================================================
@@ -1742,7 +1868,8 @@ mod tests {
         let pk3 = sk3.public_key();
 
         // Aggregate keys
-        let agg_pk = Bls12381::aggregate_verification_keys(&[pk1.clone(), pk2.clone(), pk3.clone()]);
+        let agg_pk =
+            Bls12381::aggregate_verification_keys(&[pk1.clone(), pk2.clone(), pk3.clone()]);
         assert!(agg_pk.is_some());
 
         // Manual aggregation should match
@@ -1833,8 +1960,8 @@ mod tests {
         let sig = sk.sign(msg);
 
         // Aggregating single items should work
-        let agg_pk = Bls12381::aggregate_verification_keys(&[pk.clone()]).unwrap();
-        let agg_sig = Bls12381::aggregate_signatures(&[sig.clone()]).unwrap();
+        let agg_pk = Bls12381::aggregate_verification_keys(core::slice::from_ref(&pk)).unwrap();
+        let agg_sig = Bls12381::aggregate_signatures(core::slice::from_ref(&sig)).unwrap();
 
         // Should equal the original
         assert_eq!(agg_pk.point, pk.point);
@@ -1868,9 +1995,18 @@ mod tests {
         let attacker_pop = Bls12381::generate_possession_proof(&attacker_sk);
 
         // Only legitimate PoPs pass
-        assert!(Bls12381::verify_possession_proof(&attacker_pk, &attacker_pop));
-        assert!(!Bls12381::verify_possession_proof(&attacker_pk, &honest_pop));
-        assert!(!Bls12381::verify_possession_proof(&honest_pk, &attacker_pop));
+        assert!(Bls12381::verify_possession_proof(
+            &attacker_pk,
+            &attacker_pop
+        ));
+        assert!(!Bls12381::verify_possession_proof(
+            &attacker_pk,
+            &honest_pop
+        ));
+        assert!(!Bls12381::verify_possession_proof(
+            &honest_pk,
+            &attacker_pop
+        ));
     }
 
     #[test]

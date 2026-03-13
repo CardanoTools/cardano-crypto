@@ -66,7 +66,7 @@ mod ecdsa_cardano_base_vectors {
             let msg_bytes: [u8; 32] = hex_to_array(msg_hex);
 
             let sk = Secp256k1EcdsaSigningKey::from_bytes(&sk_bytes).unwrap();
-            let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+            let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
             // Sign the message hash (prehashed)
             let sig = Secp256k1Ecdsa::sign_prehashed(&sk, &msg_bytes).unwrap();
@@ -82,15 +82,24 @@ mod ecdsa_cardano_base_vectors {
     }
 
     /// ECDSA Verify-Only test vector from cardano-base
+    ///
+    /// In cardano-base, ECDSA's `toSignable` applies SHA3-256 to the message.
+    /// The Haskell string "0000...0000" is a 64-byte ASCII ByteString (each byte is 0x30).
+    /// The prehash used for verification is SHA3-256 of those ASCII bytes.
     #[test]
     fn test_ecdsa_verify_only_vector() {
+        use sha3::{Digest, Sha3_256};
+
         // From ecdsaVerifyOnlyTestVector in cardano-base
         let vk_hex = "02599de3e582e2a3779208a210dfeae8f330b9af00a47a7fb22e9bb8ef596f301b";
-        let msg_hex = "0000000000000000000000000000000000000000000000000000000000000000";
         let sig_hex = "354b868c757ef0b796003f7c23dd754d2d1726629145be2c7b7794a25fec80a06254f0915935f33b91bceb16d46ff2814f659e9b6791a4a21ff8764b78d7e114";
 
+        // In Haskell, the message is the ASCII string "0000...0000" (64 chars of '0').
+        // ECDSA toSignable applies SHA3-256 to the raw bytes.
+        let ascii_msg = b"0000000000000000000000000000000000000000000000000000000000000000";
+        let msg: [u8; 32] = Sha3_256::digest(ascii_msg).into();
+
         let vk = Secp256k1EcdsaVerificationKey::from_bytes(&hex_to_bytes(vk_hex)).unwrap();
-        let msg: [u8; 32] = hex_to_array(msg_hex);
         let sig = Secp256k1EcdsaSignature::from_bytes(&hex_to_bytes(sig_hex)).unwrap();
 
         assert!(Secp256k1Ecdsa::verify_prehashed(&vk, &msg, &sig).is_ok());
@@ -177,7 +186,7 @@ mod ecdsa_plutus_conformance {
         let vk = Secp256k1EcdsaVerificationKey::from_bytes(&hex_to_bytes(vk_hex)).unwrap();
 
         // Verify key derivation matches expected
-        let derived_vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let derived_vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
         assert_eq!(vk.as_bytes(), derived_vk.as_bytes());
 
         // Sign empty message (sha256(""))
@@ -206,8 +215,8 @@ mod ecdsa_plutus_conformance {
     #[test]
     fn test_ecdsa_message_hash_validation() {
         let seed = [42u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
-        let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
         // Valid 32-byte message hash
         let valid_msg = [0u8; 32];
@@ -280,11 +289,12 @@ mod schnorr_bip340_vectors {
     }
 
     /// BIP-340 test vector 4
+    /// Source: https://github.com/bitcoin/bips/blob/master/bip-0340/test-vectors.csv
     #[test]
     fn test_bip340_vector_04() {
         let vk_hex = "d69c3509bb99e412e68b0fe8544e72837dfa30746d8be2aa65975f29d22dc7b9";
         let msg_hex = "4df3c3f68fcc83b27e9d42c90431a72499f17875c81a599b566c9889b9696703";
-        let sig_hex = "28705f5a12003f6cc27e56a7f6e0d09c3dae4d3d8de58d17034921df1c73cc18d3dba29bb2c8ec9ad9fc2e7601187e5f0c47bc86cb3e4aec1e60b5c6913b0f42";
+        let sig_hex = "00000000000000000000003b78ce563f89a0ed9414f5aa28ad0d96d6795f9c6376afb1548af603b3eb45c9f8207dee1060cb71c04e80f593060b07d28308d7f4";
 
         let vk = Secp256k1SchnorrVerificationKey::from_bytes(&hex_to_bytes(vk_hex)).unwrap();
         let msg = hex_to_bytes(msg_hex);
@@ -367,11 +377,12 @@ mod schnorr_bip340_vectors {
     }
 
     /// BIP-340 test vector 17 - 17-byte message (valid)
+    /// Source: https://github.com/bitcoin/bips/blob/master/bip-0340/test-vectors.csv
     #[test]
     fn test_bip340_vector_17_seventeen_bytes() {
         let vk_hex = "778caa53b4393ac467774d09497a87224bf9fab6f6e68b23086497324d6fd117";
         let msg_hex = "0102030405060708090a0b0c0d0e0f1011";
-        let sig_hex = "5130f39a4059b43bc7cac09a19ece52b5d8699d1a71e3c52da9afdb6b50571369f28a309a1c1be0cb5b9b7f8c7bc9a0a91b57e42e92a28f5b2fced99ff59c5f4";
+        let sig_hex = "5130f39a4059b43bc7cac09a19ece52b5d8699d1a71e3c52da9afdb6b50ac370c4a482b77bf960f8681540e25b6771ece1e5a37fd80e5a51897c5566a97ea5a5";
 
         let vk = Secp256k1SchnorrVerificationKey::from_bytes(&hex_to_bytes(vk_hex)).unwrap();
         let msg = hex_to_bytes(msg_hex);
@@ -389,18 +400,23 @@ mod schnorr_cardano_base_vectors {
     use super::*;
 
     /// Schnorr verify-only test vector from cardano-base
+    ///
+    /// In cardano-base, Schnorr's `toSignable` is the identity function.
+    /// The Haskell string "0000...0000" is a 64-byte ASCII ByteString (each byte is 0x30),
+    /// NOT hex-decoded to 32 zero bytes.
     #[test]
     fn test_schnorr_verify_only_vector() {
         // From schnorrVerifyOnlyTestVector in cardano-base
         let vk_hex = "599de3e582e2a3779208a210dfeae8f330b9af00a47a7fb22e9bb8ef596f301b";
-        let msg_hex = "0000000000000000000000000000000000000000000000000000000000000000";
         let sig_hex = "5a56da88e6fd8419181dec4d3dd6997bab953d2fc71ab65e23cfc9e7e3d1a310613454a60f6703819a39fdac2a410a094442afd1fc083354443e8d8bb4461a9b";
 
+        // The message in Haskell is the ASCII bytes of the hex string, not decoded
+        let msg = b"0000000000000000000000000000000000000000000000000000000000000000";
+
         let vk = Secp256k1SchnorrVerificationKey::from_bytes(&hex_to_bytes(vk_hex)).unwrap();
-        let msg = hex_to_bytes(msg_hex);
         let sig = Secp256k1SchnorrSignature::from_bytes(&hex_to_bytes(sig_hex)).unwrap();
 
-        assert!(Secp256k1Schnorr::verify(&vk, &msg, &sig).is_ok());
+        assert!(Secp256k1Schnorr::verify(&vk, msg, &sig).is_ok());
     }
 
     /// Test wrong message with valid signature
@@ -497,11 +513,11 @@ mod cross_algorithm {
     fn test_different_pubkey_formats() {
         let seed = [42u8; 32];
 
-        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed);
-        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk);
+        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk).unwrap();
 
-        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
-        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
+        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk).unwrap();
 
         // ECDSA uses compressed SEC1 (33 bytes with prefix)
         assert_eq!(ecdsa_vk.as_bytes().len(), 33);
@@ -519,13 +535,13 @@ mod cross_algorithm {
         let seed = [42u8; 32];
         let message = b"test message";
 
-        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed);
-        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk);
-        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, message);
+        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk).unwrap();
+        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, message).unwrap();
 
-        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
-        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
-        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message);
+        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk).unwrap();
+        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message).unwrap();
 
         // Each signature should only verify with its own algorithm
         assert!(Secp256k1Ecdsa::verify(&ecdsa_vk, message, &ecdsa_sig).is_ok());
@@ -544,7 +560,7 @@ mod determinism {
     fn test_ecdsa_deterministic_signing() {
         // RFC 6979 requires deterministic ECDSA signatures
         let seed = [1u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
         let msg = [0u8; 32];
 
         let sig1 = Secp256k1Ecdsa::sign_prehashed(&sk, &msg).unwrap();
@@ -561,11 +577,11 @@ mod determinism {
     fn test_schnorr_deterministic_signing() {
         // BIP-340 specifies deterministic signature generation
         let seed = [1u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
         let msg = b"deterministic test";
 
-        let sig1 = Secp256k1Schnorr::sign(&sk, msg);
-        let sig2 = Secp256k1Schnorr::sign(&sk, msg);
+        let sig1 = Secp256k1Schnorr::sign(&sk, msg).unwrap();
+        let sig2 = Secp256k1Schnorr::sign(&sk, msg).unwrap();
 
         assert_eq!(
             sig1.as_bytes(),

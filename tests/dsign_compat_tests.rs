@@ -53,7 +53,7 @@ fn test_ed25519_rfc8032_vector1() -> Result<()> {
     );
 
     let seed_arr: [u8; 32] = seed.try_into().unwrap();
-    let sk = Ed25519::gen_key(&seed_arr);
+    let sk = Ed25519::gen_key(&seed_arr).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     assert_eq!(
@@ -90,7 +90,7 @@ fn test_ed25519_rfc8032_vector2() -> Result<()> {
     );
 
     let seed_arr: [u8; 32] = seed.try_into().unwrap();
-    let sk = Ed25519::gen_key(&seed_arr);
+    let sk = Ed25519::gen_key(&seed_arr).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     assert_eq!(pk.as_bytes(), &expected_pk[..]);
@@ -116,7 +116,7 @@ fn test_ed25519_rfc8032_vector3() -> Result<()> {
     );
 
     let seed_arr: [u8; 32] = seed.try_into().unwrap();
-    let sk = Ed25519::gen_key(&seed_arr);
+    let sk = Ed25519::gen_key(&seed_arr).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     assert_eq!(pk.as_bytes(), &expected_pk[..]);
@@ -146,7 +146,7 @@ fn test_ed25519_rfc8032_vector_1023() -> Result<()> {
     );
 
     let seed_arr: [u8; 32] = seed.try_into().unwrap();
-    let sk = Ed25519::gen_key(&seed_arr);
+    let sk = Ed25519::gen_key(&seed_arr).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     assert_eq!(pk.as_bytes(), &expected_pk[..]);
@@ -170,11 +170,11 @@ fn test_ed25519_cardano_seed() -> Result<()> {
     let seed = hex_decode("0000000000000000000000000000000000000000000000000000000000000000");
     let seed_arr: [u8; 32] = seed.try_into().unwrap();
 
-    let sk = Ed25519::gen_key(&seed_arr);
+    let sk = Ed25519::gen_key(&seed_arr).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     // Key should be deterministic
-    let sk2 = Ed25519::gen_key(&seed_arr);
+    let sk2 = Ed25519::gen_key(&seed_arr).unwrap();
     let pk2 = Ed25519::derive_verification_key(&sk2);
     assert_eq!(pk, pk2, "Same seed should produce same public key");
     assert_eq!(sk, sk2, "Same seed should produce same secret key");
@@ -191,7 +191,7 @@ fn test_ed25519_cardano_seed() -> Result<()> {
 #[test]
 fn test_ed25519_key_sizes() {
     let seed = [0x42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     assert_eq!(
@@ -206,7 +206,7 @@ fn test_ed25519_key_sizes() {
 #[test]
 fn test_ed25519_signature_size() {
     let seed = [0x42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
 
     let sig = Ed25519::sign(&sk, b"test");
     assert_eq!(
@@ -226,9 +226,9 @@ fn test_ed25519_verify_wrong_key() -> Result<()> {
     let seed1 = [0x01u8; 32];
     let seed2 = [0x02u8; 32];
 
-    let sk1 = Ed25519::gen_key(&seed1);
+    let sk1 = Ed25519::gen_key(&seed1).unwrap();
     let _pk1 = Ed25519::derive_verification_key(&sk1);
-    let sk2 = Ed25519::gen_key(&seed2);
+    let sk2 = Ed25519::gen_key(&seed2).unwrap();
     let pk2 = Ed25519::derive_verification_key(&sk2);
 
     let message = b"test message";
@@ -247,7 +247,7 @@ fn test_ed25519_verify_wrong_key() -> Result<()> {
 #[test]
 fn test_ed25519_verify_wrong_message() -> Result<()> {
     let seed = [0x42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     let message = b"original message";
@@ -268,7 +268,7 @@ fn test_ed25519_verify_wrong_message() -> Result<()> {
 #[test]
 fn test_ed25519_verify_tampered_signature() -> Result<()> {
     let seed = [0x42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     let message = b"test message";
@@ -296,7 +296,7 @@ fn test_ed25519_verify_tampered_signature() -> Result<()> {
 #[test]
 fn test_ed25519_deterministic() {
     let seed = [0x42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
 
     let message = b"test message";
 
@@ -310,7 +310,7 @@ fn test_ed25519_deterministic() {
 #[test]
 fn test_ed25519_different_messages() {
     let seed = [0x42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
 
     let sig1 = Ed25519::sign(&sk, b"message 1");
     let sig2 = Ed25519::sign(&sk, b"message 2");
@@ -327,8 +327,8 @@ fn test_ed25519_different_keys() {
     let seed1 = [0x01u8; 32];
     let seed2 = [0x02u8; 32];
 
-    let sk1 = Ed25519::gen_key(&seed1);
-    let sk2 = Ed25519::gen_key(&seed2);
+    let sk1 = Ed25519::gen_key(&seed1).unwrap();
+    let sk2 = Ed25519::gen_key(&seed2).unwrap();
 
     let message = b"same message";
 
@@ -349,7 +349,7 @@ fn test_ed25519_different_keys() {
 #[test]
 fn test_ed25519_empty_message() -> Result<()> {
     let seed = [0x42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     let message: &[u8] = &[];
@@ -364,7 +364,7 @@ fn test_ed25519_empty_message() -> Result<()> {
 #[test]
 fn test_ed25519_large_message() -> Result<()> {
     let seed = [0x42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     // 1 MB message
@@ -380,7 +380,7 @@ fn test_ed25519_large_message() -> Result<()> {
 #[test]
 fn test_ed25519_zero_seed() -> Result<()> {
     let seed = [0x00u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     let message = b"test";
@@ -395,7 +395,7 @@ fn test_ed25519_zero_seed() -> Result<()> {
 #[test]
 fn test_ed25519_ones_seed() -> Result<()> {
     let seed = [0xFFu8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     let message = b"test";
@@ -417,11 +417,13 @@ fn test_ed25519_tx_signing() -> Result<()> {
 
     let seed = hex_decode("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60");
     let seed_arr: [u8; 32] = seed.try_into().unwrap();
-    let sk = Ed25519::gen_key(&seed_arr);
+    let sk = Ed25519::gen_key(&seed_arr).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     // Simulate a transaction body (CBOR encoded)
-    let tx_body_cbor = hex_decode("a400818258201234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef00018182583900112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00001a001e84800282a10083");
+    let tx_body_cbor = hex_decode(
+        "a400818258201234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef00018182583900112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00001a001e84800282a10083",
+    );
 
     // Hash the transaction body (Cardano uses Blake2b-256)
     let tx_body_hash = Blake2b256::hash(&tx_body_cbor);
@@ -442,7 +444,7 @@ fn test_ed25519_tx_signing() -> Result<()> {
 #[test]
 fn test_ed25519_pubkey_derivation() {
     let seed = [0x42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
     let pk1 = Ed25519::derive_verification_key(&sk);
 
     // Derive public key from secret key again
@@ -459,7 +461,7 @@ fn test_ed25519_pubkey_derivation() {
 #[test]
 fn test_ed25519_key_serialization() -> Result<()> {
     let seed = [0x42u8; 32];
-    let sk = Ed25519::gen_key(&seed);
+    let sk = Ed25519::gen_key(&seed).unwrap();
     let pk = Ed25519::derive_verification_key(&sk);
 
     // Secret key bytes

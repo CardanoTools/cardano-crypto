@@ -24,7 +24,7 @@ use sha2::{Digest, Sha512};
 use zeroize::Zeroizing;
 
 use super::point::cardano_hash_to_curve;
-use crate::common::{point_to_bytes, CryptoResult, SUITE_DRAFT03, TWO};
+use crate::common::{CryptoError, CryptoResult, SUITE_DRAFT03, TWO, point_to_bytes};
 
 /// Generate VRF proof using Cardano-compatible method
 ///
@@ -69,9 +69,13 @@ pub fn cardano_vrf_prove(secret_key: &[u8; 64], message: &[u8]) -> CryptoResult<
     az[31] &= 127;
     az[31] |= 64;
 
-    let secret_scalar_bytes: [u8; 32] = az[0..32]
-        .try_into()
-        .expect("secret key slice must be 32 bytes");
+    let secret_scalar_bytes: [u8; 32] =
+        az[0..32]
+            .try_into()
+            .map_err(|_| CryptoError::InvalidKeyLength {
+                expected: 32,
+                got: az[0..32].len(),
+            })?;
     let x = Scalar::from_bytes_mod_order(secret_scalar_bytes);
 
     // Extract public key
@@ -108,7 +112,9 @@ pub fn cardano_vrf_prove(secret_key: &[u8; 64], message: &[u8]) -> CryptoResult<
     c_hasher.update(k_b_bytes);
     c_hasher.update(k_h_bytes);
     let c_hash = c_hasher.finalize();
-    let c_bytes_short: [u8; 16] = c_hash[0..16].try_into().unwrap();
+    let c_bytes_short: [u8; 16] = c_hash[0..16]
+        .try_into()
+        .map_err(|_| CryptoError::InvalidProof)?;
 
     // Expand c to 32 bytes for scalar operations
     let mut c_bytes = [0u8; 32];

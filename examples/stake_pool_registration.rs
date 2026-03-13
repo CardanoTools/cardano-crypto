@@ -3,13 +3,13 @@
 //! Demonstrates creating and validating stake pool parameters for
 //! pool registration certificates on the Cardano blockchain.
 
+use cardano_crypto::hash::{Blake2b256, HashAlgorithm};
 use cardano_crypto::key::hash::{
-    hash_pool_verification_key, hash_stake_verification_key, PoolKeyHash, StakeKeyHash,
+    PoolKeyHash, hash_pool_verification_key, hash_stake_verification_key,
 };
 use cardano_crypto::key::stake_pool::{
     PoolMetadata, Rational, RewardAccount, StakePoolParams, StakePoolRelay, VrfKeyHash,
 };
-use cardano_crypto::hash::{Blake2b256, HashAlgorithm};
 use std::collections::BTreeSet;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         arr.copy_from_slice(&vrf_hash_vec);
         arr
     };
-    println!("VRF key hash: {}", hex::encode(&vrf_hash));
+    println!("VRF key hash: {}", hex::encode(vrf_hash));
 
     // Step 2: Define economic parameters
     println!("\n--- Step 2: Economic Parameters ---");
@@ -150,7 +150,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     params.set_metadata(metadata)?;
 
     println!("✓ Metadata URL: {}", metadata_url);
-    println!("✓ Metadata hash: {}", hex::encode(&metadata_hash));
+    println!("✓ Metadata hash: {}", hex::encode(metadata_hash));
 
     // Step 8: Validate all parameters
     println!("\n--- Step 8: Validation ---");
@@ -172,10 +172,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "│ Cost:       {:>10} ADA/epoch             │",
         cost / 1_000_000
     );
-    println!("│ Margin:     {:>10.2}%                     │", margin_for_display.to_f64() * 100.0);
-    println!("│ Owners:     {:>10}                        │", params.owners.len());
-    println!("│ Relays:     {:>10}                        │", params.relays.len());
-    println!("│ Metadata:   {:>10}                        │", if params.metadata.is_some() { "Yes" } else { "No" });
+    println!(
+        "│ Margin:     {:>10.2}%                     │",
+        margin_for_display.to_f64() * 100.0
+    );
+    println!(
+        "│ Owners:     {:>10}                        │",
+        params.owners.len()
+    );
+    println!(
+        "│ Relays:     {:>10}                        │",
+        params.relays.len()
+    );
+    println!(
+        "│ Metadata:   {:>10}                        │",
+        if params.metadata.is_some() {
+            "Yes"
+        } else {
+            "No"
+        }
+    );
     println!("└─────────────────────────────────────────────────┘");
 
     // Step 10: Next steps

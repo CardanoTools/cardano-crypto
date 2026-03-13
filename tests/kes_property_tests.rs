@@ -403,10 +403,7 @@ fn test_sum6_max_period_boundary() -> Result<()> {
 
     // Should NOT be able to evolve past max period
     let result = Sum6Kes::update_kes(&(), sk, max_period)?;
-    assert!(
-        result.is_none(),
-        "Cannot evolve past max period (63)"
-    );
+    assert!(result.is_none(), "Cannot evolve past max period (63)");
 
     Ok(())
 }
@@ -507,7 +504,10 @@ fn test_kes_wrong_message_fails() -> Result<()> {
 
     // Verify with second message should fail
     let result = Sum6Kes::verify_kes(&(), &vk, 0, msg2, &sig);
-    assert!(result.is_err(), "Verification with wrong message should fail");
+    assert!(
+        result.is_err(),
+        "Verification with wrong message should fail"
+    );
 
     Ok(())
 }

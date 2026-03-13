@@ -5,8 +5,8 @@
 #![cfg(all(feature = "secp256k1", feature = "bls"))]
 
 use cardano_crypto::bls::{
-    bls_verify, bls_verify_with_dst, Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature, G1Point,
-    G2Point, Scalar, G1_COMPRESSED_SIZE, G2_COMPRESSED_SIZE, SCALAR_SIZE,
+    Bls12381, BlsPublicKey, BlsSecretKey, BlsSignature, G1_COMPRESSED_SIZE, G1Point,
+    G2_COMPRESSED_SIZE, G2Point, SCALAR_SIZE, Scalar, bls_verify, bls_verify_with_dst,
 };
 use cardano_crypto::dsign::secp256k1::{
     Secp256k1Ecdsa, Secp256k1EcdsaSignature, Secp256k1EcdsaSigningKey,
@@ -24,8 +24,8 @@ mod ecdsa_tests {
     #[test]
     fn test_ecdsa_key_generation() {
         let seed = [1u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
-        let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
         assert_eq!(sk.as_bytes().len(), 32);
         assert_eq!(vk.as_bytes().len(), 33);
@@ -34,11 +34,11 @@ mod ecdsa_tests {
     #[test]
     fn test_ecdsa_sign_verify() {
         let seed = [2u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
-        let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
         let message = b"Hello, Cardano Plutus!";
-        let signature = Secp256k1Ecdsa::sign(&sk, message);
+        let signature = Secp256k1Ecdsa::sign(&sk, message).unwrap();
 
         assert!(Secp256k1Ecdsa::verify(&vk, message, &signature).is_ok());
     }
@@ -46,11 +46,11 @@ mod ecdsa_tests {
     #[test]
     fn test_ecdsa_wrong_message() {
         let seed = [3u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
-        let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
         let message = b"Original message";
-        let signature = Secp256k1Ecdsa::sign(&sk, message);
+        let signature = Secp256k1Ecdsa::sign(&sk, message).unwrap();
 
         assert!(Secp256k1Ecdsa::verify(&vk, b"Modified message", &signature).is_err());
     }
@@ -59,12 +59,12 @@ mod ecdsa_tests {
     fn test_ecdsa_wrong_key() {
         let seed1 = [4u8; 32];
         let seed2 = [5u8; 32];
-        let sk1 = Secp256k1Ecdsa::gen_key(&seed1);
-        let sk2 = Secp256k1Ecdsa::gen_key(&seed2);
-        let vk2 = Secp256k1Ecdsa::derive_verification_key(&sk2);
+        let sk1 = Secp256k1Ecdsa::gen_key(&seed1).unwrap();
+        let sk2 = Secp256k1Ecdsa::gen_key(&seed2).unwrap();
+        let vk2 = Secp256k1Ecdsa::derive_verification_key(&sk2).unwrap();
 
         let message = b"Test message";
-        let signature = Secp256k1Ecdsa::sign(&sk1, message);
+        let signature = Secp256k1Ecdsa::sign(&sk1, message).unwrap();
 
         // Signature from sk1 should not verify with vk2
         assert!(Secp256k1Ecdsa::verify(&vk2, message, &signature).is_err());
@@ -73,8 +73,8 @@ mod ecdsa_tests {
     #[test]
     fn test_ecdsa_key_roundtrip() {
         let seed = [6u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
-        let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
         let sk_bytes = sk.as_bytes().to_vec();
         let vk_bytes = vk.as_bytes().to_vec();
@@ -89,10 +89,10 @@ mod ecdsa_tests {
     #[test]
     fn test_ecdsa_signature_roundtrip() {
         let seed = [7u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
 
         let message = b"Roundtrip test";
-        let signature = Secp256k1Ecdsa::sign(&sk, message);
+        let signature = Secp256k1Ecdsa::sign(&sk, message).unwrap();
 
         let sig_bytes = signature.as_bytes().to_vec();
         let sig_restored = Secp256k1EcdsaSignature::from_bytes(&sig_bytes).unwrap();
@@ -105,8 +105,8 @@ mod ecdsa_tests {
         use sha2::{Digest, Sha256};
 
         let seed = [8u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
-        let vk = Secp256k1Ecdsa::derive_verification_key(&sk);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let vk = Secp256k1Ecdsa::derive_verification_key(&sk).unwrap();
 
         let message = b"Pre-hashed message for Plutus";
         let mut hasher = Sha256::new();
@@ -120,11 +120,11 @@ mod ecdsa_tests {
     #[test]
     fn test_ecdsa_deterministic() {
         let seed = [9u8; 32];
-        let sk = Secp256k1Ecdsa::gen_key(&seed);
+        let sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
 
         let message = b"Deterministic test";
-        let sig1 = Secp256k1Ecdsa::sign(&sk, message);
-        let sig2 = Secp256k1Ecdsa::sign(&sk, message);
+        let sig1 = Secp256k1Ecdsa::sign(&sk, message).unwrap();
+        let sig2 = Secp256k1Ecdsa::sign(&sk, message).unwrap();
 
         // ECDSA is deterministic with RFC 6979
         assert_eq!(sig1, sig2);
@@ -141,8 +141,8 @@ mod schnorr_tests {
     #[test]
     fn test_schnorr_key_generation() {
         let seed = [10u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
-        let vk = Secp256k1Schnorr::derive_verification_key(&sk);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let vk = Secp256k1Schnorr::derive_verification_key(&sk).unwrap();
 
         assert_eq!(sk.as_bytes().len(), 32);
         assert_eq!(vk.as_bytes().len(), 32); // x-only public key
@@ -151,11 +151,11 @@ mod schnorr_tests {
     #[test]
     fn test_schnorr_sign_verify() {
         let seed = [11u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
-        let vk = Secp256k1Schnorr::derive_verification_key(&sk);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let vk = Secp256k1Schnorr::derive_verification_key(&sk).unwrap();
 
         let message = b"Schnorr signature for Plutus!";
-        let signature = Secp256k1Schnorr::sign(&sk, message);
+        let signature = Secp256k1Schnorr::sign(&sk, message).unwrap();
 
         assert!(Secp256k1Schnorr::verify(&vk, message, &signature).is_ok());
     }
@@ -163,11 +163,11 @@ mod schnorr_tests {
     #[test]
     fn test_schnorr_wrong_message() {
         let seed = [12u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
-        let vk = Secp256k1Schnorr::derive_verification_key(&sk);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let vk = Secp256k1Schnorr::derive_verification_key(&sk).unwrap();
 
         let message = b"Original Schnorr message";
-        let signature = Secp256k1Schnorr::sign(&sk, message);
+        let signature = Secp256k1Schnorr::sign(&sk, message).unwrap();
 
         assert!(Secp256k1Schnorr::verify(&vk, b"Different message", &signature).is_err());
     }
@@ -175,8 +175,8 @@ mod schnorr_tests {
     #[test]
     fn test_schnorr_key_roundtrip() {
         let seed = [13u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
-        let vk = Secp256k1Schnorr::derive_verification_key(&sk);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let vk = Secp256k1Schnorr::derive_verification_key(&sk).unwrap();
 
         let sk_bytes = sk.as_bytes().to_vec();
         let vk_bytes = vk.as_bytes().to_vec();
@@ -191,10 +191,10 @@ mod schnorr_tests {
     #[test]
     fn test_schnorr_signature_roundtrip() {
         let seed = [14u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
 
         let message = b"Schnorr roundtrip";
-        let signature = Secp256k1Schnorr::sign(&sk, message);
+        let signature = Secp256k1Schnorr::sign(&sk, message).unwrap();
 
         let sig_bytes = signature.as_bytes().to_vec();
         let sig_restored = Secp256k1SchnorrSignature::from_bytes(&sig_bytes).unwrap();
@@ -207,8 +207,8 @@ mod schnorr_tests {
         use sha2::{Digest, Sha256};
 
         let seed = [15u8; 32];
-        let sk = Secp256k1Schnorr::gen_key(&seed);
-        let vk = Secp256k1Schnorr::derive_verification_key(&sk);
+        let sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let vk = Secp256k1Schnorr::derive_verification_key(&sk).unwrap();
 
         let message = b"Pre-hashed Schnorr message";
         let mut hasher = Sha256::new();
@@ -229,8 +229,8 @@ mod bls_g1_tests {
 
     #[test]
     fn test_g1_generator() {
-        let gen = G1Point::generator();
-        assert!(!Bls12381::g1_is_identity(&gen));
+        let generator = G1Point::generator();
+        assert!(!Bls12381::g1_is_identity(&generator));
     }
 
     #[test]
@@ -241,47 +241,47 @@ mod bls_g1_tests {
 
     #[test]
     fn test_g1_add_identity() {
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
         let id = G1Point::identity();
-        let result = Bls12381::g1_add(&gen, &id);
-        assert_eq!(gen, result);
+        let result = Bls12381::g1_add(&generator, &id);
+        assert_eq!(generator, result);
     }
 
     #[test]
     fn test_g1_neg() {
-        let gen = G1Point::generator();
-        let neg = Bls12381::g1_neg(&gen);
-        let sum = Bls12381::g1_add(&gen, &neg);
+        let generator = G1Point::generator();
+        let neg = Bls12381::g1_neg(&generator);
+        let sum = Bls12381::g1_add(&generator, &neg);
         assert!(Bls12381::g1_is_identity(&sum));
     }
 
     #[test]
     fn test_g1_scalar_mul() {
-        let gen = G1Point::generator();
+        let generator = G1Point::generator();
 
         // 2 * G = G + G
         let mut two_bytes = [0u8; 32];
         two_bytes[31] = 2;
         let two = Scalar::from_bytes_be(&two_bytes).unwrap();
 
-        let doubled = Bls12381::g1_scalar_mul(&two, &gen);
-        let also_doubled = Bls12381::g1_add(&gen, &gen);
+        let doubled = Bls12381::g1_scalar_mul(&two, &generator);
+        let also_doubled = Bls12381::g1_add(&generator, &generator);
 
         assert_eq!(doubled, also_doubled);
     }
 
     #[test]
     fn test_g1_compress_uncompress() {
-        let gen = G1Point::generator();
-        let compressed = Bls12381::g1_compress(&gen);
+        let generator = G1Point::generator();
+        let compressed = Bls12381::g1_compress(&generator);
         let restored = Bls12381::g1_uncompress(&compressed).unwrap();
-        assert_eq!(gen, restored);
+        assert_eq!(generator, restored);
     }
 
     #[test]
     fn test_g1_compress_size() {
-        let gen = G1Point::generator();
-        let compressed = Bls12381::g1_compress(&gen);
+        let generator = G1Point::generator();
+        let compressed = Bls12381::g1_compress(&generator);
         assert_eq!(compressed.len(), G1_COMPRESSED_SIZE);
     }
 
@@ -312,8 +312,8 @@ mod bls_g2_tests {
 
     #[test]
     fn test_g2_generator() {
-        let gen = G2Point::generator();
-        assert!(!Bls12381::g2_is_identity(&gen));
+        let generator = G2Point::generator();
+        assert!(!Bls12381::g2_is_identity(&generator));
     }
 
     #[test]
@@ -324,46 +324,46 @@ mod bls_g2_tests {
 
     #[test]
     fn test_g2_add_identity() {
-        let gen = G2Point::generator();
+        let generator = G2Point::generator();
         let id = G2Point::identity();
-        let result = Bls12381::g2_add(&gen, &id);
-        assert_eq!(gen, result);
+        let result = Bls12381::g2_add(&generator, &id);
+        assert_eq!(generator, result);
     }
 
     #[test]
     fn test_g2_neg() {
-        let gen = G2Point::generator();
-        let neg = Bls12381::g2_neg(&gen);
-        let sum = Bls12381::g2_add(&gen, &neg);
+        let generator = G2Point::generator();
+        let neg = Bls12381::g2_neg(&generator);
+        let sum = Bls12381::g2_add(&generator, &neg);
         assert!(Bls12381::g2_is_identity(&sum));
     }
 
     #[test]
     fn test_g2_scalar_mul() {
-        let gen = G2Point::generator();
+        let generator = G2Point::generator();
 
         let mut three_bytes = [0u8; 32];
         three_bytes[31] = 3;
         let three = Scalar::from_bytes_be(&three_bytes).unwrap();
 
-        let tripled = Bls12381::g2_scalar_mul(&three, &gen);
-        let also_tripled = Bls12381::g2_add(&gen, &Bls12381::g2_add(&gen, &gen));
+        let tripled = Bls12381::g2_scalar_mul(&three, &generator);
+        let also_tripled = Bls12381::g2_add(&generator, &Bls12381::g2_add(&generator, &generator));
 
         assert_eq!(tripled, also_tripled);
     }
 
     #[test]
     fn test_g2_compress_uncompress() {
-        let gen = G2Point::generator();
-        let compressed = Bls12381::g2_compress(&gen);
+        let generator = G2Point::generator();
+        let compressed = Bls12381::g2_compress(&generator);
         let restored = Bls12381::g2_uncompress(&compressed).unwrap();
-        assert_eq!(gen, restored);
+        assert_eq!(generator, restored);
     }
 
     #[test]
     fn test_g2_compress_size() {
-        let gen = G2Point::generator();
-        let compressed = Bls12381::g2_compress(&gen);
+        let generator = G2Point::generator();
+        let compressed = Bls12381::g2_compress(&generator);
         assert_eq!(compressed.len(), G2_COMPRESSED_SIZE);
     }
 
@@ -630,15 +630,15 @@ mod integration_tests {
         let message = b"Universal test message";
 
         // ECDSA
-        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed);
-        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk);
-        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, message);
+        let ecdsa_sk = Secp256k1Ecdsa::gen_key(&seed).unwrap();
+        let ecdsa_vk = Secp256k1Ecdsa::derive_verification_key(&ecdsa_sk).unwrap();
+        let ecdsa_sig = Secp256k1Ecdsa::sign(&ecdsa_sk, message).unwrap();
         assert!(Secp256k1Ecdsa::verify(&ecdsa_vk, message, &ecdsa_sig).is_ok());
 
         // Schnorr
-        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed);
-        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk);
-        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message);
+        let schnorr_sk = Secp256k1Schnorr::gen_key(&seed).unwrap();
+        let schnorr_vk = Secp256k1Schnorr::derive_verification_key(&schnorr_sk).unwrap();
+        let schnorr_sig = Secp256k1Schnorr::sign(&schnorr_sk, message).unwrap();
         assert!(Secp256k1Schnorr::verify(&schnorr_vk, message, &schnorr_sig).is_ok());
 
         // BLS
@@ -654,15 +654,21 @@ mod integration_tests {
         let seed2 = [2u8; 32];
 
         // ECDSA
-        let ecdsa_vk1 = Secp256k1Ecdsa::derive_verification_key(&Secp256k1Ecdsa::gen_key(&seed1));
-        let ecdsa_vk2 = Secp256k1Ecdsa::derive_verification_key(&Secp256k1Ecdsa::gen_key(&seed2));
+        let ecdsa_vk1 =
+            Secp256k1Ecdsa::derive_verification_key(&Secp256k1Ecdsa::gen_key(&seed1).unwrap())
+                .unwrap();
+        let ecdsa_vk2 =
+            Secp256k1Ecdsa::derive_verification_key(&Secp256k1Ecdsa::gen_key(&seed2).unwrap())
+                .unwrap();
         assert_ne!(ecdsa_vk1, ecdsa_vk2);
 
         // Schnorr
         let schnorr_vk1 =
-            Secp256k1Schnorr::derive_verification_key(&Secp256k1Schnorr::gen_key(&seed1));
+            Secp256k1Schnorr::derive_verification_key(&Secp256k1Schnorr::gen_key(&seed1).unwrap())
+                .unwrap();
         let schnorr_vk2 =
-            Secp256k1Schnorr::derive_verification_key(&Secp256k1Schnorr::gen_key(&seed2));
+            Secp256k1Schnorr::derive_verification_key(&Secp256k1Schnorr::gen_key(&seed2).unwrap())
+                .unwrap();
         assert_ne!(schnorr_vk1, schnorr_vk2);
 
         // BLS

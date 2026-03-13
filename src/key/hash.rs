@@ -410,7 +410,7 @@ pub fn hash_raw(data: &[u8]) -> LegacyKeyHash {
 ///
 /// let vk = [0u8; 32];
 /// let hash = hash_payment_verification_key(&vk);
-/// assert_eq!(hash.len(), 28);
+/// assert_eq!(hash.as_bytes().len(), 28);
 /// ```
 pub fn hash_payment_verification_key(vk: &[u8; 32]) -> PaymentKeyHash {
     hash_key(vk)
@@ -433,7 +433,7 @@ pub fn hash_payment_verification_key(vk: &[u8; 32]) -> PaymentKeyHash {
 ///
 /// let vk = [0u8; 32];
 /// let hash = hash_stake_verification_key(&vk);
-/// assert_eq!(hash.len(), 28);
+/// assert_eq!(hash.as_bytes().len(), 28);
 /// ```
 pub fn hash_stake_verification_key(vk: &[u8; 32]) -> StakeKeyHash {
     hash_key(vk)
@@ -456,7 +456,7 @@ pub fn hash_stake_verification_key(vk: &[u8; 32]) -> StakeKeyHash {
 ///
 /// let vk = [0u8; 32];
 /// let pool_id = hash_pool_verification_key(&vk);
-/// assert_eq!(pool_id.len(), 28);
+/// assert_eq!(pool_id.as_bytes().len(), 28);
 /// ```
 pub fn hash_pool_verification_key(vk: &[u8; 32]) -> PoolKeyHash {
     hash_key(vk)
@@ -479,7 +479,7 @@ pub fn hash_pool_verification_key(vk: &[u8; 32]) -> PoolKeyHash {
 ///
 /// let vk = [0u8; 32];
 /// let hash = hash_vrf_verification_key(&vk);
-/// assert_eq!(hash.len(), 28);
+/// assert_eq!(hash.as_bytes().len(), 28);
 /// ```
 pub fn hash_vrf_verification_key(vk: &[u8; 32]) -> VrfKeyHash {
     hash_key(vk)
@@ -593,8 +593,8 @@ fn hex_preview(bytes: &[u8]) -> alloc::string::String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::role::*;
+    use super::*;
 
     #[test]
     fn test_key_hash_size() {
@@ -759,7 +759,10 @@ mod tests {
 
     #[test]
     fn test_keyhash_debug_display() {
-        let bytes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
+        let bytes = [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28,
+        ];
         let hash = KeyHash::<Payment>::from_bytes(bytes);
 
         // Debug should show preview

@@ -16,8 +16,8 @@ use cardano_crypto::common::error::Result;
 use cardano_crypto::dsign::{DsignAlgorithm, Ed25519};
 use cardano_crypto::kes::{KesAlgorithm, Sum6Kes};
 use cardano_crypto::key::kes_period::{
-    is_kes_expired, kes_expiry_slot, kes_period_info, period_from_slot, KesPeriod, KESPeriodInfo,
-    KES_SLOTS_PER_PERIOD_MAINNET,
+    KES_SLOTS_PER_PERIOD_MAINNET, KESPeriodInfo, KesPeriod, is_kes_expired, kes_expiry_slot,
+    kes_period_info, period_from_slot,
 };
 use cardano_crypto::key::operational_cert::OperationalCertificate;
 
@@ -41,7 +41,8 @@ fn section(title: &str) {
 /// Display KES period status with color-coded warnings
 fn display_kes_status(info: &KESPeriodInfo, ocert_start_period: KesPeriod) {
     let effective_remaining = if info.period.0 >= ocert_start_period.0 {
-        info.total_periods.saturating_sub(info.period.0 - ocert_start_period.0)
+        info.total_periods
+            .saturating_sub(info.period.0 - ocert_start_period.0)
     } else {
         info.total_periods
     };
@@ -50,7 +51,14 @@ fn display_kes_status(info: &KESPeriodInfo, ocert_start_period: KesPeriod) {
     println!("  OCert Start:       {}", ocert_start_period.0);
     println!("  Total Periods:     {}", info.total_periods);
     println!("  Remaining:         {}", effective_remaining);
-    println!("  Is Valid:          {}", if info.is_valid { "Yes" } else { "NO - EXPIRED!" });
+    println!(
+        "  Is Valid:          {}",
+        if info.is_valid {
+            "Yes"
+        } else {
+            "NO - EXPIRED!"
+        }
+    );
 
     // Rotation warnings
     if effective_remaining == 0 {
@@ -83,10 +91,13 @@ fn main() -> Result<()> {
     section("1. Pool Cold Key (Offline)");
 
     let cold_seed = [0x01u8; 32]; // In production: Use secure random seed!
-    let cold_sk = Ed25519::gen_key(&cold_seed);
+    let cold_sk = Ed25519::gen_key(&cold_seed)?;
     let cold_vk = Ed25519::derive_verification_key(&cold_sk);
 
-    println!("  Cold verification key: {:02x?}...", &cold_vk.as_bytes()[..8]);
+    println!(
+        "  Cold verification key: {:02x?}...",
+        &cold_vk.as_bytes()[..8]
+    );
     println!("  [Security] Keep cold key OFFLINE in cold storage!");
 
     // =========================================================================
@@ -120,7 +131,8 @@ fn main() -> Result<()> {
     // Calculate KES period from slot
     let ocert_start_period = period_from_slot(kes_start_slot, KES_SLOTS_PER_PERIOD_MAINNET, 0);
 
-    let ocert = OperationalCertificate::new(kes_vk.clone(), ocert_counter, ocert_start_period, &cold_sk);
+    let ocert =
+        OperationalCertificate::new(kes_vk.clone(), ocert_counter, ocert_start_period, &cold_sk);
 
     println!("  OCert Counter:        {}", ocert.counter());
     println!("  OCert KES Period:     {}", ocert.kes_period().0);
@@ -203,13 +215,19 @@ fn main() -> Result<()> {
     section("7. Rotation Planning");
 
     let periods_remaining = Sum6Kes::total_periods() as u32 - periods_elapsed;
-    let rotation_deadline_slot =
-        kes_start_slot + ((Sum6Kes::total_periods() as u32 - ROTATION_CRITICAL_THRESHOLD) as u64)
+    let rotation_deadline_slot = kes_start_slot
+        + ((Sum6Kes::total_periods() as u32 - ROTATION_CRITICAL_THRESHOLD) as u64)
             * KES_SLOTS_PER_PERIOD_MAINNET;
 
     println!("  Periods Remaining:    {}", periods_remaining);
-    println!("  Warning Threshold:    {} periods", ROTATION_WARNING_THRESHOLD);
-    println!("  Critical Threshold:   {} periods", ROTATION_CRITICAL_THRESHOLD);
+    println!(
+        "  Warning Threshold:    {} periods",
+        ROTATION_WARNING_THRESHOLD
+    );
+    println!(
+        "  Critical Threshold:   {} periods",
+        ROTATION_CRITICAL_THRESHOLD
+    );
     println!("  Rotate Before Slot:   {}", rotation_deadline_slot);
 
     if periods_remaining <= ROTATION_WARNING_THRESHOLD {

@@ -34,7 +34,10 @@
 /// * `data` - Mutable byte slice to be zeroed. All bytes will be overwritten with 0x00.
 pub fn zeroize(data: &mut [u8]) {
     for byte in data.iter_mut() {
-        // Use volatile write to prevent compiler optimization
+        // SAFETY: write_volatile on a valid mutable reference from a slice is
+        // well-defined. The byte reference is always valid and properly aligned
+        // (guaranteed by the mutable slice), and write_volatile prevents the
+        // compiler from optimizing away the zeroing operation.
         unsafe {
             core::ptr::write_volatile(byte, 0);
         }

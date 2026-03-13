@@ -15,6 +15,8 @@ use alloc::vec::Vec;
 use crate::common::error::{CryptoError, Result};
 use crate::kes::hash::KesHashAlgorithm;
 use crate::kes::{KesAlgorithm, KesError, Period};
+use subtle::ConstantTimeEq;
+use zeroize::{Zeroize, Zeroizing};
 
 /// SumKES composes two KES schemes to create a scheme with double the periods
 ///
@@ -81,7 +83,7 @@ where
     /// Current signing key
     pub(crate) sk: D::SigningKey,
     /// Seed for right subtree (None after transition)
-    pub(crate) r1_seed: Option<Vec<u8>>,
+    pub(crate) r1_seed: Option<Zeroizing<Vec<u8>>>,
     /// Left subtree verification key
     pub(crate) vk0: D::VerificationKey,
     /// Right subtree verification key
@@ -204,7 +206,7 @@ where
         let vk1_bytes = D::raw_serialize_verification_key_kes(&signature.vk1);
         let computed_vk = H::hash_concat(&vk0_bytes, &vk1_bytes);
 
-        if &computed_vk != verification_key {
+        if !bool::from(computed_vk.ct_eq(verification_key)) {
             return Err(CryptoError::KesError(KesError::VerificationFailed));
         }
 
@@ -240,13 +242,16 @@ where
 
         if period + 1 == t_half {
             // Transition from left to right subtree
-            let r1_seed = signing_key
+            let mut r1_seed = signing_key
                 .r1_seed
                 .take()
                 .ok_or(CryptoError::KesError(KesError::KeyExpired))?;
 
             // Generate right subtree key
             let sk1 = D::gen_key_kes_from_seed_bytes(&r1_seed)?;
+
+            // Zeroize seed before dropping
+            r1_seed.zeroize();
 
             // Forget left subtree key
             D::forget_signing_key_kes(signing_key.sk);
@@ -297,11 +302,14 @@ where
         }
 
         // Expand seed into two seeds
-        let (r0_bytes, r1_bytes) = H::expand_seed(seed);
+        let (mut r0_bytes, r1_bytes) = H::expand_seed(seed);
 
         // Generate keys for both subtrees
         let sk0 = D::gen_key_kes_from_seed_bytes(&r0_bytes)?;
         let vk0 = D::derive_verification_key(&sk0)?;
+
+        // Zeroize r0 seed after use
+        r0_bytes.zeroize();
 
         let sk1 = D::gen_key_kes_from_seed_bytes(&r1_bytes)?;
         let vk1 = D::derive_verification_key(&sk1)?;
@@ -309,7 +317,7 @@ where
 
         Ok(SumSigningKey {
             sk: sk0,
-            r1_seed: Some(r1_bytes),
+            r1_seed: Some(Zeroizing::new(r1_bytes)),
             vk0,
             vk1,
             _phantom: PhantomData,
@@ -360,7 +368,10 @@ where
 
     fn forget_signing_key_kes(signing_key: Self::SigningKey) {
         D::forget_signing_key_kes(signing_key.sk);
-        // r1_seed will be dropped automatically
+        // Zeroize r1_seed if present
+        if let Some(mut seed) = signing_key.r1_seed {
+            seed.zeroize();
+        }
     }
 }
 
@@ -429,17 +440,16 @@ pub type Sum4Kes = SumKes<Sum3Kes, Blake2b256>;
 /// ```
 pub type Sum5Kes = SumKes<Sum4Kes, Blake2b256>;
 
-/// 2^6 = 64 periods
+/// 2^6 = 64 periods (Cardano mainnet standard KES)
 pub type Sum6Kes = SumKes<Sum5Kes, Blake2b256>;
 
-/// 2^7 = 128 periods (standard Cardano KES)
+/// 2^7 = 128 periods
 ///
 /// # Example
 ///
 /// ```rust
 /// use cardano_crypto::kes::{Sum7Kes, KesAlgorithm};
 ///
-/// // Cardano uses Sum7Kes with 128 periods
 /// assert_eq!(Sum7Kes::total_periods(), 128);
 /// ```
 pub type Sum7Kes = SumKes<Sum6Kes, Blake2b256>;

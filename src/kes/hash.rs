@@ -55,13 +55,16 @@ pub trait KesHashAlgorithm: Clone + Send + Sync + 'static {
     #[must_use]
     fn expand_seed(seed: &[u8]) -> (Vec<u8>, Vec<u8>) {
         // Hash with different prefixes to derive independent seeds
+        // Tags 0x01/0x02 with prefix ordering match upstream cardano-base expandSeed:
+        //   left  = hash(0x01 || seed)
+        //   right = hash(0x02 || seed)
         let mut left_input = Vec::with_capacity(seed.len() + 1);
-        left_input.push(0x00);
+        left_input.push(0x01);
         left_input.extend_from_slice(seed);
         let left_seed = Self::hash(&left_input);
 
         let mut right_input = Vec::with_capacity(seed.len() + 1);
-        right_input.push(0x01);
+        right_input.push(0x02);
         right_input.extend_from_slice(seed);
         let right_seed = Self::hash(&right_input);
 

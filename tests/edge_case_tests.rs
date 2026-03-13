@@ -40,8 +40,7 @@ mod vrf_edge_cases {
         let (sk, pk) = VrfDraft03::keypair_from_seed(&seed);
 
         let proof = VrfDraft03::prove(&sk, &[42]).expect("Single byte message should work");
-        let output =
-            VrfDraft03::verify(&pk, &proof, &[42]).expect("Verification should succeed");
+        let output = VrfDraft03::verify(&pk, &proof, &[42]).expect("Verification should succeed");
         assert_eq!(output.len(), 64);
     }
 
@@ -53,8 +52,8 @@ mod vrf_edge_cases {
         // Test with very large message (Cardano block headers can be large)
         let large_msg = vec![0xFF; 10_000];
         let proof = VrfDraft03::prove(&sk, &large_msg).expect("Large message should work");
-        let output = VrfDraft03::verify(&pk, &proof, &large_msg)
-            .expect("Verification should succeed");
+        let output =
+            VrfDraft03::verify(&pk, &proof, &large_msg).expect("Verification should succeed");
         assert_eq!(output.len(), 64);
     }
 
@@ -78,8 +77,8 @@ mod vrf_edge_cases {
 
         // Get a valid proof then corrupt half of it
         let mut proof = VrfDraft03::prove(&sk, b"test").expect("Prove should succeed");
-        for i in 0..40 {
-            proof[i] ^= 0xFF;
+        for item in proof.iter_mut().take(40) {
+            *item ^= 0xFF;
         }
         assert!(
             VrfDraft03::verify(&pk, &proof, b"test").is_err(),
@@ -252,7 +251,10 @@ mod kes_edge_cases {
 
             if let Some(corrupted_sig) = Sum6Kes::raw_deserialize_signature_kes(&sig_bytes) {
                 let result = Sum6Kes::verify_kes(&(), &vk, 0, msg, &corrupted_sig);
-                assert!(result.is_err(), "Corrupted signature should fail verification");
+                assert!(
+                    result.is_err(),
+                    "Corrupted signature should fail verification"
+                );
             }
         }
 
@@ -302,7 +304,10 @@ mod kes_edge_cases {
         if let Ok(sig) = result {
             // Verification at invalid period should fail
             let verify_result = Sum6Kes::verify_kes(&(), &vk, 100, b"msg", &sig);
-            assert!(verify_result.is_err(), "Invalid period should fail verification");
+            assert!(
+                verify_result.is_err(),
+                "Invalid period should fail verification"
+            );
         }
 
         Ok(())
@@ -342,7 +347,7 @@ mod dsign_edge_cases {
     #[test]
     fn test_ed25519_empty_message() -> Result<()> {
         let seed = [0x20u8; 32];
-        let sk = Ed25519::gen_key(&seed);
+        let sk = Ed25519::gen_key(&seed).unwrap();
         let vk = Ed25519::derive_verification_key(&sk);
 
         let sig = Ed25519::sign(&sk, &[]);
@@ -357,7 +362,7 @@ mod dsign_edge_cases {
     #[test]
     fn test_ed25519_large_message() -> Result<()> {
         let seed = [0x21u8; 32];
-        let sk = Ed25519::gen_key(&seed);
+        let sk = Ed25519::gen_key(&seed).unwrap();
         let vk = Ed25519::derive_verification_key(&sk);
 
         let large_msg = vec![0xAB; 100_000];
@@ -375,8 +380,8 @@ mod dsign_edge_cases {
         let seed1 = [0x22u8; 32];
         let seed2 = [0x23u8; 32];
 
-        let sk1 = Ed25519::gen_key(&seed1);
-        let sk2 = Ed25519::gen_key(&seed2);
+        let sk1 = Ed25519::gen_key(&seed1).unwrap();
+        let sk2 = Ed25519::gen_key(&seed2).unwrap();
         let vk2 = Ed25519::derive_verification_key(&sk2);
 
         // Sign with key1, verify with key2's vk
@@ -390,7 +395,7 @@ mod dsign_edge_cases {
     #[test]
     fn test_ed25519_wrong_message() -> Result<()> {
         let seed = [0x24u8; 32];
-        let sk = Ed25519::gen_key(&seed);
+        let sk = Ed25519::gen_key(&seed).unwrap();
         let vk = Ed25519::derive_verification_key(&sk);
 
         let sig = Ed25519::sign(&sk, b"message1");
@@ -405,7 +410,7 @@ mod dsign_edge_cases {
         use cardano_crypto::dsign::ed25519::Ed25519Signature;
 
         let seed = [0x25u8; 32];
-        let sk = Ed25519::gen_key(&seed);
+        let sk = Ed25519::gen_key(&seed).unwrap();
         let vk = Ed25519::derive_verification_key(&sk);
 
         let sig = Ed25519::sign(&sk, b"test");
@@ -428,7 +433,7 @@ mod dsign_edge_cases {
     #[test]
     fn test_ed25519_single_byte_message() -> Result<()> {
         let seed = [0x26u8; 32];
-        let sk = Ed25519::gen_key(&seed);
+        let sk = Ed25519::gen_key(&seed).unwrap();
         let vk = Ed25519::derive_verification_key(&sk);
 
         let sig = Ed25519::sign(&sk, &[0x42]);
@@ -530,14 +535,21 @@ mod cross_module_edge_cases {
         // VRF
         let (vrf_sk1, vrf_pk1) = VrfDraft03::keypair_from_seed(&seed);
         let (vrf_sk2, vrf_pk2) = VrfDraft03::keypair_from_seed(&seed);
-        assert_eq!(vrf_pk1, vrf_pk2, "VRF key derivation should be deterministic");
+        assert_eq!(
+            vrf_pk1, vrf_pk2,
+            "VRF key derivation should be deterministic"
+        );
 
         // Ed25519
-        let ed_sk1 = Ed25519::gen_key(&seed);
-        let ed_sk2 = Ed25519::gen_key(&seed);
+        let ed_sk1 = Ed25519::gen_key(&seed).unwrap();
+        let ed_sk2 = Ed25519::gen_key(&seed).unwrap();
         let ed_vk1 = Ed25519::derive_verification_key(&ed_sk1);
         let ed_vk2 = Ed25519::derive_verification_key(&ed_sk2);
-        assert_eq!(ed_vk1.as_bytes(), ed_vk2.as_bytes(), "Ed25519 should be deterministic");
+        assert_eq!(
+            ed_vk1.as_bytes(),
+            ed_vk2.as_bytes(),
+            "Ed25519 should be deterministic"
+        );
 
         // VRF proofs
         let proof1 = VrfDraft03::prove(&vrf_sk1, b"test").unwrap();
@@ -556,8 +568,8 @@ mod cross_module_edge_cases {
         assert_ne!(vrf_pk1, vrf_pk2);
 
         // Ed25519
-        let ed_sk1 = Ed25519::gen_key(&seed1);
-        let ed_sk2 = Ed25519::gen_key(&seed2);
+        let ed_sk1 = Ed25519::gen_key(&seed1).unwrap();
+        let ed_sk2 = Ed25519::gen_key(&seed2).unwrap();
         let ed_vk1 = Ed25519::derive_verification_key(&ed_sk1);
         let ed_vk2 = Ed25519::derive_verification_key(&ed_sk2);
         assert_ne!(ed_vk1.as_bytes(), ed_vk2.as_bytes());
