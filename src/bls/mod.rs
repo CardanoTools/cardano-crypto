@@ -552,6 +552,13 @@ impl G2Point {
             return Err(CryptoError::InvalidPublicKey);
         }
 
+        // Verify point is in the correct prime-order subgroup G2.
+        // Without this check, points on the curve but not in the subgroup
+        // could enable small-subgroup attacks.
+        if unsafe { !blst_p2_in_g2(&point) } {
+            return Err(CryptoError::InvalidPublicKey);
+        }
+
         Ok(Self { point })
     }
 
