@@ -358,6 +358,12 @@ impl Secp256k1Ecdsa {
     /// Signs a message using the signing key.
     ///
     /// The message is hashed with SHA-256 before signing (standard ECDSA).
+    ///
+    /// # Cardano Compatibility
+    ///
+    /// Upstream `EcdsaSecp256k1DSIGN` operates on a pre-hashed `MessageHash`.
+    /// For Plutus/CIP-0049 compatibility, use [`sign_prehashed`](Self::sign_prehashed)
+    /// with an already-hashed 32-byte message hash.
     pub fn sign(
         signing_key: &Secp256k1EcdsaSigningKey,
         message: &[u8],
@@ -370,6 +376,11 @@ impl Secp256k1Ecdsa {
     }
 
     /// Verifies a signature against a message and verification key.
+    ///
+    /// # Cardano Compatibility
+    ///
+    /// Upstream `EcdsaSecp256k1DSIGN` verifies against a pre-hashed `MessageHash`.
+    /// For Plutus/CIP-0049 compatibility, use [`verify_prehashed`](Self::verify_prehashed).
     pub fn verify(
         verification_key: &Secp256k1EcdsaVerificationKey,
         message: &[u8],
@@ -382,9 +393,10 @@ impl Secp256k1Ecdsa {
             .map_err(|_| CryptoError::SignatureVerificationFailed)
     }
 
-    /// Signs a pre-hashed message (for Plutus compatibility).
+    /// Signs a pre-hashed message (for Plutus/CIP-0049 compatibility).
     ///
-    /// Use this when the message has already been hashed.
+    /// Use this when the message has already been hashed. This matches
+    /// upstream `signDSIGN` for `EcdsaSecp256k1DSIGN` which takes a `MessageHash`.
     pub fn sign_prehashed(
         signing_key: &Secp256k1EcdsaSigningKey,
         message_hash: &[u8; 32],
@@ -399,7 +411,9 @@ impl Secp256k1Ecdsa {
         Ok(Secp256k1EcdsaSignature { bytes })
     }
 
-    /// Verifies a signature against a pre-hashed message (for Plutus compatibility).
+    /// Verifies a signature against a pre-hashed message (for Plutus/CIP-0049 compatibility).
+    ///
+    /// This matches upstream `verifyDSIGN` for `EcdsaSecp256k1DSIGN`.
     pub fn verify_prehashed(
         verification_key: &Secp256k1EcdsaVerificationKey,
         message_hash: &[u8; 32],

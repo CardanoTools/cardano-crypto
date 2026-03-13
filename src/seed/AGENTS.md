@@ -29,5 +29,5 @@ Deterministic seed generation and hierarchical key derivation matching cardano-b
 
 - `seed` feature implies `hash` + `alloc`.
 - `SecureSeed` must derive `Zeroize` + `ZeroizeOnDrop`; `Debug` must print `[REDACTED]`.
-- `expand_seed()` uses HMAC-SHA512 for derivation — must match cardano-base output.
+- `expand_seed()` uses Blake2b-256 for derivation: `Blake2b256(parent_seed || index)`.
 - Seeds are the root of all key material; never log, print, or expose them.

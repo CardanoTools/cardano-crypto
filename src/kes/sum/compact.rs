@@ -13,7 +13,7 @@ use crate::kes::hash::KesHashAlgorithm;
 use crate::kes::single::compact::{CompactKesComponents, CompactSingleKes, OptimizedKesSignature};
 use crate::kes::{KesAlgorithm, Period};
 use subtle::ConstantTimeEq;
-use zeroize::Zeroize;
+use zeroize::{Zeroize, Zeroizing};
 
 /// CompactSumKES is an optimized version of SumKES that stores fewer verification keys.
 ///
@@ -91,7 +91,7 @@ where
     H: KesHashAlgorithm,
 {
     pub(crate) sk: D::SigningKey,
-    pub(crate) r1_seed: Option<Vec<u8>>,
+    pub(crate) r1_seed: Option<Zeroizing<Vec<u8>>>,
     pub(crate) vk0: D::VerificationKey,
     pub(crate) vk1: D::VerificationKey,
     _phantom: PhantomData<H>,
@@ -320,7 +320,7 @@ where
 
         Ok(CompactSumSigningKey {
             sk: sk0,
-            r1_seed: Some(r1_bytes),
+            r1_seed: Some(Zeroizing::new(r1_bytes)),
             vk0,
             vk1,
             _phantom: PhantomData,
@@ -429,10 +429,10 @@ pub type CompactSum4Kes = CompactSumKes<CompactSum3Kes, Blake2b256>;
 /// ```
 pub type CompactSum5Kes = CompactSumKes<CompactSum4Kes, Blake2b256>;
 
-/// 2^6 = 64 periods (compact)
+/// 2^6 = 64 periods (compact, Cardano mainnet standard KES)
 pub type CompactSum6Kes = CompactSumKes<CompactSum5Kes, Blake2b256>;
 
-/// 2^7 = 128 periods (compact, standard Cardano KES)
+/// 2^7 = 128 periods (compact)
 ///
 /// # Example
 ///

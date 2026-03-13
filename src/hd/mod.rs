@@ -1,8 +1,12 @@
 //! Hierarchical Deterministic (HD) Key Derivation - CIP-1852 & BIP32-Ed25519
 //!
-//! Implements the BIP32-Ed25519 key derivation scheme (Khovratovich & Law, 2017)
-//! as used by Cardano wallets. Extended private keys are 64 bytes (kL || kR)
-//! where kL is the Ed25519 scalar and kR is used in child derivation.
+//! Implements the BIP32-Ed25519 key derivation scheme (Khovratovich & Law, 2017).
+//! Extended private keys are 64 bytes (kL || kR) where kL is the Ed25519 scalar
+//! and kR is used in child derivation.
+//!
+//! **Root key derivation** uses `HMAC-SHA-512(key="ed25519 seed")` per BIP32-Ed25519.
+//! Cardano wallets use the Icarus scheme (`PBKDF2-HMAC-SHA-512`) for root keys, so
+//! root keys will differ. Child derivation and address construction are compatible.
 
 use crate::common::Result;
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -103,10 +107,18 @@ pub struct ExtendedPrivateKey {
 }
 
 impl ExtendedPrivateKey {
-    /// Create from seed using HMAC-SHA-512
+    /// Create from seed using BIP32-Ed25519 derivation
     ///
-    /// Matches BIP32-Ed25519 / cardano-addresses: HMAC-SHA-512 with key "ed25519 seed"
+    /// Uses `HMAC-SHA-512(key="ed25519 seed", data=seed)` per the
+    /// BIP32-Ed25519 spec (Khovratovich & Law, 2017).
     /// The 64-byte output is split into kL (left 32, clamped) and kR (right 32).
+    ///
+    /// # Cardano Compatibility
+    ///
+    /// Cardano wallets (Daedalus, Eternl, Nami) use the Icarus scheme which
+    /// derives root keys via `PBKDF2-HMAC-SHA-512(iterations=4096)` instead.
+    /// Root keys from this function will NOT match those wallet implementations.
+    /// Child derivation via [`derive_child`](Self::derive_child) IS compatible.
     ///
     /// # Errors
     ///

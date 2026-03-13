@@ -491,6 +491,10 @@ impl super::DsignAlgorithm for Ed25519 {
     type Signature = Ed25519Signature;
 
     const ALGORITHM_NAME: &'static str = "Ed25519";
+    /// In-memory compound key size (seed + pubkey = 64 bytes).
+    ///
+    /// Note: upstream `SizeSignKeyDSIGN Ed25519DSIGN = 32` (seed only).
+    /// Our raw serialization via `seed_bytes()` returns 32 bytes to match.
     const SIGNING_KEY_SIZE: usize = SECRET_COMPOUND_SIZE;
     const VERIFICATION_KEY_SIZE: usize = VERIFICATION_KEY_SIZE;
     const SIGNATURE_SIZE: usize = SIGNATURE_SIZE;

@@ -16,7 +16,7 @@ use crate::common::error::{CryptoError, Result};
 use crate::kes::hash::KesHashAlgorithm;
 use crate::kes::{KesAlgorithm, KesError, Period};
 use subtle::ConstantTimeEq;
-use zeroize::Zeroize;
+use zeroize::{Zeroize, Zeroizing};
 
 /// SumKES composes two KES schemes to create a scheme with double the periods
 ///
@@ -83,7 +83,7 @@ where
     /// Current signing key
     pub(crate) sk: D::SigningKey,
     /// Seed for right subtree (None after transition)
-    pub(crate) r1_seed: Option<Vec<u8>>,
+    pub(crate) r1_seed: Option<Zeroizing<Vec<u8>>>,
     /// Left subtree verification key
     pub(crate) vk0: D::VerificationKey,
     /// Right subtree verification key
@@ -317,7 +317,7 @@ where
 
         Ok(SumSigningKey {
             sk: sk0,
-            r1_seed: Some(r1_bytes),
+            r1_seed: Some(Zeroizing::new(r1_bytes)),
             vk0,
             vk1,
             _phantom: PhantomData,
@@ -440,17 +440,16 @@ pub type Sum4Kes = SumKes<Sum3Kes, Blake2b256>;
 /// ```
 pub type Sum5Kes = SumKes<Sum4Kes, Blake2b256>;
 
-/// 2^6 = 64 periods
+/// 2^6 = 64 periods (Cardano mainnet standard KES)
 pub type Sum6Kes = SumKes<Sum5Kes, Blake2b256>;
 
-/// 2^7 = 128 periods (standard Cardano KES)
+/// 2^7 = 128 periods
 ///
 /// # Example
 ///
 /// ```rust
 /// use cardano_crypto::kes::{Sum7Kes, KesAlgorithm};
 ///
-/// // Cardano uses Sum7Kes with 128 periods
 /// assert_eq!(Sum7Kes::total_periods(), 128);
 /// ```
 pub type Sum7Kes = SumKes<Sum6Kes, Blake2b256>;

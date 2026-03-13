@@ -1,7 +1,13 @@
 //! HD Derivation and Address Golden Tests
 //!
-//! These tests verify byte-for-byte compatibility with Haskell cardano-addresses
-//! and cardano-wallet implementations using official test vectors.
+//! These tests verify the BIP32-Ed25519 HD derivation and Shelley address
+//! construction logic. Child derivation follows Khovratovich & Law (2017).
+//!
+//! Note: Root key derivation uses `HMAC-SHA-512(key="ed25519 seed", data=seed)`
+//! per the BIP32-Ed25519 spec. Cardano wallets (Daedalus, Eternl, Nami) use the
+//! Icarus scheme with PBKDF2-HMAC-SHA-512, so root keys from this library will
+//! differ from those wallet implementations. Child derivation and address
+//! construction are compatible.
 
 #![cfg(feature = "hd")]
 

@@ -62,6 +62,15 @@ pub use secp256k1::{
 };
 
 /// Trait for digital signature algorithms
+///
+/// This is the primary public-facing DSIGN abstraction. Parameter ordering
+/// follows the upstream Haskell convention (`signDSIGN ctx key msg`):
+/// `sign(signing_key, message)`.
+///
+/// Note: [`crate::common::traits::DsignAlgorithm`] is a separate internal
+/// trait used by KES and BLS with `sign(message, signing_key)` ordering
+/// and `Result` return types. The two traits will be unified in a future
+/// major version.
 pub trait DsignAlgorithm: Clone + Send + Sync + 'static {
     /// Signing key type
     type SigningKey;

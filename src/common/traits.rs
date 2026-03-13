@@ -15,12 +15,15 @@ use alloc::vec::Vec;
 
 use crate::common::error::Result;
 
-/// Trait for digital signature algorithms used in KES and other constructions
+/// Internal trait for digital signature algorithms used in KES and BLS
 ///
-/// This trait provides a unified interface for digital signature schemes,
-/// primarily used as the base layer for Key Evolving Signatures (KES).
-/// It defines the complete lifecycle of key generation, signing, verification,
-/// and serialization.
+/// This trait is consumed by KES and BLS internally and uses
+/// `sign(message, signing_key)` ordering with `Result` returns.
+///
+/// Note: [`crate::dsign::DsignAlgorithm`] is the primary public trait
+/// with `sign(signing_key, message)` ordering matching the upstream
+/// Haskell convention. The two traits will be unified in a future
+/// major version.
 ///
 /// # Type Parameters
 ///
