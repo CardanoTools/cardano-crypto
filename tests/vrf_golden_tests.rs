@@ -188,7 +188,8 @@ fn test_vrf_draft03_ietf_vector_12() -> Result<()> {
 #[test]
 fn test_vrf_draft03_generated_1() -> Result<()> {
     let sk_seed = hex_decode("0000000000000000000000000000000000000000000000000000000000000000");
-    let expected_pk = hex_decode("3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29");
+    let expected_pk =
+        hex_decode("3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29");
     let alpha = hex_decode("00");
     let expected_pi = hex_decode(
         "000f006e64c91f84212919fe0899970cd341206fc081fe599339c8492e2cea329\
@@ -226,7 +227,8 @@ fn test_vrf_draft03_generated_1() -> Result<()> {
 #[test]
 fn test_vrf_draft03_generated_2() -> Result<()> {
     let sk_seed = hex_decode("0000000000000000000000000000000000000000000000000000000000000000");
-    let expected_pk = hex_decode("3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29");
+    let expected_pk =
+        hex_decode("3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29");
     let alpha = hex_decode("00010203040506070809");
     let expected_pi = hex_decode(
         "0031f929352875995e3d55c4abdac7bfb92e706beb182999dd7d78f61e1bdc3f\
@@ -261,7 +263,8 @@ fn test_vrf_draft03_generated_2() -> Result<()> {
 #[test]
 fn test_vrf_draft03_generated_3() -> Result<()> {
     let sk_seed = hex_decode("a70b8f607568df8ae26cf438b1057d8d0a94b7f3ac44cd984577fc43c2da55b7");
-    let expected_pk = hex_decode("f1eb347d5c59e24f9f5f33c80cfd866e79fd72e0c370da3c011b1c9f045e23f1");
+    let expected_pk =
+        hex_decode("f1eb347d5c59e24f9f5f33c80cfd866e79fd72e0c370da3c011b1c9f045e23f1");
     let alpha = hex_decode("00");
     let expected_pi = hex_decode(
         "aa349327d919c8c96de316855de6fe5fa841ef25af913cfb9b33d6b663c425bd\
@@ -296,7 +299,8 @@ fn test_vrf_draft03_generated_3() -> Result<()> {
 #[test]
 fn test_vrf_draft03_generated_4() -> Result<()> {
     let sk_seed = hex_decode("a70b8f607568df8ae26cf438b1057d8d0a94b7f3ac44cd984577fc43c2da55b7");
-    let expected_pk = hex_decode("f1eb347d5c59e24f9f5f33c80cfd866e79fd72e0c370da3c011b1c9f045e23f1");
+    let expected_pk =
+        hex_decode("f1eb347d5c59e24f9f5f33c80cfd866e79fd72e0c370da3c011b1c9f045e23f1");
     let alpha = hex_decode("00010203040506070809");
     let expected_pi = hex_decode(
         "989c0c477b4a0c07e0dabd7b73cdb42beb4b4e09471377e6d0b75e8ffd5d0917\
@@ -674,17 +678,26 @@ fn test_vrf_draft13_proof_structure() -> Result<()> {
     // Gamma should be a valid compressed Edwards point
     let gamma_bytes: [u8; 32] = proof[0..32].try_into().unwrap();
     let gamma = curve25519_dalek::edwards::CompressedEdwardsY(gamma_bytes);
-    assert!(gamma.decompress().is_some(), "Gamma must be a valid Edwards point");
+    assert!(
+        gamma.decompress().is_some(),
+        "Gamma must be a valid Edwards point"
+    );
 
     // kB (U) should be a valid compressed Edwards point
     let kb_bytes: [u8; 32] = proof[32..64].try_into().unwrap();
     let kb = curve25519_dalek::edwards::CompressedEdwardsY(kb_bytes);
-    assert!(kb.decompress().is_some(), "kB must be a valid Edwards point");
+    assert!(
+        kb.decompress().is_some(),
+        "kB must be a valid Edwards point"
+    );
 
     // kH (V) should be a valid compressed Edwards point
     let kh_bytes: [u8; 32] = proof[64..96].try_into().unwrap();
     let kh = curve25519_dalek::edwards::CompressedEdwardsY(kh_bytes);
-    assert!(kh.decompress().is_some(), "kH must be a valid Edwards point");
+    assert!(
+        kh.decompress().is_some(),
+        "kH must be a valid Edwards point"
+    );
 
     Ok(())
 }
@@ -700,7 +713,8 @@ fn test_vrf_draft13_proof_structure() -> Result<()> {
 #[test]
 fn test_vrf_draft13_batchcompat_generated_1() -> Result<()> {
     let sk_seed = hex_decode("0000000000000000000000000000000000000000000000000000000000000000");
-    let expected_pk = hex_decode("3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29");
+    let expected_pk =
+        hex_decode("3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29");
     let alpha = hex_decode("00");
     let expected_pi = hex_decode(
         "93d70c5ed59ccb21ca9991be561756939ff9753bf85764d2a7b937d6fbf91834\
@@ -741,7 +755,8 @@ fn test_vrf_draft13_batchcompat_generated_1() -> Result<()> {
 #[test]
 fn test_vrf_draft13_batchcompat_generated_2() -> Result<()> {
     let sk_seed = hex_decode("0000000000000000000000000000000000000000000000000000000000000000");
-    let expected_pk = hex_decode("3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29");
+    let expected_pk =
+        hex_decode("3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29");
     let alpha = hex_decode("00010203040506070809");
     let expected_pi = hex_decode(
         "235d7f05374c05e2ca22017575c572d708b0fbd22c90d1ca5a94d0596b28a6cb\
@@ -779,7 +794,8 @@ fn test_vrf_draft13_batchcompat_generated_2() -> Result<()> {
 #[test]
 fn test_vrf_draft13_batchcompat_generated_3() -> Result<()> {
     let sk_seed = hex_decode("a70b8f607568df8ae26cf438b1057d8d0a94b7f3ac44cd984577fc43c2da55b7");
-    let expected_pk = hex_decode("f1eb347d5c59e24f9f5f33c80cfd866e79fd72e0c370da3c011b1c9f045e23f1");
+    let expected_pk =
+        hex_decode("f1eb347d5c59e24f9f5f33c80cfd866e79fd72e0c370da3c011b1c9f045e23f1");
     let alpha = hex_decode("00");
     let expected_pi = hex_decode(
         "fe7fe305611dbd8402bf580ceaa4775b573a3be110bc30901880cfd81903852b\
@@ -817,7 +833,8 @@ fn test_vrf_draft13_batchcompat_generated_3() -> Result<()> {
 #[test]
 fn test_vrf_draft13_batchcompat_generated_4() -> Result<()> {
     let sk_seed = hex_decode("a70b8f607568df8ae26cf438b1057d8d0a94b7f3ac44cd984577fc43c2da55b7");
-    let expected_pk = hex_decode("f1eb347d5c59e24f9f5f33c80cfd866e79fd72e0c370da3c011b1c9f045e23f1");
+    let expected_pk =
+        hex_decode("f1eb347d5c59e24f9f5f33c80cfd866e79fd72e0c370da3c011b1c9f045e23f1");
     let alpha = hex_decode("00010203040506070809");
     let expected_pi = hex_decode(
         "2ad402fec38563095e0a355fe580084812d7728f613da256ddd01140c29d5ec9\
@@ -855,7 +872,8 @@ fn test_vrf_draft13_batchcompat_generated_4() -> Result<()> {
 #[test]
 fn test_vrf_draft13_batchcompat_standard_10() -> Result<()> {
     let sk_seed = hex_decode("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60");
-    let expected_pk = hex_decode("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
+    let expected_pk =
+        hex_decode("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
     let alpha: &[u8] = &[]; // empty message
     let expected_pi = hex_decode(
         "7d9c633ffeee27349264cf5c667579fc583b4bda63ab71d001f89c10003ab46f\
@@ -893,7 +911,8 @@ fn test_vrf_draft13_batchcompat_standard_10() -> Result<()> {
 #[test]
 fn test_vrf_draft13_batchcompat_standard_11() -> Result<()> {
     let sk_seed = hex_decode("4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb");
-    let expected_pk = hex_decode("3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c");
+    let expected_pk =
+        hex_decode("3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c");
     let alpha = hex_decode("72");
     let expected_pi = hex_decode(
         "47b327393ff2dd81336f8a2ef10339112401253b3c714eeda879f12c509072ef\
@@ -931,7 +950,8 @@ fn test_vrf_draft13_batchcompat_standard_11() -> Result<()> {
 #[test]
 fn test_vrf_draft13_batchcompat_standard_12() -> Result<()> {
     let sk_seed = hex_decode("c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7");
-    let expected_pk = hex_decode("fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025");
+    let expected_pk =
+        hex_decode("fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025");
     let alpha = hex_decode("af82");
     let expected_pi = hex_decode(
         "926e895d308f5e328e7aa159c06eddbe56d06846abf5d98c2512235eaa57fdce\

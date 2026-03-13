@@ -305,14 +305,13 @@ impl Ed25519SigningKey {
         bytes: &[u8; SECRET_COMPOUND_SIZE],
     ) -> core::result::Result<Self, CryptoError> {
         // Derive the expected public key from the seed
-        let signing_key = DalekSigningKey::from_bytes(
-            bytes[..SEED_SIZE].try_into().map_err(|_| {
+        let signing_key =
+            DalekSigningKey::from_bytes(bytes[..SEED_SIZE].try_into().map_err(|_| {
                 CryptoError::InvalidKeyLength {
                     expected: SEED_SIZE,
                     got: 0,
                 }
-            })?,
-        );
+            })?);
         let expected_vk = signing_key.verifying_key().to_bytes();
         let embedded_vk = &bytes[SEED_SIZE..];
 

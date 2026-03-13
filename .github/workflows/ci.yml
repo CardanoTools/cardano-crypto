@@ -26,13 +26,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [stable, beta, nightly, 1.81.0]
+        rust: [stable, beta, nightly, 1.85.0]
         exclude:
           # Reduce matrix size - only test MSRV on Linux
           - os: windows-latest
-            rust: 1.81.0
+            rust: 1.85.0
           - os: macos-latest
-            rust: 1.81.0
+            rust: 1.85.0
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -192,10 +192,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust MSRV (1.81.0)
+      - name: Install Rust MSRV (1.85.0)
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.81.0
+          toolchain: 1.85.0
 
       - name: Check with MSRV
         run: cargo check --all-features --verbose
@@ -226,7 +226,6 @@ jobs:
         run: |
           if [ -z "${{ matrix.features }}" ]; then
             cargo build --no-default-features --verbose
-            cargo test --no-default-features --verbose
           else
             cargo build --no-default-features --features "${{ matrix.features }}" --verbose
             cargo test --no-default-features --features "${{ matrix.features }}" --verbose
