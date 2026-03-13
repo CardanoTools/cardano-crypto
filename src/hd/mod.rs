@@ -297,9 +297,14 @@ impl ExtendedPrivateKey {
     }
 
     fn derive_public_key(&self) -> [u8; 32] {
-        use ed25519_dalek::SigningKey;
-        let signing_key = SigningKey::from_bytes(&self.key_left);
-        signing_key.verifying_key().to_bytes()
+        // In BIP32-Ed25519, key_left IS the scalar (already clamped from HMAC output).
+        // We must NOT use ed25519_dalek::SigningKey::verifying_key() here because it
+        // internally SHA-512 hashes the bytes first (standard Ed25519 key expansion),
+        // which would double-hash the already-expanded scalar.
+        // Instead, we directly compute: public_key = key_left * B
+        use curve25519_dalek::{constants::ED25519_BASEPOINT_POINT, scalar::Scalar};
+        let scalar = Scalar::from_bytes_mod_order(self.key_left);
+        (ED25519_BASEPOINT_POINT * scalar).compress().to_bytes()
     }
 
     /// Convert to public key

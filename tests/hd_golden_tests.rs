@@ -245,3 +245,80 @@ fn test_full_wallet_address_generation() {
     let decoded = Address::from_bytes(&bytes).unwrap();
     assert_eq!(addr, decoded);
 }
+
+/// Regression test: verify that derive_public_key uses direct scalar multiplication,
+/// NOT ed25519_dalek's verifying_key() which internally SHA-512 hashes the secret.
+/// In BIP32-Ed25519, key_left IS the scalar, not a seed.
+#[test]
+fn test_hd_pk_derivation_method_correctness() {
+    use curve25519_dalek::constants::ED25519_BASEPOINT_POINT;
+    use curve25519_dalek::scalar::Scalar;
+
+    let seed = [42u8; 64];
+    let root = ExtendedPrivateKey::from_seed(&seed).unwrap();
+    let pub_key = root.to_public();
+
+    // The public key should be key_left * B (direct scalar multiplication)
+    let key_left = root.key_bytes();
+    let scalar = Scalar::from_bytes_mod_order(*key_left);
+    let expected_pk = (ED25519_BASEPOINT_POINT * scalar).compress().to_bytes();
+
+    assert_eq!(
+        pub_key.key_bytes(),
+        &expected_pk,
+        "derive_public_key must use direct scalar*B, not ed25519_dalek verifying_key()"
+    );
+}
+
+/// Golden test vectors for BIP32-Ed25519 derivation.
+///
+/// Seed: sequential 0x00..0x3f (64 bytes)
+/// Root key uses HMAC-SHA-512(key="ed25519 seed", data=seed) per Khovratovich & Law.
+/// Public keys are computed as kL * B (direct scalar basepoint multiplication).
+#[test]
+fn test_hd_golden_vectors_frozen() {
+    let seed = hex_decode(
+        "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f\
+         202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
+    );
+    let root = ExtendedPrivateKey::from_seed(&seed).unwrap();
+    let pub_root = root.to_public();
+
+    // Root key
+    assert_eq!(
+        hex::encode(root.key_bytes()),
+        "f8a8ea12b1e11426ae96a8b5d48117da3a6c29c468b1d4f789d099f540b4c96b"
+    );
+    assert_eq!(
+        hex::encode(root.key_right_bytes()),
+        "0e83b91693f715133f7370504cf081e7b2e29aa11c64ab476a8f555110cfe1b7"
+    );
+    assert_eq!(
+        hex::encode(root.chain_code().as_bytes()),
+        "001e4a1ef335e539690ca01c3db46f206c860c45a746f7bd7d38e9425add721e"
+    );
+    assert_eq!(
+        hex::encode(pub_root.key_bytes()),
+        "5c71a2606c9dd7ba3e2b5bb327fd69fad6498259aadd26bd529e0df1af058b7b"
+    );
+
+    // Hardened child m/1852'
+    let child_h = root.derive_child(1852 | 0x80000000).unwrap();
+    let pub_h = child_h.to_public();
+    assert_eq!(
+        hex::encode(child_h.key_bytes()),
+        "f06ecefd06981eb4ed0d46827b98cfe726ef4be2f5e27a286f85a33b44b4c96b"
+    );
+    assert_eq!(
+        hex::encode(pub_h.key_bytes()),
+        "7f99364d04eaf03e44408851eec4926fb3847b155cbe0938428c8f5aa6b173c5"
+    );
+
+    // Normal child m/1852'/0 (tests non-hardened derivation with public key)
+    let child_n = child_h.derive_child(0).unwrap();
+    let pub_n = child_n.to_public();
+    assert_eq!(
+        hex::encode(pub_n.key_bytes()),
+        "1df7f68ec6fee08537ca31b854e57a6cc13d9e60e2b5a1c77afbe6106f6ed0eb"
+    );
+}
