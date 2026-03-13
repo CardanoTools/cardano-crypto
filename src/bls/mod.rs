@@ -471,6 +471,14 @@ impl G1Point {
         }
         affine
     }
+
+    /// Tests equality of two G1 points.
+    ///
+    /// Corresponds to Plutus builtin `bls12_381_G1_equal`.
+    /// Compares via compressed serialization.
+    pub fn g1_equal(&self, other: &Self) -> bool {
+        self == other
+    }
 }
 
 impl PartialEq for G1Point {
@@ -615,6 +623,14 @@ impl G2Point {
             blst_p2_to_affine(&mut affine, &self.point);
         }
         affine
+    }
+
+    /// Tests equality of two G2 points.
+    ///
+    /// Corresponds to Plutus builtin `bls12_381_G2_equal`.
+    /// Compares via compressed serialization.
+    pub fn g2_equal(&self, other: &Self) -> bool {
+        self == other
     }
 }
 
@@ -865,10 +881,17 @@ impl core::fmt::Debug for PairingResult {
 /// | `bls12_381_G1_add` | [`g1_add`](Self::g1_add) |
 /// | `bls12_381_G1_neg` | [`g1_neg`](Self::g1_neg) |
 /// | `bls12_381_G1_scalarMul` | [`g1_scalar_mul`](Self::g1_scalar_mul) |
+/// | `bls12_381_G1_equal` | [`g1_equal`](Self::g1_equal) |
 /// | `bls12_381_G1_compress` | [`g1_compress`](Self::g1_compress) |
 /// | `bls12_381_G1_uncompress` | [`g1_uncompress`](Self::g1_uncompress) |
 /// | `bls12_381_G1_hashToGroup` | [`g1_hash_to_curve`](Self::g1_hash_to_curve) |
-/// | `bls12_381_G2_*` | `g2_*` methods |
+/// | `bls12_381_G2_add` | [`g2_add`](Self::g2_add) |
+/// | `bls12_381_G2_neg` | [`g2_neg`](Self::g2_neg) |
+/// | `bls12_381_G2_scalarMul` | [`g2_scalar_mul`](Self::g2_scalar_mul) |
+/// | `bls12_381_G2_equal` | [`g2_equal`](Self::g2_equal) |
+/// | `bls12_381_G2_compress` | [`g2_compress`](Self::g2_compress) |
+/// | `bls12_381_G2_uncompress` | [`g2_uncompress`](Self::g2_uncompress) |
+/// | `bls12_381_G2_hashToGroup` | [`g2_hash_to_curve`](Self::g2_hash_to_curve) |
 /// | `bls12_381_millerLoop` | [`miller_loop`](Self::miller_loop) |
 /// | `bls12_381_mulMlResult` | [`mul_ml_result`](Self::mul_ml_result) |
 /// | `bls12_381_finalVerify` | [`final_verify`](Self::final_verify) |
@@ -942,6 +965,13 @@ impl Bls12381 {
         p.mul(scalar)
     }
 
+    /// Tests equality of two G1 points.
+    ///
+    /// Corresponds to `bls12_381_G1_equal` in Plutus.
+    pub fn g1_equal(a: &G1Point, b: &G1Point) -> bool {
+        a.g1_equal(b)
+    }
+
     /// Checks if a G1 point equals the identity.
     ///
     /// Corresponds to checking against `bls12_381_G1_zero` in Plutus.
@@ -1009,6 +1039,13 @@ impl Bls12381 {
     /// Corresponds to `bls12_381_G2_scalarMul` in Plutus.
     pub fn g2_scalar_mul(scalar: &Scalar, p: &G2Point) -> G2Point {
         p.mul(scalar)
+    }
+
+    /// Tests equality of two G2 points.
+    ///
+    /// Corresponds to `bls12_381_G2_equal` in Plutus.
+    pub fn g2_equal(a: &G2Point, b: &G2Point) -> bool {
+        a.g2_equal(b)
     }
 
     /// Checks if a G2 point equals the identity.
