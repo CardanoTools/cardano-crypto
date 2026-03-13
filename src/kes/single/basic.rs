@@ -153,8 +153,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::vec;
     use crate::dsign::ed25519::Ed25519;
+    use alloc::vec;
 
     #[test]
     fn single_kes_only_supports_period_zero() {

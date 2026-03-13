@@ -828,8 +828,8 @@ impl CommonDsignAlgorithm for Ed25519 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::vec;
     use crate::dsign::DsignAlgorithm;
+    use alloc::vec;
 
     #[test]
     fn test_key_generation_deterministic() {

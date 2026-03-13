@@ -245,8 +245,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::vec;
     use crate::dsign::ed25519::Ed25519;
+    use alloc::vec;
 
     type CompactSingleEd25519 = CompactSingleKes<Ed25519>;
 
