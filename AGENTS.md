@@ -86,5 +86,5 @@ secp256k1 → dsign, alloc       plutus → secp256k1 + bls
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — design decisions, data flows, security model
 - [CONTRIBUTING.md](CONTRIBUTING.md) — PR workflow, commit conventions
-- [SECURITY.md](SECURITY.md) — vulnerability disclosure
+- Security & vulnerability reporting — use the repository’s GitHub “Security → Report a vulnerability” workflow
 - [CHANGELOG.md](CHANGELOG.md) — release history
