@@ -85,6 +85,27 @@ impl Fe25519 {
         Fe25519(result)
     }
 
+    /// Reduce a 64-byte little-endian integer modulo p = 2^255 - 19
+    ///
+    /// This matches libsodium's `fe25519_reduce64` used in `ge25519_from_hash`.
+    /// The 512-bit input is split into two 256-bit halves and reduced using
+    /// the identity 2^256 ≡ 38 (mod p):
+    ///
+    ///   result = lo + hi × 38 (mod p)
+    ///
+    /// where lo = bytes\[0..32\] and hi = bytes\[32..64\] as little-endian integers.
+    #[inline]
+    pub fn from_bytes_wide(bytes: &[u8; 64]) -> Self {
+        let lo: [u8; 32] = bytes[0..32].try_into().expect("slice is 32 bytes");
+        let hi: [u8; 32] = bytes[32..64].try_into().expect("slice is 32 bytes");
+
+        let fe_lo = Self::from_bytes(&lo);
+        let fe_hi = Self::from_bytes(&hi);
+        let fe_38 = Self(fiat_25519_tight_field_element([38, 0, 0, 0, 0]));
+
+        fe_lo.add(&fe_hi.mul(&fe_38))
+    }
+
     /// Convert to bytes (little-endian)
     #[inline]
     pub fn to_bytes(&self) -> [u8; 32] {

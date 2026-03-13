@@ -190,6 +190,51 @@ pub fn hash_to_curve_elligator2(uniform_bytes: &[u8; 32]) -> Option<EdwardsPoint
     elligator2_to_edwards(uniform_bytes)
 }
 
+/// Map a 64-byte hash to an Edwards curve point (Draft-13 variant)
+///
+/// This implements the `ge25519_from_hash` function from upstream libsodium,
+/// used for the VRF Draft-13 batch-compatible hash-to-curve pipeline.
+///
+/// Unlike [`elligator2_to_edwards`] (used for Draft-03), this function:
+/// - Takes a 64-byte input and reduces it mod p via `fe25519_reduce64`
+/// - Uses the Elligator2 `notsquare` flag for sign correction on Montgomery y
+///   (not input sign bit on Edwards x)
+///
+/// Upstream: `cardano-crypto-praos/cbits/private/ed25519_ref10.c` (`cardano_ge25519_from_hash`)
+pub fn ge25519_from_hash(h: &[u8; 64]) -> Option<EdwardsPoint> {
+    // Step 1: Reduce 64-byte LE integer mod p
+    let fe_f = Fe25519::from_bytes_wide(h);
+
+    // Step 2: Apply Elligator2 mapping
+    let (mont, notsquare) = elligator2(&fe_f);
+
+    // Step 3: Sign correction on Montgomery y using notsquare flag
+    //   y_sign = notsquare ^ 1
+    //   cmov(y, negy, is_negative(y) ^ y_sign)
+    //
+    // When gx1 IS a square (notsquare=0): y_sign=1, make y negative
+    // When gx1 NOT a square (notsquare=1): y_sign=0, make y non-negative
+    let y_sign = notsquare ^ Choice::from(1u8);
+    let mut y = mont.y;
+    let negy = y.neg();
+    let condition = y.is_negative() ^ y_sign;
+    y.cmov(&negy, condition);
+
+    // Step 4: Convert Montgomery to Edwards
+    let (xed, yed) = mont_to_ed(&MontgomeryPointInternal { x: mont.x, y });
+
+    // Step 5: Serialize to compressed Edwards point
+    let mut point_bytes = yed.to_bytes();
+    let xed_sign = bool::from(xed.is_negative()) as u8;
+    point_bytes[31] |= xed_sign << 7;
+
+    let compressed = CompressedEdwardsY(point_bytes);
+    let point = compressed.decompress()?;
+
+    // Step 6: Clear cofactor
+    Some(point.mul_by_cofactor())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

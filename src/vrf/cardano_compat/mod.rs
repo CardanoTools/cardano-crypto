@@ -35,7 +35,7 @@ pub mod prove;
 pub mod verify;
 
 // Re-export main API
-pub use elligator2::{elligator2_to_edwards, hash_to_curve_elligator2};
+pub use elligator2::{elligator2_to_edwards, ge25519_from_hash, hash_to_curve_elligator2};
 pub use point::{cardano_clear_cofactor, cardano_hash_to_curve, cardano_hash_to_curve_draft13};
 pub use prove::cardano_vrf_prove;
 pub use verify::cardano_vrf_verify;

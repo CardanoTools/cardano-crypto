@@ -36,8 +36,7 @@ use blst::{
     blst_p1_affine, blst_p1_cneg, blst_p1_compress, blst_p1_from_affine, blst_p1_mult,
     blst_p1_on_curve, blst_p1_to_affine, blst_p1_uncompress, blst_p2, blst_p2_add_or_double,
     blst_p2_affine, blst_p2_cneg, blst_p2_compress, blst_p2_from_affine, blst_p2_mult,
-    blst_p2_on_curve, blst_p2_to_affine, blst_p2_uncompress, blst_scalar,
-    blst_scalar_from_bendian,
+    blst_p2_on_curve, blst_p2_to_affine, blst_p2_uncompress, blst_scalar, blst_scalar_from_bendian,
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 

@@ -1,39 +1,34 @@
-//! VRF implementation following IETF draft-13 specification
+//! VRF implementation following IETF draft-13 specification (batch-compatible)
 //!
 //! Implements **ECVRF-ED25519-SHA512-ELL2** (Elligator2 hash-to-curve) as defined in
-//! [draft-irtf-cfrg-vrf-13](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-vrf-13).
-//! This variant produces 128-byte proofs and supports **batch verification** for improved
-//! performance when validating multiple proofs.
+//! [draft-irtf-cfrg-vrf-13](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-vrf-13)
+//! with the batch-compatible proof format used by Cardano (`PraosBatchCompatVRF`).
 //!
 //! # Specification Details
 //!
-//! - **Suite**: ECVRF-ED25519-SHA512-ELL2
+//! - **Suite**: ECVRF-ED25519-SHA512-ELL2 (suite byte 0x04)
 //! - **Curve**: Edwards25519 (Ed25519)
 //! - **Hash Function**: SHA-512
 //! - **Hash-to-Curve**: Elligator2 via XMD-SHA-512 (deterministic, uniform distribution)
-//! - **Proof Size**: 128 bytes (Gamma 32 + c 16 + s 32 + H-string 48 bytes)
+//! - **Proof Size**: 128 bytes (Gamma 32 + kB 32 + kH 32 + s 32)
 //! - **Public Key Size**: 32 bytes
 //! - **Secret Key Size**: 64 bytes (Ed25519 expanded key format)
 //! - **Output Size**: 64 bytes (SHA-512)
 //!
 //! # Differences from Draft-03
 //!
-//! | Feature | Draft-03 | Draft-13 |
-//! |---------|----------|----------|
+//! | Feature | Draft-03 | Draft-13 Batchcompat |
+//! |---------|----------|----------------------|
 //! | Proof Size | 80 bytes | 128 bytes |
-//! | Hash-to-Curve | Elligator2 (direct) | Elligator2 (XMD-SHA-512) |
-//! | Challenge Size | 16 bytes | 16 bytes |
+//! | Proof Layout | Gamma\|\|c\|\|s | Gamma\|\|kB\|\|kH\|\|s |
+//! | Hash-to-Curve | Elligator2 (direct) | Elligator2 (XMD-SHA-512, byte-reversed) |
 //! | Batch Verification | No | Yes |
-//! | Cardano Compatible | Yes | No |
 //!
-//! # When to Use
+//! # Upstream Reference
 //!
-//! Use this variant when:
-//! - You need batch verification (40-50% faster for multiple proofs)
-//! - Larger proof size (128 bytes) is acceptable
-//! - Uniform hash-to-curve distribution via Elligator2 is important
-//!
-//! For Cardano compatibility, use [`VrfDraft03`](crate::vrf::VrfDraft03).
+//! This implementation matches [`cardano-crypto-praos/cbits/vrf13_batchcompat/`](
+//! https://github.com/IntersectMBO/cardano-base/tree/master/cardano-crypto-praos/cbits/vrf13_batchcompat)
+//! byte-for-byte.
 //!
 //! # Examples
 //!
@@ -61,14 +56,6 @@
 //! # Ok(())
 //! # }
 //! ```
-//!
-//! # Performance
-//!
-//! Typical operation times on modern hardware:
-//! - Keypair generation: ~20μs
-//! - Proof generation: ~1.5ms
-//! - Proof verification: ~900μs
-//! - Batch verification (4 proofs): ~2.5ms (vs 3.6ms individual)
 
 use curve25519_dalek::{constants::ED25519_BASEPOINT_POINT, scalar::Scalar};
 use sha2::{Digest, Sha512};
@@ -79,21 +66,18 @@ use crate::common::{
 };
 use crate::vrf::cardano_compat::{cardano_clear_cofactor, cardano_hash_to_curve_draft13};
 
-/// VRF proof size for draft-13: 128 bytes (batch-compatible)
+/// Zero byte for trailing domain separation
+const ZERO: u8 = 0x00;
+
+/// VRF proof size for draft-13 batchcompat: 128 bytes
 ///
-/// Structure: Gamma (32 bytes) || c (16 bytes) || s (32 bytes) || H-string (48 bytes)
+/// Structure: Gamma (32 bytes) || kB (32 bytes) || kH (32 bytes) || s (32 bytes)
 /// - Gamma: VRF output point
-/// - c: Challenge scalar (truncated to 16 bytes for compatibility)
-/// - s: Response scalar
-/// - H-string: Hash-to-curve output string (needed for batch verification)
+/// - kB: k*B commitment (enables batch verification)
+/// - kH: k*H commitment (enables batch verification)
+/// - s: Response scalar (s = c*x + k mod L)
 ///
-/// # Example
-///
-/// ```
-/// use cardano_crypto::vrf::draft13::PROOF_SIZE;
-///
-/// assert_eq!(PROOF_SIZE, 128);
-/// ```
+/// Upstream: `cardano-crypto-praos/cbits/vrf13_batchcompat/prove.c`
 pub const PROOF_SIZE: usize = 128;
 
 /// Ed25519 public key size: 32 bytes
@@ -142,65 +126,42 @@ pub const SEED_SIZE: usize = 32;
 /// ```
 pub const OUTPUT_SIZE: usize = 64;
 
-/// VRF Draft-13 batch-compatible implementation
+/// VRF Draft-13 batch-compatible implementation (PraosBatchCompatVRF)
 ///
 /// Zero-sized type providing static methods for VRF operations following
-/// the draft-13 specification with Try-And-Increment hash-to-curve.
+/// the draft-13 specification with the batch-compatible proof format.
 ///
-/// This variant produces larger proofs (128 bytes vs 80 bytes) but enables
-/// efficient batch verification when validating multiple proofs together.
-///
-/// # Examples
-///
-/// ```rust
-/// use cardano_crypto::vrf::VrfDraft13;
-///
-/// let seed = [0u8; 32];
-/// let (sk, pk) = VrfDraft13::keypair_from_seed(&seed);
-/// ```
+/// Upstream: [`cardano-crypto-praos/cbits/vrf13_batchcompat/`](
+/// https://github.com/IntersectMBO/cardano-base/tree/master/cardano-crypto-praos/cbits/vrf13_batchcompat)
 #[derive(Clone, Debug)]
 pub struct VrfDraft13;
 
 impl VrfDraft13 {
     /// Generates a batch-compatible VRF proof using draft-13 specification
     ///
-    /// Produces a 128-byte proof that includes the hash-to-curve output string,
-    /// enabling batch verification. Uses Try-And-Increment for deterministic
-    /// and uniformly distributed hash-to-curve mapping.
+    /// Produces a 128-byte proof in the batchcompat format: Gamma || kB || kH || s.
+    /// This stores the commitment points kB and kH directly in the proof,
+    /// enabling efficient batch verification.
     ///
     /// # Arguments
     ///
-    /// * `secret_key` - 64-byte Ed25519 expanded secret key
+    /// * `secret_key` - 64-byte Ed25519 secret key (seed || public_key)
     /// * `message` - Arbitrary-length message to prove
     ///
     /// # Returns
     ///
-    /// 128-byte proof containing (Gamma || c || s || H-string)
+    /// 128-byte proof containing (Gamma || kB || kH || s)
     ///
     /// # Errors
     ///
-    /// Returns error if:
-    /// - Secret key is malformed
-    /// - Hash-to-curve operation fails
+    /// Returns error if the secret key is malformed or hash-to-curve fails.
     ///
-    /// # Examples
+    /// # Upstream
     ///
-    /// ```rust
-    /// use cardano_crypto::vrf::VrfDraft13;
-    /// use cardano_crypto::common::Result;
-    ///
-    /// # fn main() -> Result<()> {
-    /// let seed = [5u8; 32];
-    /// let (secret_key, _) = VrfDraft13::keypair_from_seed(&seed);
-    ///
-    /// let message = b"batch_proof_example";
-    /// let proof = VrfDraft13::prove(&secret_key, message)?;
-    /// assert_eq!(proof.len(), 128);
-    /// # Ok(())
-    /// # }
-    /// ```
+    /// Matches `crypto_vrf_ietfdraft13_prove_batchcompat` in
+    /// `cardano-crypto-praos/cbits/vrf13_batchcompat/prove.c`
     pub fn prove(secret_key: &[u8; SECRET_KEY_SIZE], message: &[u8]) -> Result<[u8; PROOF_SIZE]> {
-        // Step 1: Expand secret key
+        // Step 1: Expand secret key via SHA-512
         let mut az = Zeroizing::new([0u8; 64]);
         let mut hasher = Sha512::new();
         hasher.update(&secret_key[0..32]);
@@ -222,14 +183,16 @@ impl VrfDraft13 {
 
         let pk = &secret_key[32..64];
 
-        // Step 3: Hash to curve
+        // Step 3: Hash to curve → H point and its 32-byte compressed form (h_string)
         let (h_point, h_string) = cardano_hash_to_curve_draft13(pk, message)?;
 
         // Step 4: Compute Gamma = x * H
         let gamma = h_point * x;
         let gamma_bytes = point_to_bytes(&gamma);
 
-        // Step 5: Compute nonce k
+        // Step 5: Compute nonce k = SHA-512(az[32..64] || H_string) reduced as scalar
+        // Upstream: nonce is derived from the second half of expanded key and the
+        // 32-byte compressed hash-to-curve point
         let mut nonce_hasher = Sha512::new();
         nonce_hasher.update(&az[32..64]);
         nonce_hasher.update(h_string);
@@ -237,13 +200,13 @@ impl VrfDraft13 {
         let nonce_hash_bytes: [u8; 64] = nonce_hash.into();
         let k = Scalar::from_bytes_mod_order_wide(&nonce_hash_bytes);
 
-        // Step 6: Compute k*B and k*H
+        // Step 6: Compute commitment points kB and kH
         let k_b = ED25519_BASEPOINT_POINT * k;
         let k_h = h_point * k;
         let k_b_bytes = point_to_bytes(&k_b);
         let k_h_bytes = point_to_bytes(&k_h);
 
-        // Step 7: Compute challenge c
+        // Step 7: Compute challenge c = SHA-512(SUITE || TWO || pk || H_string || Gamma || kB || kH || ZERO)[0..16]
         let mut c_hasher = Sha512::new();
         c_hasher.update([SUITE_DRAFT13]);
         c_hasher.update([TWO]);
@@ -252,35 +215,36 @@ impl VrfDraft13 {
         c_hasher.update(gamma_bytes);
         c_hasher.update(k_b_bytes);
         c_hasher.update(k_h_bytes);
-        c_hasher.update([0x00]);
+        c_hasher.update([ZERO]);
         let c_hash = c_hasher.finalize();
-        let c_bytes_short: [u8; 16] = c_hash[0..16]
-            .try_into()
-            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
 
-        let mut c_bytes = [0u8; 32];
-        c_bytes[0..16].copy_from_slice(&c_bytes_short);
-        let c = Scalar::from_bytes_mod_order(c_bytes);
+        let mut c_scalar_bytes = [0u8; 32];
+        c_scalar_bytes[0..16].copy_from_slice(&c_hash[0..16]);
+        let c = Scalar::from_bytes_mod_order(c_scalar_bytes);
 
-        // Step 8: Compute s = k + c*x mod L
-        let s = k + (c * x);
+        // Step 8: Compute s = c*x + k mod L (sc25519_muladd)
+        let s = (c * x) + k;
         let s_bytes = s.to_bytes();
 
-        // Step 9: Construct proof (128 bytes)
+        // Step 9: Construct batchcompat proof: Gamma(32) || kB(32) || kH(32) || s(32)
         let mut proof = [0u8; PROOF_SIZE];
         proof[0..32].copy_from_slice(&gamma_bytes);
-        proof[32..48].copy_from_slice(&c_bytes_short);
-        proof[48..80].copy_from_slice(&s_bytes);
-        proof[80..128].copy_from_slice(&h_string);
+        proof[32..64].copy_from_slice(&k_b_bytes);
+        proof[64..96].copy_from_slice(&k_h_bytes);
+        proof[96..128].copy_from_slice(&s_bytes);
 
         Ok(proof)
     }
 
-    /// Verify a VRF proof and return the output
+    /// Verify a batch-compatible VRF proof and return the output
+    ///
+    /// Verifies the proof by recomputing the challenge from the stored
+    /// commitment points (kB, kH) and checking that the algebraic
+    /// relations s*B - c*Y == kB and s*H - c*Gamma == kH hold.
     ///
     /// # Arguments
     /// * `public_key` - 32-byte public key
-    /// * `proof` - 128-byte proof
+    /// * `proof` - 128-byte batchcompat proof (Gamma || kB || kH || s)
     /// * `message` - Message that was proven
     ///
     /// # Returns
@@ -289,120 +253,127 @@ impl VrfDraft13 {
     /// # Errors
     ///
     /// Returns error if proof verification fails
+    ///
+    /// # Upstream
+    ///
+    /// Matches `crypto_vrf_ietfdraft13_verify_batchcompat` in
+    /// `cardano-crypto-praos/cbits/vrf13_batchcompat/verify.c`
     pub fn verify(
         public_key: &[u8; PUBLIC_KEY_SIZE],
         proof: &[u8; PROOF_SIZE],
         message: &[u8],
     ) -> Result<[u8; OUTPUT_SIZE]> {
-        // Parse proof components
-        let gamma_bytes: [u8; 32] = proof[0..32]
+        // Upstream: check small-order and canonical before decompressing pk
+        let y_point = bytes_to_point(public_key)?;
+
+        // Parse proof: Gamma(32) || U_proof(32) || V_proof(32) || s(32)
+        let gamma = bytes_to_point(&proof[0..32].try_into().map_err(|_| {
+            crate::common::error::CryptoError::InvalidProof
+        })?)?;
+
+        let u_proof: [u8; 32] = proof[32..64]
             .try_into()
             .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
-        let c_bytes_short: [u8; 16] = proof[32..48]
-            .try_into()
-            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
-        let s_bytes: [u8; 32] = proof[48..80]
-            .try_into()
-            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
-        let h_string: [u8; 48] = proof[80..128]
+        let v_proof: [u8; 32] = proof[64..96]
             .try_into()
             .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
 
-        // Decode points and scalars
-        let gamma = bytes_to_point(&gamma_bytes)?;
-        let y_point = bytes_to_point(public_key)?;
+        let s_bytes: [u8; 32] = proof[96..128]
+            .try_into()
+            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
+
+        // Upstream: check s is canonical scalar (< L)
+        // s[31] & 0xF0 being nonzero is a quick pre-check
+        if s_bytes[31] & 0xF0 != 0 {
+            // Could still be canonical, but upstream checks sc25519_is_canonical
+            // For safety, reject if the high nibble is set and the scalar is non-canonical
+            let s_check = Scalar::from_canonical_bytes(s_bytes);
+            if s_check.is_none().into() {
+                return Err(crate::common::error::CryptoError::InvalidProof);
+            }
+        }
         let s = Scalar::from_bytes_mod_order(s_bytes);
 
-        let mut c_bytes = [0u8; 32];
-        c_bytes[0..16].copy_from_slice(&c_bytes_short);
-        let c = Scalar::from_bytes_mod_order(c_bytes);
+        // Hash to curve: recompute H from pk || message
+        let (h_point, h_string) = cardano_hash_to_curve_draft13(public_key, message)?;
 
-        // Hash to curve
-        let (h_point, expected_h_string) = cardano_hash_to_curve_draft13(public_key, message)?;
-
-        // Verify H-string matches
-        if h_string != expected_h_string {
-            return Err(crate::common::error::CryptoError::VerificationFailed);
-        }
-
-        // Verify equations using batch scalar multiplication
-        let neg_c = -c;
-
-        // Compute k*B = s*B + (-c)*Y
-        let k_b = (ED25519_BASEPOINT_POINT * s) + (y_point * neg_c);
-
-        // Compute k*H = s*H + (-c)*Gamma
-        let k_h = (h_point * s) + (gamma * neg_c);
-
-        let k_b_bytes = point_to_bytes(&k_b);
-        let k_h_bytes = point_to_bytes(&k_h);
-
-        // Recompute challenge
+        // Recompute challenge c from proof contents:
+        // c = SHA-512(SUITE || TWO || pk || H_string || Gamma || U_proof || V_proof || ZERO)[0..16]
         let mut c_hasher = Sha512::new();
         c_hasher.update([SUITE_DRAFT13]);
         c_hasher.update([TWO]);
         c_hasher.update(public_key);
         c_hasher.update(h_string);
-        c_hasher.update(gamma_bytes);
-        c_hasher.update(k_b_bytes);
-        c_hasher.update(k_h_bytes);
-        c_hasher.update([0x00]);
+        c_hasher.update(point_to_bytes(&gamma));
+        c_hasher.update(u_proof);
+        c_hasher.update(v_proof);
+        c_hasher.update([ZERO]);
         let c_hash = c_hasher.finalize();
-        let recomputed_c_bytes: [u8; 16] = c_hash[0..16]
-            .try_into()
-            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
 
-        // Verify challenge matches using constant-time comparison
-        if !bool::from(subtle::ConstantTimeEq::ct_eq(
-            &c_bytes_short[..],
-            &recomputed_c_bytes[..],
-        )) {
+        let mut c_scalar_bytes = [0u8; 32];
+        c_scalar_bytes[0..16].copy_from_slice(&c_hash[0..16]);
+        let c = Scalar::from_bytes_mod_order(c_scalar_bytes);
+        let neg_c = -c;
+
+        // Recompute U' = s*B + (-c)*Y  (should equal kB from proof)
+        let u_recomputed = (ED25519_BASEPOINT_POINT * s) + (y_point * neg_c);
+        let u_recomputed_bytes = point_to_bytes(&u_recomputed);
+
+        // Recompute V' = s*H + (-c)*Gamma  (should equal kH from proof)
+        let v_recomputed = (h_point * s) + (gamma * neg_c);
+        let v_recomputed_bytes = point_to_bytes(&v_recomputed);
+
+        // Verify: U' == U_proof AND V' == V_proof (byte-by-byte)
+        let u_match = subtle::ConstantTimeEq::ct_eq(&u_recomputed_bytes[..], &u_proof[..]);
+        let v_match = subtle::ConstantTimeEq::ct_eq(&v_recomputed_bytes[..], &v_proof[..]);
+
+        if !bool::from(u_match & v_match) {
             return Err(crate::common::error::CryptoError::VerificationFailed);
         }
 
-        // Compute VRF output
-        let gamma_cleared = cardano_clear_cofactor(&gamma);
-        let mut output_hasher = Sha512::new();
-        output_hasher.update([SUITE_DRAFT13]);
-        output_hasher.update([THREE]);
-        output_hasher.update(point_to_bytes(&gamma_cleared));
-        let output_hash = output_hasher.finalize();
-
-        let mut output = [0u8; OUTPUT_SIZE];
-        output.copy_from_slice(&output_hash);
-        Ok(output)
+        // Compute VRF output: SHA-512(SUITE || THREE || cofactor_cleared(Gamma) || ZERO)
+        Self::proof_to_hash(proof)
     }
 
     /// Convert a proof to VRF output hash without verification
     ///
     /// Extracts the VRF output from a proof **without verifying** its validity.
-    /// This is useful when the proof has already been verified or when you need
-    /// to extract the hash for other purposes.
+    /// This is useful when the proof has already been verified.
     ///
-    /// ⚠️ **WARNING**: This function does NOT verify the proof's authenticity.
+    /// **WARNING**: This function does NOT verify the proof's authenticity.
     /// Use [`verify`](Self::verify) if you need cryptographic assurance.
     ///
-    /// # Arguments
-    /// * `proof` - 128-byte proof
+    /// # Upstream
     ///
-    /// # Returns
-    /// 64-byte VRF output
-    ///
-    /// # Errors
-    ///
-    /// Returns error if the proof is malformed
+    /// Matches `crypto_vrf_ietfdraft13_proof_to_hash_batchcompat` in
+    /// `cardano-crypto-praos/cbits/vrf13_batchcompat/verify.c`
     pub fn proof_to_hash(proof: &[u8; PROOF_SIZE]) -> Result<[u8; OUTPUT_SIZE]> {
         let gamma_bytes: [u8; 32] = proof[0..32]
             .try_into()
             .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
 
         let gamma = bytes_to_point(&gamma_bytes)?;
+
+        // Upstream checks sc25519_is_canonical on s (last 32 bytes of proof)
+        let s_bytes: [u8; 32] = proof[96..128]
+            .try_into()
+            .map_err(|_| crate::common::error::CryptoError::InvalidProof)?;
+        if s_bytes[31] & 0xF0 != 0 {
+            let s_check = Scalar::from_canonical_bytes(s_bytes);
+            if s_check.is_none().into() {
+                return Err(crate::common::error::CryptoError::InvalidProof);
+            }
+        }
+
         let gamma_cleared = cardano_clear_cofactor(&gamma);
 
+        // SHA-512(SUITE || THREE || cofactor_cleared(Gamma) || ZERO)
+        // Note: trailing ZERO byte is required per upstream
         let mut hasher = Sha512::new();
         hasher.update([SUITE_DRAFT13]);
         hasher.update([THREE]);
         hasher.update(point_to_bytes(&gamma_cleared));
+        hasher.update([ZERO]);
         let hash = hasher.finalize();
 
         let mut output = [0u8; OUTPUT_SIZE];

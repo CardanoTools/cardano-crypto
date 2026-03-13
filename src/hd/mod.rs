@@ -142,13 +142,12 @@ impl ExtendedPrivateKey {
         key_left[31] |= 0x40;
 
         // Derive chain code from a second HMAC pass
-        let mut cc_mac =
-            Hmac::<Sha512>::new_from_slice(b"ed25519 seed").map_err(|_| {
-                crate::common::error::CryptoError::InvalidKeyLength {
-                    expected: 12,
-                    got: 0,
-                }
-            })?;
+        let mut cc_mac = Hmac::<Sha512>::new_from_slice(b"ed25519 seed").map_err(|_| {
+            crate::common::error::CryptoError::InvalidKeyLength {
+                expected: 12,
+                got: 0,
+            }
+        })?;
         cc_mac.update(&[0x01]);
         cc_mac.update(seed);
         let cc_hash = cc_mac.finalize().into_bytes();
@@ -214,12 +213,13 @@ impl ExtendedPrivateKey {
         }
         z_data.extend_from_slice(&index_le);
 
-        let mut z_mac = Hmac::<Sha512>::new_from_slice(self.chain_code.as_bytes()).map_err(
-            |_| crate::common::error::CryptoError::InvalidKeyLength {
-                expected: CHAIN_CODE_SIZE,
-                got: 0,
-            },
-        )?;
+        let mut z_mac =
+            Hmac::<Sha512>::new_from_slice(self.chain_code.as_bytes()).map_err(|_| {
+                crate::common::error::CryptoError::InvalidKeyLength {
+                    expected: CHAIN_CODE_SIZE,
+                    got: 0,
+                }
+            })?;
         z_mac.update(&z_data);
         let z = z_mac.finalize().into_bytes();
 
@@ -236,12 +236,13 @@ impl ExtendedPrivateKey {
         }
         cc_data.extend_from_slice(&index_le);
 
-        let mut cc_mac = Hmac::<Sha512>::new_from_slice(self.chain_code.as_bytes()).map_err(
-            |_| crate::common::error::CryptoError::InvalidKeyLength {
-                expected: CHAIN_CODE_SIZE,
-                got: 0,
-            },
-        )?;
+        let mut cc_mac =
+            Hmac::<Sha512>::new_from_slice(self.chain_code.as_bytes()).map_err(|_| {
+                crate::common::error::CryptoError::InvalidKeyLength {
+                    expected: CHAIN_CODE_SIZE,
+                    got: 0,
+                }
+            })?;
         cc_mac.update(&cc_data);
         let cc_hash = cc_mac.finalize().into_bytes();
 

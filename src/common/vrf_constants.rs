@@ -21,7 +21,7 @@
 //! ```rust
 //! use cardano_crypto::common::vrf_constants::{SUITE_DRAFT03, SUITE_DRAFT13, ONE, TWO, THREE};
 //! assert_eq!(SUITE_DRAFT03, 0x04);
-//! assert_eq!(SUITE_DRAFT13, 0x03);
+//! assert_eq!(SUITE_DRAFT13, 0x04);
 //! assert_eq!(ONE, 0x01);
 //! assert_eq!(TWO, 0x02);
 //! assert_eq!(THREE, 0x03);
@@ -45,23 +45,21 @@
 /// - Praos consensus protocol
 pub const SUITE_DRAFT03: u8 = 0x04;
 
-/// Suite identifier for IETF VRF Draft-13
+/// Suite identifier for IETF VRF Draft-13 (batch-compatible)
 ///
-/// Value: `0x03`
+/// Value: `0x04`
 ///
 /// Full name: **ECVRF-ED25519-SHA512-ELL2**
 ///
-/// This suite uses:
-/// - Curve: Edwards25519 (Ed25519)
-/// - Hash: SHA-512
-/// - Hash-to-curve: Elligator2 via XMD-SHA-512 (deterministic, uniform)
-/// - Proof size: 128 bytes (includes H-string for batch verification)
+/// Both Draft-03 and Draft-13 use the same suite byte `0x04` because they
+/// both use the ECVRF-ED25519-SHA512-ELL2 ciphersuite. The difference is in
+/// the proof format (80 vs 128 bytes) and verification method, not the suite.
 ///
-/// This variant provides:
-/// - Batch verification support
-/// - Uniform hash-to-curve distribution
-/// - Compatibility with RFC 9381 (newer standard)
-pub const SUITE_DRAFT13: u8 = 0x03;
+/// Upstream reference: `cardano-crypto-praos/cbits/crypto_vrf.h`
+/// ```c
+/// static const unsigned char SUITE = 0x04;
+/// ```
+pub const SUITE_DRAFT13: u8 = 0x04;
 
 /// Domain separation constant: Hash-to-curve operation
 ///
