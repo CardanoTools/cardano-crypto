@@ -216,8 +216,8 @@ When extracting code from cardano-base-rust:
 
 ### Rust Guidelines
 
-- **Edition:** Rust 2021
-- **MSRV:** 1.81+
+- **Edition:** Rust 2024
+- **MSRV:** 1.85+
 - **Style:** `rustfmt` with default settings
 - **Lints:** All Clippy warnings must be resolved
 
@@ -311,8 +311,8 @@ just bench
 
 5. **Create Release:**
    ```bash
-   git tag -a v1.2.0 -m "Release v1.2.0"
-   git push origin v1.2.0
+   git tag -a v1.1.0 -m "Release v1.1.0"
+   git push origin v1.1.0
    ```
 
 6. **Automated Steps:**

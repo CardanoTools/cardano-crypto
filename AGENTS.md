@@ -1,6 +1,6 @@
 # cardano-crypto — AI Assistant Guide
 
-> **Version:** 1.2.0 | **MSRV:** 1.85 | **Edition:** 2024 | **License:** MIT OR Apache-2.0
+> **Version:** 1.1.0 | **MSRV:** 1.85 | **Edition:** 2024 | **License:** MIT OR Apache-2.0
 
 Pure Rust implementation of Cardano cryptographic primitives with 100% binary compatibility with [IntersectMBO/cardano-base](https://github.com/IntersectMBO/cardano-base).
 

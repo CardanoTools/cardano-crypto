@@ -39,6 +39,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - IntersectMBO parity research audit complete (see `PARITY_IMPLEMENTATION_PLAN.md`)
 
 ### Changed
+- **BREAKING**: `DsignAlgorithm::gen_key()` now returns `Result<Self::SigningKey>` instead of `Self::SigningKey`
+  - Callers must handle the `Result` (e.g., `gen_key(seed)?`)
+  - Aligns with error handling patterns across all cryptographic operations
+- **BREAKING**: `SecureSeed::from_bytes()` now returns `Result<Self>` instead of `Self`
+  - Validates input length before constructing the seed
+  - Prevents silent misuse with wrong-sized inputs
 - Added `#[inline]` attributes to hot-path functions for micro-optimizations
 - Updated Cargo.toml with benchmark harness configuration
 - Updated error types to include `OCertError` variant
