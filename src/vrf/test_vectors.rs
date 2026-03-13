@@ -25,6 +25,7 @@
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use crate::common::Result;
     use crate::vrf::{VrfDraft03, VrfDraft13};
 

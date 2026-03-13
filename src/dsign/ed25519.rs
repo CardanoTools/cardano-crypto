@@ -828,6 +828,7 @@ impl CommonDsignAlgorithm for Ed25519 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::vec;
     use crate::dsign::DsignAlgorithm;
 
     #[test]
@@ -977,6 +978,9 @@ mod tests {
 // Helper for hex encoding in tests
 #[cfg(test)]
 mod hex {
+    use alloc::format;
+    use alloc::string::String;
+
     #[allow(dead_code)]
     pub(crate) fn encode(bytes: &[u8]) -> String {
         bytes.iter().map(|b| format!("{:02x}", b)).collect()

@@ -13,6 +13,7 @@
 //! # Examples
 //!
 //! ```rust
+//! # #[cfg(feature = "hash")] {
 //! use cardano_crypto::common::{hash_sha512, zeroize};
 //!
 //! let data = b"example";
@@ -22,6 +23,7 @@
 //! let mut secret = [0x55u8; 8];
 //! zeroize(&mut secret);
 //! assert_eq!(secret, [0u8; 8]);
+//! # }
 //! ```
 
 pub mod error;
