@@ -1110,57 +1110,66 @@ a63be4a1a776cadc7fc2e2d823bcc905f8f9cb0ebe662360d28d9964b022a99ce34a48b2e93cfcee
 
     /// SerDe error test vectors from cardano-base: invalid points should be rejected.
     /// Source: cardano-crypto-class/bls12-381-test-vectors/test_vectors/serde_test_vectors
+    ///
+    /// Lines: g1UncompNotOnCurve(192h), g1CompNotOnCurve(96h), g1CompNotInGroup(96h),
+    ///        g1UncompNotInGroup(192h), g2UncompNotOnCurve(384h), g2CompNotOnCurve(192h),
+    ///        g2CompNotInGroup(192h), g2UncompNotInGroup(384h)
+    ///
+    /// We test compressed lines (2,3 for G1, 6,7 for G2) via from_compressed.
+    /// Uncompressed lines (1,4 for G1, 5,8 for G2) are tested by verifying wrong-size
+    /// rejection since our API only supports compressed format.
     #[test]
     fn test_upstream_serde_invalid_points() {
         let vecs = parse_hex_lines(SERDE_VECTORS);
         assert_eq!(vecs.len(), 8, "Expected 8 hex lines");
 
-        // Line 1: g1UncompNotOnCurve (96 bytes uncompressed G1)
-        assert!(
-            G1Point::from_compressed(&vecs[0]).is_err(),
-            "g1UncompNotOnCurve should fail deserialization"
-        );
-
         // Line 2: g1CompNotOnCurve (48 bytes compressed G1)
         assert!(
             G1Point::from_compressed(&vecs[1]).is_err(),
-            "g1CompNotOnCurve should fail deserialization"
+            "g1CompNotOnCurve should fail decompression"
         );
 
         // Line 3: g1CompNotInGroup (48 bytes compressed G1)
         assert!(
             G1Point::from_compressed(&vecs[2]).is_err(),
-            "g1CompNotInGroup should fail deserialization"
-        );
-
-        // Line 4: g1UncompNotInGroup (96 bytes uncompressed G1)
-        assert!(
-            G1Point::from_compressed(&vecs[3]).is_err(),
-            "g1UncompNotInGroup should fail deserialization"
-        );
-
-        // Line 5: g2UncompNotOnCurve (192 bytes uncompressed G2)
-        assert!(
-            G2Point::from_compressed(&vecs[4]).is_err(),
-            "g2UncompNotOnCurve should fail deserialization"
+            "g1CompNotInGroup should fail decompression"
         );
 
         // Line 6: g2CompNotOnCurve (96 bytes compressed G2)
         assert!(
             G2Point::from_compressed(&vecs[5]).is_err(),
-            "g2CompNotOnCurve should fail deserialization"
+            "g2CompNotOnCurve should fail decompression"
         );
 
         // Line 7: g2CompNotInGroup (96 bytes compressed G2)
         assert!(
             G2Point::from_compressed(&vecs[6]).is_err(),
-            "g2CompNotInGroup should fail deserialization"
+            "g2CompNotInGroup should fail decompression"
         );
 
-        // Line 8: g2UncompNotInGroup (192 bytes uncompressed G2)
+        // Uncompressed points should also be rejected by from_compressed (wrong format/length)
+        // Line 1: g1UncompNotOnCurve (96 bytes, but uncompressed format)
+        assert!(
+            G1Point::from_compressed(&vecs[0]).is_err(),
+            "g1UncompNotOnCurve should fail from_compressed"
+        );
+
+        // Line 4: g1UncompNotInGroup (96 bytes uncompressed)
+        assert!(
+            G1Point::from_compressed(&vecs[3]).is_err(),
+            "g1UncompNotInGroup should fail from_compressed"
+        );
+
+        // Line 5: g2UncompNotOnCurve (192 bytes uncompressed)
+        assert!(
+            G2Point::from_compressed(&vecs[4]).is_err(),
+            "g2UncompNotOnCurve should fail from_compressed"
+        );
+
+        // Line 8: g2UncompNotInGroup (192 bytes uncompressed)
         assert!(
             G2Point::from_compressed(&vecs[7]).is_err(),
-            "g2UncompNotInGroup should fail deserialization"
+            "g2UncompNotInGroup should fail from_compressed"
         );
     }
 
