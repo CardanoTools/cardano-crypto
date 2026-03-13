@@ -24,6 +24,7 @@
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
     use crate::common::Result;
     use crate::dsign::Ed25519;
     use crate::kes::{KesAlgorithm, SingleKes, Sum2Kes, Sum6Kes};

@@ -973,6 +973,7 @@ impl FromCbor for Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::vec;
 
     #[test]
     fn test_cbor_encode_decode_short() {

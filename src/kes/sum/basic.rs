@@ -457,6 +457,7 @@ pub type Sum7Kes = SumKes<Sum6Kes, Blake2b256>;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::{format, vec};
 
     #[test]
     fn sum1_total_periods() {
