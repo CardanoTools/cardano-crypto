@@ -64,7 +64,7 @@ jobs:
           RUSTDOCFLAGS: "-D warnings --cfg docsrs"
 
       - name: Check for broken links
-        uses: lycheeverse/lychee-action@v1
+        uses: lycheeverse/lychee-action@v2
         with:
           args: '--verbose --no-progress ./target/doc/**/*.html --exclude-path target/doc/src'
           fail: false
