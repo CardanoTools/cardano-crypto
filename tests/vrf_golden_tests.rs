@@ -179,6 +179,155 @@ fn test_vrf_draft03_ietf_vector_12() -> Result<()> {
 }
 
 // ============================================================================
+// VRF Draft-03 Cardano Generated Test Vectors
+// ============================================================================
+// These vectors are from IntersectMBO/cardano-base cardano-crypto-praos test suite.
+// Source: cardano-crypto-praos/test_vectors/vrf_ver03_generated_*
+
+/// Draft-03 generated test vector 1: all-zero seed, single zero byte
+#[test]
+fn test_vrf_draft03_generated_1() -> Result<()> {
+    let sk_seed = hex_decode("0000000000000000000000000000000000000000000000000000000000000000");
+    let expected_pk = hex_decode("3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29");
+    let alpha = hex_decode("00");
+    let expected_pi = hex_decode(
+        "000f006e64c91f84212919fe0899970cd341206fc081fe599339c8492e2cea329\
+         9ae9de4b6ce21cda0a975f65f45b70f82b3952ba6d0dbe11a06716e67aca233c\
+         0d78f115a655aa1952ada9f3d692a0a",
+    );
+    let expected_beta = hex_decode(
+        "9930b5dddc0938f01cf6f9746eded569ee676bd6ff3b4f19233d74b903ec53a4\
+         5c5728116088b7c622b6d6c354f7125c7d09870b56ec6f1e4bf4970f607e04b2",
+    );
+
+    let seed: [u8; 32] = sk_seed.try_into().expect("seed must be 32 bytes");
+    let (sk, pk) = VrfDraft03::keypair_from_seed(&seed);
+    assert_eq!(&pk[..], &expected_pk[..], "Public key mismatch");
+
+    let proof = VrfDraft03::prove(&sk, &alpha)?;
+    assert_eq!(
+        &proof[..],
+        &expected_pi[..],
+        "Proof mismatch for draft03 generated_1.\nExpected: {}\nGot:      {}",
+        hex_encode(&expected_pi),
+        hex_encode(&proof)
+    );
+
+    let beta = VrfDraft03::verify(&pk, &proof, &alpha)?;
+    assert_eq!(&beta[..], &expected_beta[..], "Output (beta) mismatch");
+
+    let beta2 = VrfDraft03::proof_to_hash(&proof)?;
+    assert_eq!(beta, beta2, "proof_to_hash should match verify output");
+
+    Ok(())
+}
+
+/// Draft-03 generated test vector 2: all-zero seed, 10-byte alpha
+#[test]
+fn test_vrf_draft03_generated_2() -> Result<()> {
+    let sk_seed = hex_decode("0000000000000000000000000000000000000000000000000000000000000000");
+    let expected_pk = hex_decode("3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29");
+    let alpha = hex_decode("00010203040506070809");
+    let expected_pi = hex_decode(
+        "0031f929352875995e3d55c4abdac7bfb92e706beb182999dd7d78f61e1bdc3f\
+         83b746a9ae6caee317a7c47597ece1801799c06ca2180cdb5392677cd8815353\
+         c1d0d5691956b3be52b322be049fc20c",
+    );
+    let expected_beta = hex_decode(
+        "ca4171883d173a3f03bdb87c45ce349f0bb168ca8171d64f9b9aeaf20d0869ba\
+         b9f74e819ccdc6754656468ccc2aa85e5f903a31375a39be84464fa515b51512",
+    );
+
+    let seed: [u8; 32] = sk_seed.try_into().expect("seed must be 32 bytes");
+    let (sk, pk) = VrfDraft03::keypair_from_seed(&seed);
+    assert_eq!(&pk[..], &expected_pk[..], "Public key mismatch");
+
+    let proof = VrfDraft03::prove(&sk, &alpha)?;
+    assert_eq!(
+        &proof[..],
+        &expected_pi[..],
+        "Proof mismatch for draft03 generated_2.\nExpected: {}\nGot:      {}",
+        hex_encode(&expected_pi),
+        hex_encode(&proof)
+    );
+
+    let beta = VrfDraft03::verify(&pk, &proof, &alpha)?;
+    assert_eq!(&beta[..], &expected_beta[..], "Output (beta) mismatch");
+
+    Ok(())
+}
+
+/// Draft-03 generated test vector 3: non-zero seed, single zero byte
+#[test]
+fn test_vrf_draft03_generated_3() -> Result<()> {
+    let sk_seed = hex_decode("a70b8f607568df8ae26cf438b1057d8d0a94b7f3ac44cd984577fc43c2da55b7");
+    let expected_pk = hex_decode("f1eb347d5c59e24f9f5f33c80cfd866e79fd72e0c370da3c011b1c9f045e23f1");
+    let alpha = hex_decode("00");
+    let expected_pi = hex_decode(
+        "aa349327d919c8c96de316855de6fe5fa841ef25af913cfb9b33d6b663c425bd\
+         024456ca193f10da319a2205c67222e8a62da87101904f453de0beb79568902c\
+         edeea891f3db8202690f51c8e7d3210b",
+    );
+    let expected_beta = hex_decode(
+        "d4b4deef941fc3ece4e86f837c784951b4a0cbc4accd79cdcbc882123befeb17\
+         c63b329730c59bbe9253294496f730428d588b9221832cb336bfd9d67754030f",
+    );
+
+    let seed: [u8; 32] = sk_seed.try_into().expect("seed must be 32 bytes");
+    let (sk, pk) = VrfDraft03::keypair_from_seed(&seed);
+    assert_eq!(&pk[..], &expected_pk[..], "Public key mismatch");
+
+    let proof = VrfDraft03::prove(&sk, &alpha)?;
+    assert_eq!(
+        &proof[..],
+        &expected_pi[..],
+        "Proof mismatch for draft03 generated_3.\nExpected: {}\nGot:      {}",
+        hex_encode(&expected_pi),
+        hex_encode(&proof)
+    );
+
+    let beta = VrfDraft03::verify(&pk, &proof, &alpha)?;
+    assert_eq!(&beta[..], &expected_beta[..], "Output (beta) mismatch");
+
+    Ok(())
+}
+
+/// Draft-03 generated test vector 4: non-zero seed, 10-byte alpha
+#[test]
+fn test_vrf_draft03_generated_4() -> Result<()> {
+    let sk_seed = hex_decode("a70b8f607568df8ae26cf438b1057d8d0a94b7f3ac44cd984577fc43c2da55b7");
+    let expected_pk = hex_decode("f1eb347d5c59e24f9f5f33c80cfd866e79fd72e0c370da3c011b1c9f045e23f1");
+    let alpha = hex_decode("00010203040506070809");
+    let expected_pi = hex_decode(
+        "989c0c477b4a0c07e0dabd7b73cdb42beb4b4e09471377e6d0b75e8ffd5d0917\
+         04394c5ea4e2be5d5244b02c03cf85984adfa12c61280bc8c6e46f02035ee57d\
+         6cd18b96695ea04ff5ec541869ea890a",
+    );
+    let expected_beta = hex_decode(
+        "933f886e8648796a968dccc71a3ce09a8026b28fdf5ffcc50be4b97431f3e390\
+         4375870b0bd196509dc33606846bb14820acdf36170e1667dbe9d3a940717bbd",
+    );
+
+    let seed: [u8; 32] = sk_seed.try_into().expect("seed must be 32 bytes");
+    let (sk, pk) = VrfDraft03::keypair_from_seed(&seed);
+    assert_eq!(&pk[..], &expected_pk[..], "Public key mismatch");
+
+    let proof = VrfDraft03::prove(&sk, &alpha)?;
+    assert_eq!(
+        &proof[..],
+        &expected_pi[..],
+        "Proof mismatch for draft03 generated_4.\nExpected: {}\nGot:      {}",
+        hex_encode(&expected_pi),
+        hex_encode(&proof)
+    );
+
+    let beta = VrfDraft03::verify(&pk, &proof, &alpha)?;
+    assert_eq!(&beta[..], &expected_beta[..], "Output (beta) mismatch");
+
+    Ok(())
+}
+
+// ============================================================================
 // VRF Draft-03 Cardano Compatibility Tests
 // ============================================================================
 
