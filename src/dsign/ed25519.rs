@@ -305,14 +305,13 @@ impl Ed25519SigningKey {
         bytes: &[u8; SECRET_COMPOUND_SIZE],
     ) -> core::result::Result<Self, CryptoError> {
         // Derive the expected public key from the seed
-        let signing_key = DalekSigningKey::from_bytes(
-            bytes[..SEED_SIZE].try_into().map_err(|_| {
+        let signing_key =
+            DalekSigningKey::from_bytes(bytes[..SEED_SIZE].try_into().map_err(|_| {
                 CryptoError::InvalidKeyLength {
                     expected: SEED_SIZE,
                     got: 0,
                 }
-            })?,
-        );
+            })?);
         let expected_vk = signing_key.verifying_key().to_bytes();
         let embedded_vk = &bytes[SEED_SIZE..];
 
@@ -830,6 +829,7 @@ impl CommonDsignAlgorithm for Ed25519 {
 mod tests {
     use super::*;
     use crate::dsign::DsignAlgorithm;
+    use alloc::vec;
 
     #[test]
     fn test_key_generation_deterministic() {
@@ -978,6 +978,9 @@ mod tests {
 // Helper for hex encoding in tests
 #[cfg(test)]
 mod hex {
+    use alloc::format;
+    use alloc::string::String;
+
     #[allow(dead_code)]
     pub(crate) fn encode(bytes: &[u8]) -> String {
         bytes.iter().map(|b| format!("{:02x}", b)).collect()

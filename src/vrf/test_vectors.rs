@@ -27,6 +27,7 @@
 mod tests {
     use crate::common::Result;
     use crate::vrf::{VrfDraft03, VrfDraft13};
+    use alloc::vec;
 
     /// Test VRF Draft-03 determinism
     #[test]

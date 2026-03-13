@@ -267,9 +267,11 @@ impl VrfDraft13 {
         let y_point = bytes_to_point(public_key)?;
 
         // Parse proof: Gamma(32) || U_proof(32) || V_proof(32) || s(32)
-        let gamma = bytes_to_point(&proof[0..32].try_into().map_err(|_| {
-            crate::common::error::CryptoError::InvalidProof
-        })?)?;
+        let gamma = bytes_to_point(
+            &proof[0..32]
+                .try_into()
+                .map_err(|_| crate::common::error::CryptoError::InvalidProof)?,
+        )?;
 
         let u_proof: [u8; 32] = proof[32..64]
             .try_into()

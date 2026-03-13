@@ -154,6 +154,7 @@ where
 mod tests {
     use super::*;
     use crate::dsign::ed25519::Ed25519;
+    use alloc::vec;
 
     #[test]
     fn single_kes_only_supports_period_zero() {

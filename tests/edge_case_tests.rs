@@ -1,3 +1,4 @@
+#![cfg(all(feature = "dsign", feature = "hash", feature = "kes", feature = "vrf"))]
 //! Comprehensive Edge Case Tests for Cardano Cryptographic Primitives
 //!
 //! This module tests edge cases, boundary conditions, and malformed inputs

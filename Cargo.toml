@@ -162,6 +162,10 @@ required-features = ["kes", "dsign", "key"]
 name = "stake_pool_registration"
 required-features = ["key", "vrf"]
 
+[[example]]
+name = "spo_kes_management"
+required-features = ["kes", "dsign", "key"]
+
 # ============================================================================
 # Build Optimization Profiles
 # ============================================================================

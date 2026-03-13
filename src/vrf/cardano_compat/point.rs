@@ -24,7 +24,7 @@
 //! Each hash-to-curve variant uses a unique suite identifier to prevent
 //! cross-protocol attacks:
 //! - Draft-03: `0x04` (ECVRF-ED25519-SHA512-ELL2)
-//! - Draft-13: `0x03` (ECVRF-ED25519-SHA512-ELL2)
+//! - Draft-13: `0x04` (ECVRF-ED25519-SHA512-ELL2)
 
 use alloc::vec;
 use alloc::vec::Vec;

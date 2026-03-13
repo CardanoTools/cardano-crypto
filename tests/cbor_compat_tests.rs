@@ -1,3 +1,4 @@
+#![cfg(feature = "cbor")]
 //! CBOR Encoding Tests - Cardano Compatibility
 //!
 //! These tests verify that our CBOR implementation produces output compatible

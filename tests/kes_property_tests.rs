@@ -1,3 +1,4 @@
+#![cfg(feature = "kes")]
 // ! Property-based tests for KES implementations
 //!
 //! These tests verify KES invariants using property-based testing,

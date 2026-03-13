@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions for cardano-crypto
 
-> **Version:** 1.2.0 | **MSRV:** 1.85 | **Edition:** 2024 | **License:** MIT OR Apache-2.0
+> **Version:** 1.1.0 | **MSRV:** 1.85 | **Edition:** 2024 | **License:** MIT OR Apache-2.0
 
 Production-grade Rust implementation of Cardano cryptographic primitives with 100% binary compatibility with [IntersectMBO/cardano-base](https://github.com/IntersectMBO/cardano-base). Every output must match the official Haskell implementation byte-for-byte.
 

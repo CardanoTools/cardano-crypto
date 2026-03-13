@@ -1,3 +1,4 @@
+#![cfg(feature = "kes")]
 //! KES Interoperability Tests with Cardano's Haskell Implementation
 //!
 //! These tests verify byte-for-byte compatibility with Cardano's official

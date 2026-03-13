@@ -212,17 +212,22 @@ impl ExtendedPrivateKey {
         let hardened = index >= HARDENED_OFFSET;
         let index_le = index.to_le_bytes();
 
-        // Compute Z
-        let mut z_data = Vec::with_capacity(69);
-        if hardened {
-            z_data.push(0x00);
-            z_data.extend_from_slice(&self.key_left);
-            z_data.extend_from_slice(&self.key_right);
+        // Build data prefix: for hardened, use private key material;
+        // for non-hardened, compute public key once (expensive scalar mul)
+        let (z_tag, cc_tag, key_material): (u8, u8, Vec<u8>) = if hardened {
+            let mut km = Vec::with_capacity(64);
+            km.extend_from_slice(&self.key_left);
+            km.extend_from_slice(&self.key_right);
+            (0x00, 0x01, km)
         } else {
-            z_data.push(0x02);
             let pub_key = self.derive_public_key();
-            z_data.extend_from_slice(&pub_key);
-        }
+            (0x02, 0x03, pub_key.to_vec())
+        };
+
+        // Compute Z = HMAC-SHA-512(cc, z_tag || key_material || index_LE)
+        let mut z_data = Vec::with_capacity(1 + key_material.len() + 4);
+        z_data.push(z_tag);
+        z_data.extend_from_slice(&key_material);
         z_data.extend_from_slice(&index_le);
 
         let mut z_mac =
@@ -235,17 +240,10 @@ impl ExtendedPrivateKey {
         z_mac.update(&z_data);
         let z = z_mac.finalize().into_bytes();
 
-        // Compute child chain code
-        let mut cc_data = Vec::with_capacity(69);
-        if hardened {
-            cc_data.push(0x01);
-            cc_data.extend_from_slice(&self.key_left);
-            cc_data.extend_from_slice(&self.key_right);
-        } else {
-            cc_data.push(0x03);
-            let pub_key = self.derive_public_key();
-            cc_data.extend_from_slice(&pub_key);
-        }
+        // Compute child chain code = HMAC-SHA-512(cc, cc_tag || key_material || index_LE)
+        let mut cc_data = Vec::with_capacity(1 + key_material.len() + 4);
+        cc_data.push(cc_tag);
+        cc_data.extend_from_slice(&key_material);
         cc_data.extend_from_slice(&index_le);
 
         let mut cc_mac =
@@ -258,13 +256,15 @@ impl ExtendedPrivateKey {
         cc_mac.update(&cc_data);
         let cc_hash = cc_mac.finalize().into_bytes();
 
-        // Zeroize data vecs (may contain secret key bytes)
+        // Zeroize data vecs (may contain secret key bytes for hardened derivation)
         z_data.zeroize();
         cc_data.zeroize();
+        let mut key_material = key_material;
+        key_material.zeroize();
 
         // kL_child = 8 * Z[0..28] + kL_parent
         let mut z_left = [0u8; 32];
-        z_left[..32].copy_from_slice(&z[0..32]);
+        z_left.copy_from_slice(&z[0..32]);
         let child_key_left = add_scalar_mul8(&self.key_left, &z_left);
 
         // kR_child = Z[32..64] + kR_parent (mod 2^256)

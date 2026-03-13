@@ -96,8 +96,10 @@ impl Fe25519 {
     /// where lo = bytes\[0..32\] and hi = bytes\[32..64\] as little-endian integers.
     #[inline]
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> Self {
-        let lo: [u8; 32] = bytes[0..32].try_into().expect("slice is 32 bytes");
-        let hi: [u8; 32] = bytes[32..64].try_into().expect("slice is 32 bytes");
+        let mut lo = [0u8; 32];
+        lo.copy_from_slice(&bytes[0..32]);
+        let mut hi = [0u8; 32];
+        hi.copy_from_slice(&bytes[32..64]);
 
         let fe_lo = Self::from_bytes(&lo);
         let fe_hi = Self::from_bytes(&hi);

@@ -143,6 +143,7 @@ pub enum CryptoError {
     EncodingError,
 
     /// Invalid parameter
+    #[cfg(feature = "alloc")]
     #[cfg_attr(feature = "thiserror", error("Invalid parameter: {0}"))]
     InvalidParameter(alloc::string::String),
 }
@@ -186,6 +187,7 @@ impl fmt::Display for CryptoError {
             CryptoError::OCert(e) => write!(f, "Operational Certificate error: {}", e),
             CryptoError::Other(msg) => write!(f, "{}", msg),
             CryptoError::EncodingError => write!(f, "Encoding/decoding error"),
+            #[cfg(feature = "alloc")]
             CryptoError::InvalidParameter(msg) => write!(f, "Invalid parameter: {}", msg),
         }
     }
