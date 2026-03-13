@@ -356,8 +356,8 @@ let sig = Secp256k1Ecdsa::sign(&sk, message);
 | `bls12_381_G2_hashToGroup` | `Bls12381::g2_hash_to_curve` | ✅ |
 | `bls12_381_G2_equal` | `G2Point::eq` | ✅ |
 | `bls12_381_millerLoop` | `Bls12381::miller_loop` | ✅ |
-| `bls12_381_mulMlResult` | `PairingResult::mul` | ✅ |
-| `bls12_381_finalVerify` | `Bls12381::final_exponentiate` | ✅ |
+| `bls12_381_mulMlResult` | `Bls12381::mul_ml_result` | ✅ |
+| `bls12_381_finalVerify` | `Bls12381::final_verify` | ✅ |
 
 **Verification:**
 - ✅ All 17 Plutus builtins implemented

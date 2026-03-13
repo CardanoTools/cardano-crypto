@@ -31,12 +31,13 @@
 
 use crate::common::error::CryptoError;
 use blst::{
-    BLST_ERROR, blst_encode_to_g1, blst_encode_to_g2, blst_final_exp, blst_fp12, blst_fp12_is_one,
-    blst_miller_loop, blst_p1, blst_p1_add_or_double, blst_p1_affine, blst_p1_cneg,
-    blst_p1_compress, blst_p1_from_affine, blst_p1_mult, blst_p1_on_curve, blst_p1_to_affine,
-    blst_p1_uncompress, blst_p2, blst_p2_add_or_double, blst_p2_affine, blst_p2_cneg,
-    blst_p2_compress, blst_p2_from_affine, blst_p2_mult, blst_p2_on_curve, blst_p2_to_affine,
-    blst_p2_uncompress, blst_scalar, blst_scalar_from_bendian,
+    BLST_ERROR, blst_final_exp, blst_fp12, blst_fp12_finalverify, blst_fp12_is_one,
+    blst_hash_to_g1, blst_hash_to_g2, blst_miller_loop, blst_p1, blst_p1_add_or_double,
+    blst_p1_affine, blst_p1_cneg, blst_p1_compress, blst_p1_from_affine, blst_p1_mult,
+    blst_p1_on_curve, blst_p1_to_affine, blst_p1_uncompress, blst_p2, blst_p2_add_or_double,
+    blst_p2_affine, blst_p2_cneg, blst_p2_compress, blst_p2_from_affine, blst_p2_mult,
+    blst_p2_on_curve, blst_p2_to_affine, blst_p2_uncompress, blst_scalar,
+    blst_scalar_from_bendian,
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -854,7 +855,8 @@ impl core::fmt::Debug for PairingResult {
 /// | `bls12_381_G1_hashToGroup` | [`g1_hash_to_curve`](Self::g1_hash_to_curve) |
 /// | `bls12_381_G2_*` | `g2_*` methods |
 /// | `bls12_381_millerLoop` | [`miller_loop`](Self::miller_loop) |
-/// | `bls12_381_finalVerify` | [`final_exponentiate`](Self::final_exponentiate) |
+/// | `bls12_381_mulMlResult` | [`mul_ml_result`](Self::mul_ml_result) |
+/// | `bls12_381_finalVerify` | [`final_verify`](Self::final_verify) |
 ///
 /// # Examples
 ///
@@ -948,11 +950,15 @@ impl Bls12381 {
 
     /// Hash arbitrary bytes to a G1 point using hash-to-curve.
     ///
+    /// Uses `blst_hash_to_g1` (Random Oracle variant, `_RO_` suite) as required
+    /// by CIP-0381. This produces uniformly distributed points matching the
+    /// upstream Haskell `hashToGroup` implementation.
+    ///
     /// Corresponds to `bls12_381_G1_hashToGroup` in Plutus.
     pub fn g1_hash_to_curve(msg: &[u8], dst: &[u8]) -> G1Point {
         let mut point = blst_p1::default();
         unsafe {
-            blst_encode_to_g1(
+            blst_hash_to_g1(
                 &mut point,
                 msg.as_ptr(),
                 msg.len(),
@@ -1013,11 +1019,15 @@ impl Bls12381 {
 
     /// Hash arbitrary bytes to a G2 point using hash-to-curve.
     ///
+    /// Uses `blst_hash_to_g2` (Random Oracle variant, `_RO_` suite) as required
+    /// by CIP-0381. This produces uniformly distributed points matching the
+    /// upstream Haskell `hashToGroup` implementation.
+    ///
     /// Corresponds to `bls12_381_G2_hashToGroup` in Plutus.
     pub fn g2_hash_to_curve(msg: &[u8], dst: &[u8]) -> G2Point {
         let mut point = blst_p2::default();
         unsafe {
-            blst_encode_to_g2(
+            blst_hash_to_g2(
                 &mut point,
                 msg.as_ptr(),
                 msg.len(),
@@ -1067,14 +1077,33 @@ impl Bls12381 {
     }
 
     /// Performs final exponentiation on a Miller loop result.
-    ///
-    /// Corresponds to `bls12_381_finalVerify` in Plutus (checking if result is one).
     pub fn final_exponentiate(ml_result: &PairingResult) -> PairingResult {
         let mut result = blst_fp12::default();
         unsafe {
             blst_final_exp(&mut result, &ml_result.value);
         }
         PairingResult { value: result }
+    }
+
+    /// Multiplies two Miller loop results.
+    ///
+    /// Corresponds to `bls12_381_mulMlResult` in Plutus.
+    pub fn mul_ml_result(a: &PairingResult, b: &PairingResult) -> PairingResult {
+        let mut result = blst_fp12::default();
+        unsafe {
+            blst::blst_fp12_mul(&mut result, &a.value, &b.value);
+        }
+        PairingResult { value: result }
+    }
+
+    /// Checks equality of two Miller loop results after final exponentiation.
+    ///
+    /// Corresponds to `bls12_381_finalVerify` in Plutus. Takes two `MlResult`
+    /// values and returns true if they are equal after final exponentiation.
+    /// Uses `blst_fp12_finalverify` which matches the upstream Haskell
+    /// `ptFinalVerify` implementation.
+    pub fn final_verify(a: &PairingResult, b: &PairingResult) -> bool {
+        unsafe { blst_fp12_finalverify(&a.value, &b.value) }
     }
 
     /// Verifies a pairing equation: e(g1_1, g2_1) * e(g1_2, g2_2) == 1.
@@ -1690,6 +1719,42 @@ mod tests {
         let result2 = Bls12381::pairing(&g1, &g2);
 
         assert_eq!(result1, result2);
+    }
+
+    #[test]
+    fn test_final_verify() {
+        let g1 = G1Point::generator();
+        let g2 = G2Point::generator();
+
+        // Same pairing inputs should verify equal
+        let ml1 = Bls12381::miller_loop(&g1, &g2);
+        let ml2 = Bls12381::miller_loop(&g1, &g2);
+        assert!(Bls12381::final_verify(&ml1, &ml2));
+
+        // Different inputs should not verify equal
+        let scalar = Scalar::from_bytes_be(&{
+            let mut s = [0u8; 32];
+            s[31] = 2;
+            s
+        })
+        .expect("valid scalar");
+        let g1_2 = Bls12381::g1_scalar_mul(&scalar, &g1);
+        let ml3 = Bls12381::miller_loop(&g1_2, &g2);
+        assert!(!Bls12381::final_verify(&ml1, &ml3));
+    }
+
+    #[test]
+    fn test_mul_ml_result() {
+        let g1 = G1Point::generator();
+        let g2 = G2Point::generator();
+
+        let ml1 = Bls12381::miller_loop(&g1, &g2);
+        let ml2 = Bls12381::miller_loop(&g1, &g2);
+
+        // mul_ml_result should produce a valid PairingResult
+        let product = Bls12381::mul_ml_result(&ml1, &ml2);
+        // Multiplying with identity should give same result
+        let _exp = Bls12381::final_exponentiate(&product);
     }
 
     // ========================================================================

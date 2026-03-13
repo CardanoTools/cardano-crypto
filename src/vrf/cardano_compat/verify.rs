@@ -29,6 +29,33 @@ use subtle::ConstantTimeEq;
 use super::point::{cardano_clear_cofactor, cardano_hash_to_curve};
 use crate::common::{CryptoError, CryptoResult, SUITE_DRAFT03, THREE, TWO, point_to_bytes};
 
+/// Ed25519 group order ℓ = 2^252 + 27742317777372353535851937790883648493
+/// Used for scalar canonicality check (matches upstream sc25519_is_canonical).
+const L: [u8; 32] = [
+    0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde,
+    0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x10,
+];
+
+/// Check if a 32-byte scalar is in canonical form (< ℓ).
+///
+/// Matches upstream `sc25519_is_canonical` in libsodium/cardano-crypto-praos.
+/// Rejects non-canonical scalars to prevent proof malleability (s + k*ℓ would
+/// produce same verification equation but different proof bytes).
+fn sc_is_canonical(s: &[u8; 32]) -> bool {
+    // Compare s < L in little-endian byte order (most significant byte last)
+    // Walk from MSB to LSB; first difference decides
+    let mut borrow: u8 = 0;
+    for i in 0..32 {
+        // Subtract with borrow: s[i] - L[i] - borrow
+        let (diff, b1) = s[i].overflowing_sub(L[i]);
+        let (_, b2) = diff.overflowing_sub(borrow);
+        borrow = u8::from(b1 || b2);
+    }
+    // If borrow == 1, then s < L (canonical)
+    borrow == 1
+}
+
 /// Verify VRF proof using Cardano-compatible method
 ///
 /// Verifies that a VRF proof is valid for the given public key and message,
@@ -89,10 +116,20 @@ pub fn cardano_vrf_verify(
         .try_into()
         .map_err(|_| CryptoError::InvalidProof)?;
 
+    // Reject non-canonical scalar s (matches upstream sc25519_is_canonical check)
+    if !sc_is_canonical(&s_bytes) {
+        return Err(CryptoError::InvalidProof);
+    }
+
     // Parse public key
     let y_point = CompressedEdwardsY(*public_key)
         .decompress()
         .ok_or(CryptoError::InvalidPublicKey)?;
+
+    // Reject small-order public keys (matches upstream ge25519_has_small_order check)
+    if y_point.is_small_order() {
+        return Err(CryptoError::InvalidPublicKey);
+    }
 
     // Parse Gamma
     let gamma = CompressedEdwardsY(gamma_bytes)
@@ -228,5 +265,84 @@ mod tests {
         let result = cardano_vrf_verify(pk.try_into().unwrap(), &proof, b"wrong");
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_verify_rejects_small_order_public_key() {
+        // Small-order points on Ed25519 (identity and low-order torsion points)
+        let small_order_pks: [[u8; 32]; 4] = [
+            // Identity point (0, 1)
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            // (0, -1) = order 2
+            [0xec, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f],
+            // order 4 point
+            [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+            // order 8 point: c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa
+            [0xc7, 0x17, 0x6a, 0x70, 0x3d, 0x4d, 0xd8, 0x4f, 0xba, 0x3c, 0x0b, 0x76, 0x0d, 0x10, 0x67, 0x0f, 0x2a, 0x20, 0x53, 0xfa, 0x2c, 0x39, 0xcc, 0xc6, 0x4e, 0xc7, 0xfd, 0x77, 0x92, 0xac, 0x03, 0xfa],
+        ];
+
+        let proof = [0u8; 80];
+        let message = b"test";
+
+        for pk in &small_order_pks {
+            let result = cardano_vrf_verify(pk, &proof, message);
+            assert!(result.is_err(), "Should reject small-order public key");
+        }
+    }
+
+    #[test]
+    fn test_verify_rejects_non_canonical_scalar() {
+        // Generate a valid keypair and proof, then tamper with s to be non-canonical
+        let seed = [1u8; 32];
+        let mut hasher = Sha512::new();
+        hasher.update(seed);
+        let hash = hasher.finalize();
+
+        let mut secret_scalar_bytes = [0u8; 32];
+        secret_scalar_bytes.copy_from_slice(&hash[0..32]);
+        secret_scalar_bytes[0] &= 248;
+        secret_scalar_bytes[31] &= 127;
+        secret_scalar_bytes[31] |= 64;
+
+        let scalar = Scalar::from_bytes_mod_order(secret_scalar_bytes);
+        let public_point = ED25519_BASEPOINT_POINT * scalar;
+        let public_key = point_to_bytes(&public_point);
+
+        let mut sk = [0u8; 64];
+        sk[0..32].copy_from_slice(&seed);
+        sk[32..64].copy_from_slice(&public_key);
+
+        let message = b"test";
+        let mut proof = cardano_vrf_prove(&sk, message).expect("prove failed");
+
+        // Set s (bytes 48..80) to ℓ (the group order) — non-canonical
+        let l: [u8; 32] = [
+            0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde,
+            0xf9, 0xde, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+        ];
+        proof[48..80].copy_from_slice(&l);
+
+        let result = cardano_vrf_verify(&public_key, &proof, message);
+        assert!(result.is_err(), "Should reject non-canonical scalar s");
+    }
+
+    #[test]
+    fn test_sc_is_canonical() {
+        // Zero is canonical (0 < ℓ)
+        assert!(sc_is_canonical(&[0u8; 32]));
+        // One is canonical
+        let mut one = [0u8; 32];
+        one[0] = 1;
+        assert!(sc_is_canonical(&one));
+        // ℓ itself is NOT canonical
+        assert!(!sc_is_canonical(&L));
+        // ℓ - 1 IS canonical
+        let mut l_minus_1 = L;
+        // Subtract 1 from little-endian L
+        l_minus_1[0] = 0xec; // 0xed - 1
+        assert!(sc_is_canonical(&l_minus_1));
+        // All 0xFF is NOT canonical (way larger than ℓ)
+        assert!(!sc_is_canonical(&[0xff; 32]));
     }
 }
