@@ -286,17 +286,44 @@ impl Ed25519SigningKey {
 
     /// Create a signing key from compound bytes (seed + public key)
     ///
+    /// Validates that the embedded public key (bytes 32..64) matches the
+    /// public key derived from the seed (bytes 0..32). Returns an error
+    /// if they don't match.
+    ///
     /// # Example
     ///
     /// ```
     /// use cardano_crypto::dsign::ed25519::Ed25519SigningKey;
     ///
-    /// let compound = [42u8; 64];
-    /// let signing_key = Ed25519SigningKey::from_compound_bytes(&compound);
+    /// let seed = [42u8; 32];
+    /// let sk = Ed25519SigningKey::from_seed_bytes(&seed).unwrap();
+    /// let compound = *sk.compound_bytes();
+    /// let sk2 = Ed25519SigningKey::from_compound_bytes(&compound).unwrap();
+    /// assert_eq!(sk.seed_bytes(), sk2.seed_bytes());
     /// ```
-    #[inline]
-    pub fn from_compound_bytes(bytes: &[u8; SECRET_COMPOUND_SIZE]) -> Self {
-        Self(*bytes)
+    pub fn from_compound_bytes(
+        bytes: &[u8; SECRET_COMPOUND_SIZE],
+    ) -> core::result::Result<Self, CryptoError> {
+        // Derive the expected public key from the seed
+        let signing_key = DalekSigningKey::from_bytes(
+            bytes[..SEED_SIZE].try_into().map_err(|_| {
+                CryptoError::InvalidKeyLength {
+                    expected: SEED_SIZE,
+                    got: 0,
+                }
+            })?,
+        );
+        let expected_vk = signing_key.verifying_key().to_bytes();
+        let embedded_vk = &bytes[SEED_SIZE..];
+
+        if !bool::from(subtle::ConstantTimeEq::ct_eq(
+            expected_vk.as_slice(),
+            embedded_vk,
+        )) {
+            return Err(CryptoError::InvalidInput);
+        }
+
+        Ok(Self(*bytes))
     }
 
     /// Get the seed bytes (first 32 bytes)
@@ -927,6 +954,24 @@ mod tests {
         // Same key should produce same hash
         let hash_256_again = Ed25519::hash_verification_key::<Blake2b256>(&vk);
         assert_eq!(hash_256, hash_256_again);
+    }
+
+    #[test]
+    fn test_from_compound_bytes_valid() {
+        let seed = [42u8; 32];
+        let sk = Ed25519SigningKey::from_seed_bytes(&seed).unwrap();
+        let compound = *sk.compound_bytes();
+        let sk2 = Ed25519SigningKey::from_compound_bytes(&compound).unwrap();
+        assert_eq!(sk.seed_bytes(), sk2.seed_bytes());
+        assert_eq!(sk.verifying_bytes(), sk2.verifying_bytes());
+    }
+
+    #[test]
+    fn test_from_compound_bytes_invalid_vk() {
+        let mut compound = [0u8; 64];
+        compound[..32].copy_from_slice(&[42u8; 32]); // valid seed
+        compound[32..].copy_from_slice(&[0u8; 32]); // wrong public key
+        assert!(Ed25519SigningKey::from_compound_bytes(&compound).is_err());
     }
 }
 
