@@ -557,7 +557,7 @@ fn test_vrf_draft13_batchcompat_generated_1() -> Result<()> {
         "93d70c5ed59ccb21ca9991be561756939ff9753bf85764d2a7b937d6fbf91834\
          43cd118bee8a0f61e8bdc5403c03d6c94ead31956e98bfd6a5e02d3be5900d17\
          a540852d586f0891caed3e3b0e0871d6a741fb0edcdb586f7f10252f79c35176\
-         4474ece4936e0190b5167832c10712884ad12acdfff2e434aacb165e1f789660f",
+         474ece4936e0190b5167832c10712884ad12acdfff2e434aacb165e1f789660f",
     );
     let expected_beta = hex_decode(
         "9a4d34f87003412e413ca42feba3b6158bdf11db41c2bbde98961c5865400cfd\
