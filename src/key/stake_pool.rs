@@ -808,8 +808,10 @@ impl StakePoolParams {
 // =============================================================================
 
 #[cfg(test)]
+#[cfg(feature = "alloc")]
 mod tests {
     use super::*;
+    use alloc::string::ToString;
 
     #[test]
     fn test_rational_from_percentage() {

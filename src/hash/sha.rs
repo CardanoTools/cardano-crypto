@@ -228,6 +228,9 @@ mod tests {
 // Helper for hex encoding in tests
 #[cfg(test)]
 mod hex {
+    use alloc::format;
+    use alloc::string::String;
+
     pub(crate) fn encode(bytes: impl AsRef<[u8]>) -> String {
         bytes
             .as_ref()
